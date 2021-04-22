@@ -13,14 +13,14 @@ class CalculateThermalIndex:
     """
 
     # convert kelvin to celcius
-    def kelvin_to_celcius(t):
-        t = t - 273.15
-        return t
+    def kelvin_to_celcius(t2m):
+        t = t2m - 273.15
+        return t2m
 
     # convert celcius to kelvin
-    def celcius_to_kelvin(t):
-        t = t + 273.15
-        return t
+    def celcius_to_kelvin(t2m):
+        t2m = t2m + 273.15
+        return t2m
 
     # convert from pa to hpa for e (relative humidity)
     def pa_to_hpa(rh):
@@ -28,31 +28,33 @@ class CalculateThermalIndex:
         return rh
 
     # Relative Humidity
-    def calculate_rh(t):
+    def calculate_rh(t2m,percent=True):
         g = [-2.8365744e3, -6.028076559e3, 1.954263612e1, -2.737830188e-2,
              1.6261698e-5, 7.0229056e-10, -1.8680009e-13, 2.7150305]
-        tk = t + 273.15
+        tk = t2m + 273.15
         ess = g[7] * np.log(tk)
         for i in range(7):
             ess = ess + g[i] * pow(tk, (i - 2))
         ess = np.exp(ess) * 0.01
-        return ess
-
+        if percent == False:
+            return ess
+        rh = (ess / 6.105 * np.exp(17.27 * t2m / 237.7 + t2m)) * 100
+        return rh
     # Heat Index
-    def calculate_heat_index(t, rh=None):
+    def calculate_heat_index(t2m, rh=None):
         if rh is None:
-            rh = CalculateThermalIndex.calculate_rh(t)
-        t = CalculateThermalIndex.kelvin_to_celcius(t)
+            rh = CalculateThermalIndex.calculate_rh(t2m)
+        t2m = CalculateThermalIndex.kelvin_to_celcius(t2m)
         rh = CalculateThermalIndex.pa_to_hpa(rh)
         hiarray = [8.784695, 1.61139411, 2.338549, 0.14611605, 1.2308094 * 10 ** -2, 2.211732 * 10 ** -3,
                    7.2546 * 10 ** -4, 3.58 * 10 ** -6]
-        hi = -hiarray[0] + hiarray[1] * t + hiarray[2] * rh - hiarray[3] * t * \
-             rh - hiarray[4] * rh ** 2 + hiarray[5] * t ** 2 * rh + hiarray[6] * \
-             t * rh ** 2 - hiarray[7] * t ** 2 * rh ** 2
+        hi = -hiarray[0] + hiarray[1] * t2m + hiarray[2] * rh - hiarray[3] * t2m * \
+             rh - hiarray[4] * rh ** 2 + hiarray[5] * t2m ** 2 * rh + hiarray[6] * \
+             t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
         return hi
 
     def calculate_mean_radiant_temperature(t, ssrd, ssr, fdir, strd, strr, cossza, fp):
-        """   
+        """
          mrt - Mean Radiant Temperature
          :param t: is 2m temperature
          :param ssrd: is surface solar radiation downwards
@@ -73,7 +75,7 @@ class CalculateThermalIndex:
         mrt = CalculateThermalIndex.kelvin_to_celcius(pow(mrtcal, 0.25))
         return mrt
 
-    def calculate_utci(t, va, mrt=None, rh=None):
+    def calculate_utci(t2m, va, mrt=None, rh=None):
         """
         UTCI
         :param t: is 2m temperature
@@ -81,15 +83,15 @@ class CalculateThermalIndex:
         :param mrt: is mean radiant temperature
         :param rh: is relative humidity
         Calculate UTCI with a 6th order polynomial approximation according to:
-        Brode, P. et al. Deriving the operational procedure for the 
+        Brode, P. et al. Deriving the operational procedure for the
         Universal Thermal Climate Index (UTCI). Int J Biometeorol (2012) 56: 48.1
 
         """
-        t = CalculateThermalIndex.kelvin_to_celcius(t)
+        t = CalculateThermalIndex.kelvin_to_celcius(t2m)
         if rh is None:
-            rh = CalculateThermalIndex.calculate_rh(t)
-        if mrt is None:
-            mrt = CalculateThermalIndex.calculate_mean_radiant_temperature(t, ssrd, ssr, fdir, strd, strr, cossza, fp)
+            rh = CalculateThermalIndex.calculate_rh(t2m)
+        #if mrt is None:
+        #    mrt = CalculateThermalIndex.calculate_mean_radiant_temperature(t, ssrd, ssr, fdir, strd, strr, cossza, fp)
         e_mrt = np.subtract(mrt, t)
         rh = rh / 10.0
 
@@ -329,28 +331,56 @@ class CalculateThermalIndex:
                           2.47090539E-04 * e_mrt * rh5 + \
                           1.48348065E-03 * rh6
             return utci_approx
-
-    def calculate_wbgts(t,rh=None):
+    def calculate_wbgts(t2m):
         """wgbts - Wet Bulb Globe Temperature Simple
         :param t: 2m temperature
         :param rh: relative humidity
         """
-        if rh == None:
-            rh = CalculateThermalIndex.calculate_rh(t)
-        wbgts = 0.567 * t + 0.393 * rh + 3.94
-        return wbgts
+        rh = CalculateThermalIndex.calculate_rh(t2m,percent=False)
+        rh=CalculateThermalIndex.pa_to_hpa(rh)
+        t2m = CalculateThermalIndex.kelvin_to_celcius(t2m)
+        td = 243.15 * np.log(rh / 0.6112) / (17.67 - np.log(rh / 0.6112))
+        wbgt = 0.066 * t2m + 4098 * rh * td / (td + 273.3)**2 / 0.066 + 4098 * rh / (td+273.3) **2
+        return(wbgt)
 
-    def calculate_humidex(t,td):
+        # wbgts = 0.567 * t + 0.393 * rh + 3.94
+    def calculate_wbgt(t2m,mrt,va):
+        f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
+        a = f / 2
+        b = -f * t2m - mrt ** 4
+        rt1 = 3 ** (1 / 3)
+        rt2 = (np.sqrt(3) * np.sqrt(27 * a ** 4 - 16 * b ** 3) + 9 * a ** 2)
+        va= va
+        wbgt_quartic = - 1 / 2 * np.sqrt((2 * 2 ** (2 / 3) * b) / (rt1* rt2 ** (1 / 3)) +
+        (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) + 1 / 2 * np.sqrt((4 * a) / np.sqrt((2 * 2 ** (2 / 3) * b) /
+        (rt1* rt2 ** (1 / 3)) +(2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) -(2 ** (1 / 3) * rt2 ** (1 / 3)) /
+        3 ** (2 / 3) - (2 * 2 ** (2 / 3) * b) / (rt1* rt2 ** (1 / 3)))
+        return(wbgt_quartic)
+
+    def calculate_mrt_from_wbgt(t2m,wbgt,va):
+        f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
+        wbgt4 = wbgt ** 4
+        dit = wbgt - t2m
+        mrtcalculation = wbgt4 + f * dit
+        mrtcalc2 = pow(mrtcalculation, 0.25)
+        return(mrtcalc2)
+
+    def calculate_humidex(t2m,td):
         """
         PROVISIONAL
-        humidex - heat index used by the Candian Meteorological Serivce
+        humidex - heat index used by the Canadian Meteorological Serivce
         :param t: 2m temperature in degrees celcius
         :param td: dew point temperature in kelvin
         """
-        e= 6.11 * np.exp(5417.7530 * 1/273.16 - 1/td)
+        e = 6.11 * np.exp(5417.7530 * 1/273.16 - 1/td)
         h = 0.5555 * e - 10.0
-        humidex = t + h
-
+        humidex = t2m + h
+        return humidex
+    def calculate_net_effective_temperature(t2m,rh,va):
+        ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
+        diterm = 0.68 - 0.0014 * rh + ditermeq
+        net = 37 - (37 - t2m / diterm) - 0.29 * t2m * (1 - 0.01 * rh)
+        return net
 # The main method to run the code
 if __name__ == '__main__':
     main()
