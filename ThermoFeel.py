@@ -65,9 +65,62 @@ class ThermalIndexCalculator:
              rh - hiarray[4] * rh ** 2 + hiarray[5] * t2m ** 2 * rh + hiarray[6] * \
              t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
         return hi
+    def calculate_solar_zenith_angle(lat,lon,y,m,d,h,base,step):
+
+        if base == 0:
+            base_offset = 0
+        if base == 6:
+            base_offset = 594
+        if base == 18:
+            base_offset = 1806
+        if base == 12:
+            base_offset = 1212
 
 
-    def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
+        if step == 1:
+            h_offset = 0.5
+            max = 32.0
+        if step == 3:
+            h_offset = 1.5
+            max = 14.0
+        if step == 6:
+            h_offset = 3
+            max = 100.0
+
+
+        jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
+                    (y + 4900 + (m - 14) / 12) / 100) / 4
+        jd2 = 1 - 32075 + 1461 * (y + 4800 + (1 - 14) / 12) / 4 + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12 - 3 * (
+                    (y + 4900 + (1 - 14) / 12) / 100) / 4
+        jd = jd - jd + 1
+
+        k = 0.01745
+        hh = h - base_offset - h_offset
+        g = (360 / 365.25) * (jd + hh/24)
+        if g > 360:
+            g=g-360
+        gg = np.pi * g / 180
+        #solar declination angle
+        d = 0.396372 - 22.91327 * np.cos(gg) + 4.02543 * np.sin(gg) - 0.387205 * np.cos(2 * gg) + 0.051967 * np.sin(
+            2 * gg) - 0.154527 * np.cos(3 * gg) + 0.084798 * np.sin(3 * gg)
+        #time correction for solar angle
+        tc = 0.004297 + 0.107029 * np.cos(gg) - 1.837877 * np.sin(gg) - 0.837378 * np.cos(2 * gg)- 2.340475 * np.sin(2 * gg)
+
+        #solar hour angle
+        sha = (hh - 12) * 15 + (lon + 180)/2 + tc
+        latrad = lat * np.pi / 180
+        lonrad = (lon + 180) / 2 * np.pi / 180
+        accumulationperiod = step
+        zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
+        zsolartimestart = sha * np.pi / 180 - zhalftimestep;
+        zsolartimeend = sha * np.pi / 180 + zhalftimestep;
+        ztandec = np.sin(d * np.pi / 180) / max(np.cos(d * np.pi / 180), 1.0e-12);
+        zcoshouranglesunset = -ztandec * sin(latrad) / max(np.cos(latrad), 1.0e-12);
+        zsindecsinlat = np.sin(d * np.pi / 180) * np.sin(latrad)
+        zcosdeccoslat = np.cos(d * np.pi / 180) * np.cos(latrad)
+
+
+def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         """
          mrt - Mean Radiant Temperature
          :param ssrd: is surface solar radiation downwards
