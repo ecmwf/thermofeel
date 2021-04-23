@@ -17,6 +17,7 @@ class ThermalIndexCalculator:
     # convert kelvin to celcius
     def kelvin_to_celcius(t2m):
         t = t2m - 273.15
+
         return t2m
 
     # convert celcius to kelvin
@@ -47,130 +48,24 @@ class ThermalIndexCalculator:
         #rh = (ess / 6.105 * np.exp(17.27 * t2m / 237.7 + t2m)) * 100
         #return rh
 
-    # Heat Index
-    """
-    Heat Index
-    :param t2m: 2m temperature
-    :param rh: Relative Humidity
-    """
 
     def calculate_heat_index(t2m, rh=None):
+        """
+        Heat Index
+           :param t2m: np.array 2m temperature [K]
+           :param rh: Relative Humidity
+           """
         if rh is None:
-            rh = ThermalIndexCalculator.calculate_rh(t2m, percent=False)
+            rh = ThermalIndexCalculator.calculate_rh(t2m)
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         rh = ThermalIndexCalculator.pa_to_hpa(rh)
-        hiarray = [8.784695, 1.61139411, 2.338549, 0.14611605, 1.2308094 * 10 ** -2, 2.211732 * 10 ** -3,
-                   7.2546 * 10 ** -4, 3.58 * 10 ** -6]
+        hiarray = [8.784695, 1.61139411, 2.338549, 0.14611605, 1.2308094 * 10 ** -2, 2.211732E-3,
+                   7.2546E-4, 3.58E-6]
         hi = -hiarray[0] + hiarray[1] * t2m + hiarray[2] * rh - hiarray[3] * t2m * \
              rh - hiarray[4] * rh ** 2 + hiarray[5] * t2m ** 2 * rh + hiarray[6] * \
              t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
         return hi
 
-    def szafunc(day, d_longitude, d_latitude):
-        """
-            inputs: day: datetime object
-                    dLongitude: longitudes (scalar or Numpy array)
-                    dLatitude: latitudes (scalar or Numpy array)
-            output: solar zenith angles
-        """
-        d_hours, d_minutes, d_seconds = day.hour, day.minute, day.second
-        i_year, i_month, i_day = day.year, day.month, day.day
-
-        d_earth_mean_radius = 6371.01
-        d_astronomical_unit = 149597890
-
-        ###################################################################
-        # Calculate difference in days between the current Julian Day
-        # and JD 2451545.0, which is noon 1 January 2000 Universal Time
-        ###################################################################
-        # Calculate time of the day in UT decimal hours
-        d_decimal_hours = d_hours + (d_minutes + d_seconds / 60.) / 60.
-        # Calculate current Julian Day
-        li_aux1 = int((i_month - 14.) / 12.)
-        li_aux2 = int((1461. * (i_year + 4800. + li_aux1)) / 4.) + int((367. * (i_month - 2. - 12. * li_aux1)) / 12.) - int(
-            (3. * int((i_year + 4900. + li_aux1) / 100.)) / 4.) + i_day - 32075.
-        d_julian_date = li_aux2 - 0.5 + d_decimal_hours / 24.
-        # Calculate difference between current Julian Day and JD 2451545.0
-        d_elapsed_julian_days = d_julian_date - 2451545.0
-
-        ###################################################################
-        # Calculate ecliptic coordinates (ecliptic longitude and obliquity of the
-        # ecliptic in radians but without limiting the angle to be less than 2*Pi
-        # (i.e., the result may be greater than 2*Pi)
-        ###################################################################
-        d_omega = 2.1429 - 0.0010394594 * d_elapsed_julian_days
-        d_mean_longitude = 4.8950630 + 0.017202791698 * d_elapsed_julian_days  # Radians
-        d_mean_anomaly = 6.2400600 + 0.0172019699 * d_elapsed_julian_days
-        d_ecliptic_longitude = d_mean_longitude + 0.03341607 * np.sin(d_mean_anomaly) + 0.00034894 * np.sin(
-            2. * d_mean_anomaly) - 0.0001134 - 0.0000203 * np.sin(d_omega)
-        d_ecliptic_obliquity = 0.4090928 - 6.2140e-9 * d_elapsed_julian_days + 0.0000396 * np.cos(d_omega)
-
-        ###################################################################
-        # Calculate celestial coordinates ( right ascension and declination ) in radians
-        # but without limiting the angle to be less than 2*Pi (i.e., the result may be
-        # greater than 2*Pi)
-        ###################################################################
-        d_sin_ecliptic_longitude = np.sin(d_ecliptic_longitude)
-        d_y = np.cos(d_ecliptic_obliquity) * d_sin_ecliptic_longitude
-        d_x = np.cos(d_ecliptic_longitude)
-        d_right_ascension = np.arctan2(d_y, d_x)
-        if d_right_ascension < 0.0:
-            d_right_ascension = d_right_ascension + 2.0 * np.pi
-        d_declination = np.arcsin(np.sin(d_ecliptic_obliquity) * d_sin_ecliptic_longitude)
-
-        ###################################################################
-        # Calculate local coordinates ( azimuth and zenith angle ) in degrees
-        ###################################################################
-        d_greenwich_mean_sidereal_time = 6.6974243242 + 0.0657098283 * d_elapsed_julian_days + d_decimal_hours
-        d_local_mean_sidereal_time = (d_greenwich_mean_sidereal_time * 15. + d_longitude) * (np.pi / 180.)
-        d_hour_angle = d_local_mean_sidereal_time - d_right_ascension
-        d_latitude_in_radians = d_latitude * (np.pi / 180.)
-        d_cos_latitude = np.cos(d_latitude_in_radians)
-        d_sin_latitude = np.sin(d_latitude_in_radians)
-        d_cos_hour_angle = np.cos(d_hour_angle)
-        d_zenith_angle = (
-            np.arccos(d_cos_latitude * d_cos_hour_angle * np.cos(d_declination) + np.sin(d_declination) * d_sin_latitude))
-        d_y = -np.sin(d_hour_angle)
-        d_x = np.tan(d_declination) * d_cos_latitude - d_sin_latitude * d_cos_hour_angle
-        dAzimuth = np.arctan2(d_y, d_x)
-        dAzimuth[dAzimuth < 0.0] = dAzimuth[dAzimuth < 0.0] + 2.0 * np.pi
-        dAzimuth = dAzimuth / (np.pi / 180.)
-        # Parallax Correction
-        dParallax = (d_earth_mean_radius / d_astronomical_unit) * np.sin(d_zenith_angle)
-        d_zenith_angle = (d_zenith_angle + dParallax) / (np.pi / 180.)
-
-        return d_zenith_angle
-
-    def calculate_solar_angles(days, months, years, lats, longs, lsmeridian, lstime):
-
-        K = 2
-        pi = 3.141592653
-        if np.remainder(years.all(), 4) == 0:
-            K = 1
-        monthsfix = 275 * months / 9
-        monthsfixp2 = months + 9 / 12
-        n = np.round(monthsfix) - K * np.round(monthsfixp2) + days - 30
-        d = 2 * pi * (n - 1) / 365.245
-
-        cequtime = 0.01719 + 0.428146 * np.cos(d) - 7.352048 * np.sin(d) - \
-                   3.349758 * np.cos(2 * d) - 9.362591 * np.sin(2 * d)
-
-        longcor = 4 * (lsmeridian - longs) / 60
-
-        locst = lstime + longcor + cequtime / 60
-
-        solarangle = (12 - locst) * pi / 12
-
-        solardeclin = 23.45 * np.sin(2 * pi * 284 + n / 365) * pi / 180
-
-        solarangleeq = np.cos(solardeclin) * np.cos(solarangle) * \
-                       np.cos(lats * pi / 180) + np.sin(solardeclin) * \
-                       np.sin(lats * pi / 180)
-        solarhangle = np.arcsin(solarangleeq)
-
-        solarzenith = 90 - solarangleeq * 180 / pi
-
-        return (solarzenith)
 
     def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         """
@@ -454,12 +349,11 @@ class ThermalIndexCalculator:
 
     def calculate_wbgts(t2m):
         """wgbts - Wet Bulb Globe Temperature Simple
-        :param t: 2m temperature
+        :param t2m: 2m temperature
         :param rh: relative humidity
         """
         rh = ThermalIndexCalculator.calculate_rh(t2m)
         rh = ThermalIndexCalculator.pa_to_hpa(rh)
-        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         td = 243.15 * np.log(rh / 0.6112) / (17.67 - np.log(rh / 0.6112))
         wbgt = 0.066 * t2m + 4098 * rh * td / (td + 273.3) ** 2 / 0.066 + 4098 * rh / (td + 273.3) ** 2
         return (wbgt)
@@ -467,6 +361,12 @@ class ThermalIndexCalculator:
         # wbgts = 0.567 * t + 0.393 * rh + 3.94
 
     def calculate_wbgt(t2m, mrt, va):
+        """
+        calculate wet bulb globe temperature
+        :param t2m: 2m temperature in kelvin
+        :param mrt: mean radiant temperature in kelvin
+        :param va: wind speed at 10 meters
+        """
         f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
         a = f / 2
         b = -f * t2m - mrt ** 4
@@ -481,6 +381,12 @@ class ThermalIndexCalculator:
         return (wbgt_quartic)
 
     def calculate_mrt_from_wbgt(t2m, wbgt, va):
+        """
+        calculate mean radiant temperature from wet bulb globe temperature
+        :param t2m: 2m temperature in kelvin
+        :param wbgt: wet bulb globe temperature in kelvin
+        :param va: wind speed at 10 meters
+        """
         f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
         wbgt4 = wbgt ** 4
         dit = wbgt - t2m
@@ -491,10 +397,9 @@ class ThermalIndexCalculator:
     def calculate_humidex(t2m, td):
         """
         humidex - heat index used by the Canadian Meteorological Serivce
-        :param t: 2m temperature in degrees celcius
+        :param t: 2m temperature in kelvin
         :param td: dew point temperature in kelvin
         """
-        #t2m = ThermalIndexCalculator.celcius_to_kelvin(t2m)
         e = 6.11 * np.exp(5417.7530 * ((1 / t2m) - (1 / td)))
         h = 0.5555 * (e - 10.0)
         humidex = (t2m + h) - 273.15
