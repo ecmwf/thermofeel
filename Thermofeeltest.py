@@ -4,26 +4,18 @@ ThermoFeel Unit/Intergration Tests
 """
 import ThermoFeel
 def test():
-    from ThermoFeel import CalculateThermalIndex
-    from netCDF4 import Dataset
+    from ThermoFeel import ThermalIndexCalculator
     import numpy as np
-    temperature = 'Nov2mTemp.nc'
-    windspeed = 'NovWindspeed.nc'
-    mrt = 'mrtNov3.nc'
-    utci = 'UTCINov.nc'
 
-    temperature = Dataset(temperature,mode='r')
-    windspeed = Dataset(windspeed,mode='r')
-    mrt = Dataset(mrt,mode='r')
-    utci = Dataset(utci,mode='r')
-    
-    lons = temperature.variables['longitude'][:]
-    lats = temperature.variables['latitude'][:]
-    t = temperature.variables['t2m'][:]
-    mrt = mrt.variables['mrt'][:]
-    va = windspeed.variables['v10'][:]
-    utci = utci.variables['utci'][:]
-    #print(CalculateThermalIndex.calculate_utci(t,va,va,rh=None))
-    print(CalculateThermalIndex.calculate_wbgt(t,mrt=mrt,va=va))
-    #print(CalculateThermalIndex.calculate_rh(t))
+    t2m = np.array([300,300])
+    td= np.array([260,260])
+    va = np.array([1,1])
+    mrt = np.array([300,290])
+    rh= ThermalIndexCalculator.calculate_rh(t2m)
+
+    #print(ThermalIndexCalculator.calculate_utci(t2m=t2m,va=va,mrt=mrt,rh=None))
+    #print(ThermalIndexCalculator.calculate_heat_index(t2m=t2m,rh=None))
+    print(ThermalIndexCalculator.calculate_humidex(t2m=t2m,td=td))
+    #print(ThermalIndexCalculator.calculate_wbgt(t,mrt=mrt,va=va))
+    #print(ThermalIndexCalculator.calculate_rh(t2m))
 test()
