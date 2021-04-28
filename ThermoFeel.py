@@ -30,13 +30,11 @@ class ThermalIndexCalculator:
         rh = rh / 10
         return rh
 
-    # Relative Humidity
-    """Relative Humidity
-    :param t2m: 2m temperature
-    :param percent: when set to true returns relative humidity in percentage
-    """
-
-    def calculate_rh(t2m):
+    def calculate_relative_humidity(t2m):
+        """Relative Humidity
+          :param t2m: 2m temperature
+          :param percent: when set to true returns relative humidity in percentage
+          """
         g = [-2.8365744e3, -6.028076559e3, 1.954263612e1, -2.737830188e-2,
              1.6261698e-5, 7.0229056e-10, -1.8680009e-13, 2.7150305]
         tk = t2m + 273.15
@@ -53,20 +51,21 @@ class ThermalIndexCalculator:
         """
         Heat Index
            :param t2m: np.array 2m temperature [K]
-           :param rh: Relative Humidity
+           :param rh: Relative Humidity [pa]
            """
         if rh is None:
-            rh = ThermalIndexCalculator.calculate_rh(t2m)
+            rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         rh = ThermalIndexCalculator.pa_to_hpa(rh)
-        hiarray = [8.784695, 1.61139411, 2.338549, 0.14611605, 1.2308094 * 10 ** -2, 2.211732E-3,
+        hiarray = [8.784695, 1.61139411, 2.338549, 0.14611605, 1.2308094E-2, 2.211732E-3,
                    7.2546E-4, 3.58E-6]
         hi = -hiarray[0] + hiarray[1] * t2m + hiarray[2] * rh - hiarray[3] * t2m * \
              rh - hiarray[4] * rh ** 2 + hiarray[5] * t2m ** 2 * rh + hiarray[6] * \
              t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
         return hi
     def calculate_solar_zenith_angle(lat,lon,y,m,d,h,base,step):
-
+        h_offset = 0
+        step_offset = 0
         if base == 0:
             base_offset = 0
         if base == 6:
@@ -87,7 +86,7 @@ class ThermalIndexCalculator:
             h_offset = 3
             max = 100.0
 
-
+        #convert to julian days
         jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
                     (y + 4900 + (m - 14) / 12) / 100) / 4
         jd2 = 1 - 32075 + 1461 * (y + 4800 + (1 - 14) / 12) / 4 + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12 - 3 * (
@@ -100,9 +99,11 @@ class ThermalIndexCalculator:
         if g > 360:
             g=g-360
         gg = np.pi * g / 180
+
         #solar declination angle
         d = 0.396372 - 22.91327 * np.cos(gg) + 4.02543 * np.sin(gg) - 0.387205 * np.cos(2 * gg) + 0.051967 * np.sin(
             2 * gg) - 0.154527 * np.cos(3 * gg) + 0.084798 * np.sin(3 * gg)
+
         #time correction for solar angle
         tc = 0.004297 + 0.107029 * np.cos(gg) - 1.837877 * np.sin(gg) - 0.837378 * np.cos(2 * gg)- 2.340475 * np.sin(2 * gg)
 
@@ -112,15 +113,31 @@ class ThermalIndexCalculator:
         lonrad = (lon + 180) / 2 * np.pi / 180
         accumulationperiod = step
         zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
-        zsolartimestart = sha * np.pi / 180 - zhalftimestep;
-        zsolartimeend = sha * np.pi / 180 + zhalftimestep;
-        ztandec = np.sin(d * np.pi / 180) / max(np.cos(d * np.pi / 180), 1.0e-12);
-        zcoshouranglesunset = -ztandec * sin(latrad) / max(np.cos(latrad), 1.0e-12);
+        zsolartimestart = sha * np.pi / 180 - zhalftimestep
+        zsolartimeend = sha * np.pi / 180 + zhalftimestep
+        ztandec = np.sin(d * np.pi / 180) / np.max(np.abs((np.cos(d * np.pi / 180), 1.0e-12)))
+        zcoshouranglesunset = -ztandec * np.sin(latrad) / np.max((math.cos(latrad), 1.0e-12))
         zsindecsinlat = np.sin(d * np.pi / 180) * np.sin(latrad)
         zcosdeccoslat = np.cos(d * np.pi / 180) * np.cos(latrad)
 
+        #start and end hour
+        anglerange = np.arange(1,101,2)
+        zhouranglestart =np.arange(1,np.size(zsolartimestart))
+        zhourangleend = np.arange(1,np.size(zsolartimeend))
+        zhouranglestart = np.where(sha * np.pi / 180 + lonrad < anglerange * np.pi, zsolartimestart + lonrad - ((anglerange - 1.0) * np.pi),None)
+        zhourangleend = np.where(sha * np.pi / 180 + lonrad < anglerange * np.pi, zsolartimeend + lonrad - ((anglerange - 1.0) * np.pi),None)
 
-def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
+        #calculating the solar zenith angle
+        pmu0 = np.empty(np.size(sha))
+        pmu0 = np.where(zcoshouranglesunset > 1, 0,None)
+        zhouranglesunset = np.where(zcoshouranglesunset >= -1, np.arccos(zcoshouranglesunset),None)
+        pmu0 = np.where(zhourangleend.any() <= zcoshouranglesunset.any() or zhouranglesunset.any() >= zhouranglesunset.any(), 0,None)
+        pmu0 = np.where(np.subtract(zhourangleend,zhouranglestart) > 1E-8,zsindecsinlat + (zcosdeccoslat * np.sin(zhourangleend.astype(int)) - np.sin(zhouranglestart.astype(int)))/ zhourangleend - zhouranglestart,None)
+
+        return(pmu0)
+
+
+    def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         """
          mrt - Mean Radiant Temperature
          :param ssrd: is surface solar radiation downwards
@@ -147,10 +164,11 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     def calculate_utci(t2m, va,mrt, rh=None):
         """
         UTCI
-        :param t: is 2m temperature
-        :param va: is wind speed at 10 meters
-        :param mrt: is mean radiant temperature
-        :param rh: is relative humidity
+        :param t: is 2m temperature [K]
+        :param va: is wind speed at 10 meters [m/s]
+        :param mrt: is mean radiant temperature [K]
+        :param rh: is relative humidity [pa]
+
         Calculate UTCI with a 6th order polynomial approximation according to:
         Brode, P. et al. Deriving the operational procedure for the
         Universal Thermal Climate Index (UTCI). Int J Biometeorol (2012) 56: 48.1
@@ -158,7 +176,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         """
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         if rh is None:
-            rh = ThermalIndexCalculator.calculate_rh(t2m)
+            rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
 
         e_mrt = np.subtract(mrt, t2m)
         rh = rh / 10.0
@@ -402,10 +420,10 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
 
     def calculate_wbgts(t2m):
         """wgbts - Wet Bulb Globe Temperature Simple
-        :param t2m: 2m temperature
-        :param rh: relative humidity
+        :param t2m: 2m temperature [K]
+        :param rh: relative humidity [pa]
         """
-        rh = ThermalIndexCalculator.calculate_rh(t2m)
+        rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
         rh = ThermalIndexCalculator.pa_to_hpa(rh)
         td = 243.15 * np.log(rh / 0.6112) / (17.67 - np.log(rh / 0.6112))
         wbgt = 0.066 * t2m + 4098 * rh * td / (td + 273.3) ** 2 / 0.066 + 4098 * rh / (td + 273.3) ** 2
@@ -416,9 +434,9 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     def calculate_wbgt(t2m, mrt, va):
         """
         calculate wet bulb globe temperature
-        :param t2m: 2m temperature in kelvin
-        :param mrt: mean radiant temperature in kelvin
-        :param va: wind speed at 10 meters
+        :param t2m: 2m temperature [K]
+        :param mrt: mean radiant temperature [K]
+        :param va: wind speed at 10 meters [m/s]
         """
         f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
         a = f / 2
@@ -436,9 +454,9 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     def calculate_mrt_from_wbgt(t2m, wbgt, va):
         """
         calculate mean radiant temperature from wet bulb globe temperature
-        :param t2m: 2m temperature in kelvin
-        :param wbgt: wet bulb globe temperature in kelvin
-        :param va: wind speed at 10 meters
+        :param t2m: 2m temperature [K]
+        :param wbgt: wet bulb globe temperature in kelvin [K]
+        :param va: wind speed at 10 meters [m/s]
         """
         f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
         wbgt4 = wbgt ** 4
@@ -450,8 +468,8 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     def calculate_humidex(t2m, td):
         """
         humidex - heat index used by the Canadian Meteorological Serivce
-        :param t: 2m temperature in kelvin
-        :param td: dew point temperature in kelvin
+        :param t2m: 2m temperature [K]
+        :param td: dew point temperature [K]
         """
         e = 6.11 * np.exp(5417.7530 * ((1 / t2m) - (1 / td)))
         h = 0.5555 * (e - 10.0)
@@ -459,6 +477,12 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         return humidex
 
     def calculate_net_effective_temperature(t2m, rh, va):
+        """
+        Net Effective Temperature used in Hong Kong, Poland and Germany
+        :param t2m: 2m temperature [K]
+        :param rh: Relative Humidity [pa]
+        :param va: Wind speed at 10 meters [m/s]
+        """
         ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
         diterm = 0.68 - 0.0014 * rh + ditermeq
         net = 37 - (37 - t2m / diterm) - 0.29 * t2m * (1 - 0.01 * rh)
