@@ -16,8 +16,7 @@ class ThermalIndexCalculator:
 
     # convert kelvin to celcius
     def kelvin_to_celcius(t2m):
-        t = t2m - 273.15
-
+        t2m = np.subtract(t2m,273.15)
         return t2m
 
     # convert celcius to kelvin
@@ -29,12 +28,21 @@ class ThermalIndexCalculator:
     def pa_to_hpa(rh):
         rh = rh / 10
         return rh
+    # convert from pa to percent for e (relative humidity)
+    def calculate_relative_humidity_percent(t2m,td):
+    #t2m = ThermalIndexCalculator.celcius_to_kelvin(t2m)
+        td = ThermalIndexCalculator.celcius_to_kelvin(t2m)
+        es = 6.11 * 10.0 ** (7.5 * t2m / (237.7 + t2m))
+        e = 6.11 * 10.0 ** (7.5 * td / (237.7 + td))
+        rh= (e / es) * 100
+        return rh
 
     def calculate_relative_humidity(t2m):
         """Relative Humidity
           :param t2m: 2m temperature
           :param percent: when set to true returns relative humidity in percentage
           """
+        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         g = [-2.8365744e3, -6.028076559e3, 1.954263612e1, -2.737830188e-2,
              1.6261698e-5, 7.0229056e-10, -1.8680009e-13, 2.7150305]
         tk = t2m + 273.15
@@ -43,8 +51,7 @@ class ThermalIndexCalculator:
             ess = ess + g[i] * pow(tk, (i - 2))
         ess = np.exp(ess) * 0.01
         return ess
-        #rh = (ess / 6.105 * np.exp(17.27 * t2m / 237.7 + t2m)) * 100
-        #return rh
+
 
 
     def calculate_heat_index(t2m, rh=None):
@@ -121,20 +128,43 @@ class ThermalIndexCalculator:
         zcosdeccoslat = np.cos(d * np.pi / 180) * np.cos(latrad)
 
         #start and end hour
-        anglerange = np.arange(1,101,2)
-        zhouranglestart =np.arange(1,np.size(zsolartimestart))
-        zhourangleend = np.arange(1,np.size(zsolartimeend))
-        zhouranglestart = np.where(sha * np.pi / 180 + lonrad < anglerange * np.pi, zsolartimestart + lonrad - ((anglerange - 1.0) * np.pi),None)
-        zhourangleend = np.where(sha * np.pi / 180 + lonrad < anglerange * np.pi, zsolartimeend + lonrad - ((anglerange - 1.0) * np.pi),None)
+        def horizon(val, range, lonrad, zsolartimestart, zsolartimeend, max):
+            if (val < range * math.pi):
+                zhouranglestart = zsolartimestart + lonrad - ((range - 1.0) * math.pi)
+                zhourangleend = zsolartimeend + lonrad - ((range - 1.0) * math.pi)
+            else:
+                if range < max:
+                    zhouranglestart, zhourangleend = horizon(val, range + 2.0, lonrad, zsolartimestart, zsolartimeend,
+                                                             max)
+                else:
+                    zhouranglestart = zsolartimestart + lonrad - (max + 1.0) * math.pi
+                    zhourangleend = zsolartimeend + lonrad - (max + 1.0) * math.pi
 
+            return (zhouranglestart, zhourangleend)
+        
         #calculating the solar zenith angle
-        pmu0 = np.empty(np.size(sha))
-        pmu0 = np.where(zcoshouranglesunset > 1, 0,None)
-        zhouranglesunset = np.where(zcoshouranglesunset >= -1, np.arccos(zcoshouranglesunset),None)
-        pmu0 = np.where(zhourangleend.any() <= zcoshouranglesunset.any() or zhouranglesunset.any() >= zhouranglesunset.any(), 0,None)
-        pmu0 = np.where(np.subtract(zhourangleend,zhouranglestart) > 1E-8,zsindecsinlat + (zcosdeccoslat * np.sin(zhourangleend.astype(int)) - np.sin(zhouranglestart.astype(int)))/ zhourangleend - zhouranglestart,None)
+        if zcoshouranglesunset > 1.0:
+                PMU0 = 0.0
+        else:
+            zhouranglestart,zhourangleend = horizon(sha * math.pi / 180 + lonrad, 2.0,lonrad,zsolartimestart, zsolartimeend, max)
 
-        return(pmu0)
+            if zcoshouranglesunset >= -1.0:
+                zhouranglesunset = math.acos(zcoshouranglesunset)
+                if (zhourangleend <= -zhouranglesunset or zhouranglestart >= zhouranglesunset):
+                        PMU0 = 0.0
+                        zhouranglestart = max(-zhouranglesunset, min(zhouranglestart, zhouranglesunset))
+                        zhourangleend = max(-zhouranglesunset, min(zhourangleend, zhouranglesunset))
+
+
+            if zhourangleend - zhouranglestart > 1.0e-8:
+                PMU0 = zsindecsinlat + (zcosdeccoslat * (math.sin(zhourangleend)-math.sin
+                (zhouranglestart))) / (zhourangleend-zhouranglestart)
+            if PMU0 < 0.0:
+                PMU0 = 0.0
+            else:
+                PMU0 = 0.0
+
+            return (PMU0)
 
 
     def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
@@ -174,11 +204,13 @@ class ThermalIndexCalculator:
         Universal Thermal Climate Index (UTCI). Int J Biometeorol (2012) 56: 48.1
 
         """
-        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+
+        mrt = ThermalIndexCalculator.kelvin_to_celcius(mrt)
         if rh is None:
             rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
 
-        e_mrt = np.subtract(mrt, t2m)
+        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        e_mrt = np.subtract(mrt,t2m)
         rh = rh / 10.0
 
         if 50 >= t2m.any() >= -50 and 17 >= va.any() >= 0 and rh.any() <= 5 and 70 >= e_mrt.any() >= -30:
@@ -418,15 +450,22 @@ class ThermalIndexCalculator:
                           1.48348065E-03 * rh6
             return utci_approx
 
-    def calculate_wbgts(t2m):
-        """wgbts - Wet Bulb Globe Temperature Simple
+    def calculate_wbgts(t2m,td):
+        """
+        wgbts - Wet Bulb Globe Temperature Simple
         :param t2m: 2m temperature [K]
         :param rh: relative humidity [pa]
+
+        https://link.springer.com/article/10.1007/s00484-011-0453-2
+        http://www.bom.gov.au/info/thermal_stress/#approximation
         """
-        rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
-        rh = ThermalIndexCalculator.pa_to_hpa(rh)
-        td = 243.15 * np.log(rh / 0.6112) / (17.67 - np.log(rh / 0.6112))
-        wbgt = 0.066 * t2m + 4098 * rh * td / (td + 273.3) ** 2 / 0.066 + 4098 * rh / (td + 273.3) ** 2
+        rh = ThermalIndexCalculator.calculate_relative_humidity_percent(t2m,td)
+        #rh = ThermalIndexCalculator.pa_to_hpa(rh)
+        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        print(rh)
+        e = rh / 100 * 6.105 * np.exp(17.27 * t2m / (237.7 + t2m))
+        print(e)
+        wbgt = 0.567 * t2m + 0.393 * e + 3.94
         return (wbgt)
 
         # wbgts = 0.567 * t + 0.393 * rh + 3.94
