@@ -85,13 +85,13 @@ class ThermalIndexCalculator:
 
         if step == 1:
             h_offset = 0.5
-            max = 32.0
+            maxx = 32.0
         if step == 3:
             h_offset = 1.5
-            max = 14.0
+            maxx = 14.0
         if step == 6:
             h_offset = 3
-            max = 100.0
+            maxx = 100.0
 
         #convert to julian days
         jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
@@ -128,33 +128,35 @@ class ThermalIndexCalculator:
         zcosdeccoslat = np.cos(d * np.pi / 180) * np.cos(latrad)
 
         #start and end hour
-        def horizon(val, range, lonrad, zsolartimestart, zsolartimeend, max):
+        def horizon(val, range, lonrad, zsolartimestart, zsolartimeend, maxx):
             if (val < range * math.pi):
                 zhouranglestart = zsolartimestart + lonrad - ((range - 1.0) * math.pi)
                 zhourangleend = zsolartimeend + lonrad - ((range - 1.0) * math.pi)
             else:
-                if range < max:
+                if range < maxx:
                     zhouranglestart, zhourangleend = horizon(val, range + 2.0, lonrad, zsolartimestart, zsolartimeend,
-                                                             max)
+                                                             maxx)
                 else:
-                    zhouranglestart = zsolartimestart + lonrad - (max + 1.0) * math.pi
-                    zhourangleend = zsolartimeend + lonrad - (max + 1.0) * math.pi
+                    zhouranglestart = zsolartimestart + lonrad - (maxx + 1.0) * math.pi
+                    zhourangleend = zsolartimeend + lonrad - (maxx + 1.0) * math.pi
 
             return (zhouranglestart, zhourangleend)
         
         #calculating the solar zenith angle
-        if zcoshouranglesunset > 1.0:
-                PMU0 = 0.0
+        if zcoshouranglesunset > 1:
+                PMU0 = 0
         else:
-            zhouranglestart,zhourangleend = horizon(sha * math.pi / 180 + lonrad, 2.0,lonrad,zsolartimestart, zsolartimeend, max)
+            zhouranglestart,zhourangleend = horizon(sha * math.pi / 180 + lonrad, 2,lonrad,zsolartimestart, zsolartimeend, maxx)
 
-            if zcoshouranglesunset >= -1.0:
-                zhouranglesunset = math.acos(zcoshouranglesunset)
-                if (zhourangleend <= -zhouranglesunset or zhouranglestart >= zhouranglesunset):
-                        PMU0 = 0.0
-                        zhouranglestart = max(-zhouranglesunset, min(zhouranglestart, zhouranglesunset))
-                        zhourangleend = max(-zhouranglesunset, min(zhourangleend, zhouranglesunset))
 
+            if zcoshouranglesunset >= -1:
+                zhouranglesunset =  math.acos(zcoshouranglesunset)
+                if zhourangleend <= -zhouranglesunset or zhouranglestart >= zhouranglesunset:
+                        PMU0 = 0
+                        zhouranglestartmin = min(zhouranglestart,zhouranglesunset)
+                        zhourangleendmin = min(zhourangleend,zhouranglesunset)
+                        zhouranglestart = max(-zhouranglesunset,zhouranglestartmin)
+                        zhourangleend = max(-zhouranglesunset, zhourangleendmin)
 
             if zhourangleend - zhouranglestart > 1.0e-8:
                 PMU0 = zsindecsinlat + (zcosdeccoslat * (math.sin(zhourangleend)-math.sin
