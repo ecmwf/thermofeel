@@ -43,6 +43,7 @@ class ThermalIndexCalculator:
           :param percent: when set to true returns relative humidity in percentage
           """
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         g = [-2.8365744e3, -6.028076559e3, 1.954263612e1, -2.737830188e-2,
              1.6261698e-5, 7.0229056e-10, -1.8680009e-13, 2.7150305]
         tk = t2m + 273.15
@@ -208,6 +209,7 @@ class ThermalIndexCalculator:
         """
 
         mrt = ThermalIndexCalculator.kelvin_to_celcius(mrt)
+
         if rh is None:
             rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
 
@@ -452,7 +454,7 @@ class ThermalIndexCalculator:
                           1.48348065E-03 * rh6
             return utci_approx
 
-    def calculate_wbgts(t2m,td):
+    def calculate_wbgts(t2m):
         """
         wgbts - Wet Bulb Globe Temperature Simple
         :param t2m: 2m temperature [K]
@@ -460,17 +462,13 @@ class ThermalIndexCalculator:
 
         https://link.springer.com/article/10.1007/s00484-011-0453-2
         http://www.bom.gov.au/info/thermal_stress/#approximation
+        https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
         """
-        rh = ThermalIndexCalculator.calculate_relative_humidity_percent(t2m,td)
-        #rh = ThermalIndexCalculator.pa_to_hpa(rh)
+        rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
+        rh = ThermalIndexCalculator.pa_to_hpa(rh)
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
-        print(rh)
-        e = rh / 100 * 6.105 * np.exp(17.27 * t2m / (237.7 + t2m))
-        print(e)
-        wbgt = 0.567 * t2m + 0.393 * e + 3.94
-        return (wbgt)
-
-        # wbgts = 0.567 * t + 0.393 * rh + 3.94
+        wbgts = 0.567 * t2m + 0.216 * rh + 3.38
+        return(wbgts)
 
     def calculate_wbgt(t2m, mrt, va):
         """
