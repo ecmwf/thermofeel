@@ -10,9 +10,17 @@ import datetime
 
 class ThermalIndexCalculator:
     """
-    Heat Indices is a class that contains all the methods to calculate different heat indexes.
-    it includes Relative Humidity, Universal Thermal Climate Index and Mean Radiant Temperature.
+    Thermal Index Calculator is a class that contains all the methods to calculate different heat indices.
+    Relative Humidity Percentage, Relative Humidity [pa],Heat Index,Solar Zenith Angle, Mean Radiant Temperature,
+    Universal Thermal Climate Index,Wet Bulb Globe Temperature Simple,Wet Bulb Globe Temperature,
+    Mean Radiant Temperature from Wet Bulb Globe Temperature, Humidex, Net Effective Temperature,
+    Apparent Temperature and Wind Chill
     """
+
+    #convert farenheit to kelvin
+    def farenheit_to_kelvin(t2m):
+        t2m = (t2m + 459.67) * 5/9
+        return t2m
 
     # convert kelvin to celcius
     def kelvin_to_celcius(t2m):
@@ -30,8 +38,14 @@ class ThermalIndexCalculator:
         return rh
     # convert from pa to percent for e (relative humidity)
     def calculate_relative_humidity_percent(t2m,td):
-    #t2m = ThermalIndexCalculator.celcius_to_kelvin(t2m)
-        td = ThermalIndexCalculator.celcius_to_kelvin(t2m)
+        """Relative Humidity in percent
+        :param t2m: (float array) 2m temperature [K]
+        :param td: (float array) dew point temperature [K]
+
+        returns relative humidity [%]
+        """
+        if type(t2m) is int or float:
+            t2m = np.array[t2m]
         es = 6.11 * 10.0 ** (7.5 * t2m / (237.7 + t2m))
         e = 6.11 * 10.0 ** (7.5 * td / (237.7 + td))
         rh= (e / es) * 100
@@ -39,8 +53,8 @@ class ThermalIndexCalculator:
 
     def calculate_relative_humidity(t2m):
         """Relative Humidity
-          :param t2m: 2m temperature
-          :param percent: when set to true returns relative humidity in percentage
+          :param t2m: (float array) 2m temperature [K]
+          returns relative humidity [pa]
           """
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
@@ -53,13 +67,12 @@ class ThermalIndexCalculator:
         ess = np.exp(ess) * 0.01
         return ess
 
-
-
     def calculate_heat_index(t2m, rh=None):
         """
         Heat Index
            :param t2m: np.array 2m temperature [K]
            :param rh: Relative Humidity [pa]
+           returns heat index [C]
            """
         if rh is None:
             rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
@@ -71,7 +84,23 @@ class ThermalIndexCalculator:
              rh - hiarray[4] * rh ** 2 + hiarray[5] * t2m ** 2 * rh + hiarray[6] * \
              t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
         return hi
+
     def calculate_solar_zenith_angle(lat,lon,y,m,d,h,base,step):
+        """
+        calculate solar zenith angle
+        :param lat: (int array) latitude [degrees]
+        :param lon: (int array) longitude [degrees]
+        :param y: year [int]
+        :param m: month [int]
+        :param d: day [int]
+        :param h: hour [int]
+        :param base: base time of forecast enum [0,6,18,12]
+        :param step: step interval of forecast enum [1,3,6]
+
+        https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
+
+        returns cosine of the solar zenith angle [degrees]
+        """
         h_offset = 0
         step_offset = 0
         if base == 0:
@@ -173,38 +202,46 @@ class ThermalIndexCalculator:
     def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         """
          mrt - Mean Radiant Temperature
-         :param ssrd: is surface solar radiation downwards
-         :param ssr: is surface net solar radiation
-         :param fdir: is Total sky direct solar radiation at surface
-         :param strd: is Surface thermal radiation downwards
-         :param strr: is Surface net thermal radiation
-         :param cossza: is cosine of solar zenith angle
-         :param fp: is projected factor area
+         :param ssrd: is surface solar radiation downwards [J/m^-2]
+         :param ssr: is surface net solar radiation [J/m^-2]
+         :param fdir: is Total sky direct solar radiation at surface [J/m^-2]
+         :param strd: is Surface thermal radiation downwards [J/m^-2]
+         :param strr: is Surface net thermal radiation [J/m^-2]
+         :param cossza: is cosine of solar zenith angle [degrees]
+
+         returns Mean Radiant Temperature [K]
         """
         dsw = ssrd - fdir
         rsw = ssrd - ssr
         lur = strd - strr
         pi = 3.141592653
+
+        # calculate fp projected factor area
         gamma = np.arcsin(cossza) * 180 / pi
         fp = 0.308 * math.cos(pi / 180) * gamma * 0.998 - gamma * gamma / 50000
+
+        #calculate mean radiant temperature
         if cossza > 0.01:
             fdir = fdir / cossza
         mrtcal = 17636684.3 * (0.5 * strd + 0.5 * lur + 0.721649485) \
                  * (0.5 * dsw + 0.5 * rsw + fp * fdir)
         mrt = ThermalIndexCalculator.kelvin_to_celcius(pow(mrtcal, 0.25))
+
         return mrt
 
     def calculate_utci(t2m, va,mrt, rh=None):
         """
         UTCI
-        :param t: is 2m temperature [K]
-        :param va: is wind speed at 10 meters [m/s]
-        :param mrt: is mean radiant temperature [K]
-        :param rh: is relative humidity [pa]
+        :param t: (float array) is 2m temperature [K]
+        :param va: (float array) is wind speed at 10 meters [m/s]
+        :param mrt:(float array) is mean radiant temperature [K]
+        :param rh: (float array) is relative humidity [pa]
 
         Calculate UTCI with a 6th order polynomial approximation according to:
         Brode, P. et al. Deriving the operational procedure for the
         Universal Thermal Climate Index (UTCI). Int J Biometeorol (2012) 56: 48.1
+
+        returns UTCI [C]
 
         """
 
@@ -463,6 +500,8 @@ class ThermalIndexCalculator:
         https://link.springer.com/article/10.1007/s00484-011-0453-2
         http://www.bom.gov.au/info/thermal_stress/#approximation
         https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
+
+        returns Wet Bulb Globe Temperature [C]
         """
         rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
         rh = ThermalIndexCalculator.pa_to_hpa(rh)
@@ -476,6 +515,8 @@ class ThermalIndexCalculator:
         :param t2m: 2m temperature [K]
         :param mrt: mean radiant temperature [K]
         :param va: wind speed at 10 meters [m/s]
+
+        returns wet bulb globe temperature [C]
         """
         f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
         a = f / 2
@@ -488,6 +529,7 @@ class ThermalIndexCalculator:
         (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) + 1 / 2 * np.sqrt((4 * a) /
         np.sqrt(rt3 /(rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) -
         ( 2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3) - rt3 / (rt1 * rt2 ** (1 / 3)))
+        wbgt_quartic = ThermalIndexCalculator.kelvin_to_celcius(wbgt_quartic)
         return (wbgt_quartic)
 
     def calculate_mrt_from_wbgt(t2m, wbgt, va):
@@ -496,6 +538,8 @@ class ThermalIndexCalculator:
         :param t2m: 2m temperature [K]
         :param wbgt: wet bulb globe temperature in kelvin [K]
         :param va: wind speed at 10 meters [m/s]
+
+        returns mean radiant temperature [K]
         """
         f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
         wbgt4 = wbgt ** 4
@@ -509,6 +553,8 @@ class ThermalIndexCalculator:
         humidex - heat index used by the Canadian Meteorological Serivce
         :param t2m: 2m temperature [K]
         :param td: dew point temperature [K]
+
+        returns humidex [C]
         """
         e = 6.11 * np.exp(5417.7530 * ((1 / t2m) - (1 / td)))
         h = 0.5555 * (e - 10.0)
@@ -521,12 +567,40 @@ class ThermalIndexCalculator:
         :param t2m: 2m temperature [K]
         :param rh: Relative Humidity [pa]
         :param va: Wind speed at 10 meters [m/s]
+
+        returns net effective temperature [C]
         """
+        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        rh = ThermalIndexCalculator.pa_to_hpa(rh)
+        va = va * 4.87 / np.log10 (67.8 * 10 - 5.42) #converting to 2m, ~1.2m wind speed
         ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
-        diterm = 0.68 - 0.0014 * rh + ditermeq
-        net = 37 - (37 - t2m / diterm) - 0.29 * t2m * (1 - 0.01 * rh)
+        net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
         return net
 
+    def calculate_apparent_temperature(t2m,rh,va):
+        """
+        Apparent Temperature version without radiation
+        :param t2m: 2m Temperature [K]
+        :param rh: Relative Humidity [pa]
+
+        returns apparent temperature [C]
+        """
+        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        at = t2m + 0.33 * rh - 0.7 * va - 4
+        return at
+
+    def calculate_wind_chill(t2m,rh,va):
+        """
+        Wind Chill
+        :param t2m: 2m Temperature [K]
+        :param rh: Relative Humidity [pa]
+        :param va: wind speed at 10 meters [m/s]
+
+        returns wind chill (°C)
+        """
+        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        windchill = 13.12 + 0.6215 * t2m - 11.37 * va ** 0.16 + 0.3965 + t2m + va ** 0.16
+        return windchill
 
 # The main method to run the code
 if __name__ == '__main__':
