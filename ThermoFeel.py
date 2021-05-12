@@ -16,15 +16,18 @@ class ThermalIndexCalculator:
     Mean Radiant Temperature from Wet Bulb Globe Temperature, Humidex, Net Effective Temperature,
     Apparent Temperature and Wind Chill
     """
-
-    #convert farenheit to kelvin
+    #calculate wind speed from components
+    def calculate_wind_speed(u,v):
+        ws = np.sqrt(u ** 2 + v ** 2)
+        return ws
+    # convert farenheit to kelvin
     def farenheit_to_kelvin(t2m):
-        t2m = (t2m + 459.67) * 5/9
+        t2m = (t2m + 459.67) * 5 / 9
         return t2m
 
     # convert kelvin to celcius
     def kelvin_to_celcius(t2m):
-        t2m = np.subtract(t2m,273.15)
+        t2m = np.subtract(t2m, 273.15)
         return t2m
 
     # convert celcius to kelvin
@@ -36,8 +39,8 @@ class ThermalIndexCalculator:
     def pa_to_hpa(rh):
         rh = rh / 10
         return rh
-    # convert from pa to percent for e (relative humidity)
-    def calculate_relative_humidity_percent(t2m,td):
+
+    def calculate_relative_humidity_percent(t2m, td):
         """Relative Humidity in percent
         :param t2m: (float array) 2m temperature [K]
         :param td: (float array) dew point temperature [K]
@@ -45,10 +48,10 @@ class ThermalIndexCalculator:
         returns relative humidity [%]
         """
         if type(t2m) is int or float:
-            t2m = np.array[t2m]
+            t2m = np.array([t2m])
         es = 6.11 * 10.0 ** (7.5 * t2m / (237.7 + t2m))
         e = 6.11 * 10.0 ** (7.5 * td / (237.7 + td))
-        rh= (e / es) * 100
+        rh = (e / es) * 100
         return rh
 
     def calculate_relative_humidity(t2m):
@@ -72,8 +75,9 @@ class ThermalIndexCalculator:
         Heat Index
            :param t2m: np.array 2m temperature [K]
            :param rh: Relative Humidity [pa]
-           returns heat index [C]
+           returns heat index [°C]
            """
+
         if rh is None:
             rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
@@ -85,7 +89,7 @@ class ThermalIndexCalculator:
              t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
         return hi
 
-    def calculate_solar_zenith_angle(lat,lon,y,m,d,h,base,step):
+    def calculate_solar_zenith_angle(lat, lon, y, m, d, h, base, step):
         """
         calculate solar zenith angle
         :param lat: (int array) latitude [degrees]
@@ -101,6 +105,7 @@ class ThermalIndexCalculator:
 
         returns cosine of the solar zenith angle [degrees]
         """
+
         h_offset = 0
         step_offset = 0
         if base == 0:
@@ -112,7 +117,6 @@ class ThermalIndexCalculator:
         if base == 12:
             base_offset = 1212
 
-
         if step == 1:
             h_offset = 0.5
             maxx = 32.0
@@ -123,29 +127,30 @@ class ThermalIndexCalculator:
             h_offset = 3
             maxx = 100.0
 
-        #convert to julian days
+        # convert to julian days
         jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
-                    (y + 4900 + (m - 14) / 12) / 100) / 4
+                (y + 4900 + (m - 14) / 12) / 100) / 4
         jd2 = 1 - 32075 + 1461 * (y + 4800 + (1 - 14) / 12) / 4 + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12 - 3 * (
-                    (y + 4900 + (1 - 14) / 12) / 100) / 4
+                (y + 4900 + (1 - 14) / 12) / 100) / 4
         jd = jd - jd + 1
 
         k = 0.01745
         hh = h - base_offset - h_offset
-        g = (360 / 365.25) * (jd + hh/24)
+        g = (360 / 365.25) * (jd + hh / 24)
         if g > 360:
-            g=g-360
+            g = g - 360
         gg = np.pi * g / 180
 
-        #solar declination angle
+        # solar declination angle
         d = 0.396372 - 22.91327 * np.cos(gg) + 4.02543 * np.sin(gg) - 0.387205 * np.cos(2 * gg) + 0.051967 * np.sin(
             2 * gg) - 0.154527 * np.cos(3 * gg) + 0.084798 * np.sin(3 * gg)
 
-        #time correction for solar angle
-        tc = 0.004297 + 0.107029 * np.cos(gg) - 1.837877 * np.sin(gg) - 0.837378 * np.cos(2 * gg)- 2.340475 * np.sin(2 * gg)
+        # time correction for solar angle
+        tc = 0.004297 + 0.107029 * np.cos(gg) - 1.837877 * np.sin(gg) - 0.837378 * np.cos(2 * gg) - 2.340475 * np.sin(
+            2 * gg)
 
-        #solar hour angle
-        sha = (hh - 12) * 15 + (lon + 180)/2 + tc
+        # solar hour angle
+        sha = (hh - 12) * 15 + (lon + 180) / 2 + tc
         latrad = lat * np.pi / 180
         lonrad = (lon + 180) / 2 * np.pi / 180
         accumulationperiod = step
@@ -157,7 +162,7 @@ class ThermalIndexCalculator:
         zsindecsinlat = np.sin(d * np.pi / 180) * np.sin(latrad)
         zcosdeccoslat = np.cos(d * np.pi / 180) * np.cos(latrad)
 
-        #start and end hour
+        # start and end hour
         def horizon(val, range, lonrad, zsolartimestart, zsolartimeend, maxx):
             if (val < range * math.pi):
                 zhouranglestart = zsolartimestart + lonrad - ((range - 1.0) * math.pi)
@@ -171,33 +176,32 @@ class ThermalIndexCalculator:
                     zhourangleend = zsolartimeend + lonrad - (maxx + 1.0) * math.pi
 
             return (zhouranglestart, zhourangleend)
-        
-        #calculating the solar zenith angle
-        if zcoshouranglesunset > 1:
-                PMU0 = 0
-        else:
-            zhouranglestart,zhourangleend = horizon(sha * math.pi / 180 + lonrad, 2,lonrad,zsolartimestart, zsolartimeend, maxx)
 
+        # calculating the solar zenith angle
+        if zcoshouranglesunset > 1:
+            PMU0 = 0
+        else:
+            zhouranglestart, zhourangleend = horizon(sha * math.pi / 180 + lonrad, 2, lonrad, zsolartimestart,
+                                                     zsolartimeend, maxx)
 
             if zcoshouranglesunset >= -1:
-                zhouranglesunset =  math.acos(zcoshouranglesunset)
+                zhouranglesunset = math.acos(zcoshouranglesunset)
                 if zhourangleend <= -zhouranglesunset or zhouranglestart >= zhouranglesunset:
-                        PMU0 = 0
-                        zhouranglestartmin = min(zhouranglestart,zhouranglesunset)
-                        zhourangleendmin = min(zhourangleend,zhouranglesunset)
-                        zhouranglestart = max(-zhouranglesunset,zhouranglestartmin)
-                        zhourangleend = max(-zhouranglesunset, zhourangleendmin)
+                    PMU0 = 0
+                    zhouranglestartmin = min(zhouranglestart, zhouranglesunset)
+                    zhourangleendmin = min(zhourangleend, zhouranglesunset)
+                    zhouranglestart = max(-zhouranglesunset, zhouranglestartmin)
+                    zhourangleend = max(-zhouranglesunset, zhourangleendmin)
 
             if zhourangleend - zhouranglestart > 1.0e-8:
-                PMU0 = zsindecsinlat + (zcosdeccoslat * (math.sin(zhourangleend)-math.sin
-                (zhouranglestart))) / (zhourangleend-zhouranglestart)
+                PMU0 = zsindecsinlat + (zcosdeccoslat * (math.sin(zhourangleend) - math.sin
+                (zhouranglestart))) / (zhourangleend - zhouranglestart)
             if PMU0 < 0.0:
                 PMU0 = 0.0
             else:
                 PMU0 = 0.0
 
             return (PMU0)
-
 
     def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         """
@@ -220,7 +224,7 @@ class ThermalIndexCalculator:
         gamma = np.arcsin(cossza) * 180 / pi
         fp = 0.308 * math.cos(pi / 180) * gamma * 0.998 - gamma * gamma / 50000
 
-        #calculate mean radiant temperature
+        # calculate mean radiant temperature
         if cossza > 0.01:
             fdir = fdir / cossza
         mrtcal = 17636684.3 * (0.5 * strd + 0.5 * lur + 0.721649485) \
@@ -229,7 +233,7 @@ class ThermalIndexCalculator:
 
         return mrt
 
-    def calculate_utci(t2m, va,mrt, rh=None):
+    def calculate_utci(t2m, va, mrt, rh=None):
         """
         UTCI
         :param t: (float array) is 2m temperature [K]
@@ -241,7 +245,7 @@ class ThermalIndexCalculator:
         Brode, P. et al. Deriving the operational procedure for the
         Universal Thermal Climate Index (UTCI). Int J Biometeorol (2012) 56: 48.1
 
-        returns UTCI [C]
+        returns UTCI [°C]
 
         """
 
@@ -251,9 +255,8 @@ class ThermalIndexCalculator:
             rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
 
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
-        e_mrt = np.subtract(mrt,t2m)
+        e_mrt = np.subtract(mrt, t2m)
         rh = rh / 10.0
-
         if 50 >= t2m.any() >= -50 and 17 >= va.any() >= 0 and rh.any() <= 5 and 70 >= e_mrt.any() >= -30:
             t2m2 = t2m * t2m
             t2m3 = t2m2 * t2m
@@ -501,13 +504,13 @@ class ThermalIndexCalculator:
         http://www.bom.gov.au/info/thermal_stress/#approximation
         https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
 
-        returns Wet Bulb Globe Temperature [C]
+        returns Wet Bulb Globe Temperature [°C]
         """
         rh = ThermalIndexCalculator.calculate_relative_humidity(t2m)
         rh = ThermalIndexCalculator.pa_to_hpa(rh)
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         wbgts = 0.567 * t2m + 0.216 * rh + 3.38
-        return(wbgts)
+        return (wbgts)
 
     def calculate_wbgt(t2m, mrt, va):
         """
@@ -516,7 +519,7 @@ class ThermalIndexCalculator:
         :param mrt: mean radiant temperature [K]
         :param va: wind speed at 10 meters [m/s]
 
-        returns wet bulb globe temperature [C]
+        returns wet bulb globe temperature [°C]
         """
         f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
         a = f / 2
@@ -525,10 +528,12 @@ class ThermalIndexCalculator:
         rt2 = (np.sqrt(3) * np.sqrt(27 * a ** 4 - 16 * b ** 3) + 9 * a ** 2)
         rt3 = (2 * 2 ** (2 / 3) * b)
         va = va
-        wbgt_quartic = - 1 / 2 * np.sqrt(rt3 / (rt1 * rt2 ** (1 / 3)) +
-        (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) + 1 / 2 * np.sqrt((4 * a) /
-        np.sqrt(rt3 /(rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) -
-        ( 2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3) - rt3 / (rt1 * rt2 ** (1 / 3)))
+        if va.any() <= 0:
+            va = 0
+        wbgt_quartic = - 1 / 2 * np.sqrt(rt3 / (rt1 * rt2 ** (1 / 3)) + \
+                        (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) + 1 / 2 * np.sqrt((4 * a) /
+                        np.sqrt(rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 **
+                        ( 2 / 3)) -(2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3) - rt3 / (rt1 * rt2 ** ( 1 / 3)))
         wbgt_quartic = ThermalIndexCalculator.kelvin_to_celcius(wbgt_quartic)
         return (wbgt_quartic)
 
@@ -554,7 +559,7 @@ class ThermalIndexCalculator:
         :param t2m: 2m temperature [K]
         :param td: dew point temperature [K]
 
-        returns humidex [C]
+        returns humidex [°C]
         """
         e = 6.11 * np.exp(5417.7530 * ((1 / t2m) - (1 / td)))
         h = 0.5555 * (e - 10.0)
@@ -568,39 +573,50 @@ class ThermalIndexCalculator:
         :param rh: Relative Humidity [pa]
         :param va: Wind speed at 10 meters [m/s]
 
-        returns net effective temperature [C]
+        returns net effective temperature [°C]
         """
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
         rh = ThermalIndexCalculator.pa_to_hpa(rh)
-        va = va * 4.87 / np.log10 (67.8 * 10 - 5.42) #converting to 2m, ~1.2m wind speed
+        #va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
         ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
         net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
         return net
 
-    def calculate_apparent_temperature(t2m,rh,va):
+    def calculate_apparent_temperature(t2m, rh, va):
         """
         Apparent Temperature version without radiation
         :param t2m: 2m Temperature [K]
         :param rh: Relative Humidity [pa]
 
-        returns apparent temperature [C]
+        returns apparent temperature [K]
         """
-        t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
         at = t2m + 0.33 * rh - 0.7 * va - 4
+        at = np.round(at,4)
         return at
 
-    def calculate_wind_chill(t2m,rh,va):
+    def calculate_wind_chill(t2m, va):
         """
         Wind Chill
         :param t2m: 2m Temperature [K]
         :param rh: Relative Humidity [pa]
         :param va: wind speed at 10 meters [m/s]
 
-        returns wind chill (°C)
+        returns wind chill [°C]
         """
         t2m = ThermalIndexCalculator.kelvin_to_celcius(t2m)
+        va= va * 2.23694 #convert to miles per hour
+        va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
         windchill = 13.12 + 0.6215 * t2m - 11.37 * va ** 0.16 + 0.3965 + t2m + va ** 0.16
         return windchill
+
+    def validate_data(variable):
+        if type(variable) == int or float:
+            variable = np.array(variable)
+            return (variable)
+        if variable is None:
+            raise ValueError
+
 
 # The main method to run the code
 if __name__ == '__main__':

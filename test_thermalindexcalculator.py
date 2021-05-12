@@ -1,88 +1,87 @@
 import unittest
 import ThermoFeel
 import numpy as np
+import pandas as pd
+from ThermoFeel import ThermalIndexCalculator as tfc
+
+# combining the pytest library with the functionality of np testing for use with np.array file type
+
 
 class TestThermalCalculator(unittest.TestCase):
     def setUp(self):
-        self.t2m =np.array([310,300])
-        self.td = np.array([280,290])
-        self.va = np.array([2,0.02])
-        self.rh = ThermoFeel.ThermalIndexCalculator.calculate_relative_humidity(self.t2m)
-        self.rhpercent = ThermoFeel.ThermalIndexCalculator.calculate_relative_humidity_percent(self.t2m,self.td)
-        self.heatindex = np.array([50.59517795,34.48123685])
-        self.utci = np.array([31.68332968, 27.18415706])
-        self.apparenttemperature = np.array([31.45, 22.836])
-        self.wbgts = np.array([24.27395, 18.60395])
-        self.wbgt = np.array([34.4907777, 35.225786])
-        self.net = np.array([39.39678865, 31.01867697])
-        self.humidex = np.array([31.81680821, 23.11586174])
-        self.windchill = np.array([61.68250738, 51.50823866])
-        self.lat = np.array([15,20])
-        self.lon = np.array([30,40])
-        self.y = np.array([2000,2001])
-        self.m = np.array([12,1])
-        self.d = np.array([12,20])
-        self.h =np.array([22,13])
+        #variables for use in thermalindexcalculator
+        t = pd.read_csv('thermofeeltestcases.csv', delimiter=',')
+        self.t2m = t[['t2m']].to_numpy()
+        self.td = t[['td']].to_numpy()
+        self.va = t[['va']].to_numpy()
+        self.mrt = t[['mrt']].to_numpy()
+        self.lat = t[['lat']].to_numpy()
+        self.lon = t[['lon']].to_numpy()
+        self.y = t[['y']].to_numpy()
+        self.m = t[['m']].to_numpy()
+        self.d = t[['d']].to_numpy()
+        self.h = t[['h']].to_numpy()
         self.base = 6
         self.step = 3
-    def tearDown(self):
-        pass
+
+
+        #indices
+        tr = pd.read_csv('thermofeeltestresults.csv', delimiter=',')
+        self.rh = tfc.calculate_relative_humidity(self.t2m)
+        self.rhpercent = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
+        self.heatindex = tr[['heatindex']].to_numpy()
+        self.utci = tr[['utci']].to_numpy()
+        self.apparenttemperature = tr[['apparenttemperature']].to_numpy()
+        self.wbgts = tr[['wbgts']].to_numpy()
+        self.wbgt = tr[['wbgt']].to_numpy()
+        self.net = tr[['net']].to_numpy()
+        self.humidex = tr[['humidex']].to_numpy()
+        self.windchill = tr[['windchill']].to_numpy()
+
+    def test_assert_equal(self,result,calculation):
+        self.assertequal = self.assertIsNone(np.testing.assert_array_almost_equal(result, calculation))
     def test_relative_humidity(self):
-        print('test relative humidity')
-        self.assertIsNone(np.testing.assert_array_almost_equal(self.rh, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_relative_humidity(self.t2m)))
+        self.test_assert_equal(self.rh,tfc.calculate_relative_humidity(self.t2m))
+
     def test_relative_humidity_percent(self):
-        print('test relative humidity')
-        self.assertIsNone(np.testing.assert_array_almost_equal(self.rhpercent, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_relative_humidity_percent(self.t2m,self.td)))
+        self.test_assert_equal(self.rhpercent, tfc.calculate_relative_humidity_percent(self.t2m, self.td))
+
     def test_heat_index(self):
-        print('testing heat index')
-        self.assertIsNone(np.testing.assert_array_almost_equal(self.heatindex,
-                                                        ThermoFeel.ThermalIndexCalculator.calculate_heat_index
-                                                        (self.t2m)))
+        self.test_assert_equal(self.heatindex,tfc.calculate_heat_index(self.t2m))
     def test_solar_zenith_angle(self):
-       # print('testing solar zenith angle')
-        #self.assertIsNone(np.testing.assert_array_almost_equal(self.solarzenithangle,
-       #                                                 ThermoFeel.ThermalIndexCalculator.
-       #                                                 calculate_solar_zenith_angle(self.t2m)))
+        print('testing solar zenith angle')
+        # self.assertIsNone(np.testing.assert_array_almost_equal(self.solarzenithangle,
+        #                                                 ThermoFeel.ThermalIndexCalculator.
+        #                                                 calculate_solar_zenith_angle(self.t2m)))
         pass
+
     def test_mean_radiant_temperature(self):
-            #print('testing mean radiant temperature')
-           # self.assertIsNone(np.testing.assert_array_almost_equal(self.mrt,
-            #                                                ThermoFeel.ThermalIndexCalculator.
-            #                                                calculate_mean_radiant_temperature(self.t2m)))
-            pass
+        # print('testing mean radiant temperature')
+        # self.assertIsNone(np.testing.assert_array_almost_equal(self.mrt,
+        #                                                ThermoFeel.ThermalIndexCalculator.
+        #                                                calculate_mean_radiant_temperature(self.t2m)))
+        pass
+
     def test_utci(self):
-        print('testing utci')
-        self.assertIsNone(np.testing.assert_almost_equal(self.utci, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_utci(self.t2m, self.va, self.mrt)))
+        self.test_assert_equal(self.utci, tfc.calculate_utci(self.t2m, self.va, self.mrt))
 
     def test_apparent_temperature(self):
-        print('testing apparent temperature')
-        self.assertIsNone(np.testing.assert_almost_equal(self.apparenttemperature, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_apparent_temperature(self.t2m, self.rh, self.va)))
+        self.test_assert_equal(self.apparenttemperature, tfc.calculate_apparent_temperature(self.t2m, self.rh, self.va))
 
     def test_wbgts(self):
-        print('testing wet bulb globe temperature simple')
-        self.assertIsNone(np.testing.assert_array_almost_equal(self.wbgts, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_wbgts(self.t2m)))
+        self.test_assert_equal(self.wbgts, tfc.calculate_wbgts(self.t2m))
 
     def test_wbgt(self):
-        print('testing wet bulb globe temperature')
-        self.assertIsNone(np.testing.assert_array_almost_equal(self.wbgt, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_wbgt(self.t2m)))
+        self.test_assert_equal(self.wbgt, tfc.calculate_wbgt(self.t2m,self.va,self.mrt))
+
     def test_net(self):
-        print('testing net effective temperature')
-        self.assertIsNone(np.testing.assert_almost_equal(self.net, ThermoFeel.ThermalIndexCalculator.
-                                          calculate_net_effective_temperature(self.t2m)))
+        self.test_assert_equal(self.net, tfc.calculate_net_effective_temperature(self.t2m,self.rh,self.va))
+
     def test_humidex(self):
-        print('testing humidex')
-        self.assertIsNone(np.testing.assert_array_almost_equal(self.humidex, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_humidex(self.t2m,self.td)))
+        self.test_assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
+
     def test_wind_chill(self):
-        print('testing wind chill')
-        self.assertIsNone(np.testing.assert_array_almost_equal(self.windchill, ThermoFeel.ThermalIndexCalculator.
-                                                        calculate_wind_chill(self.t2m,self.va)))
+        self.test_assert_equal(self.windchill, ThermoFeel.ThermalIndexCalculator.calculate_wind_chill(self.t2m, self.va))
 
 
 if __name__ == '__main__':
