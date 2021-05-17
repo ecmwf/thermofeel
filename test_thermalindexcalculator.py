@@ -24,6 +24,9 @@ class TestThermalCalculator(unittest.TestCase):
         self.base = 6
         self.step = 3
 
+        #variables to raise errors
+
+        self.varnone = np.array([None,None])
 
         #indices
         tr = pd.read_csv('thermofeeltestresults.csv', delimiter=',')
@@ -38,16 +41,21 @@ class TestThermalCalculator(unittest.TestCase):
         self.humidex = tr[['humidex']].to_numpy()
         self.windchill = tr[['windchill']].to_numpy()
 
-    def test_assert_equal(self,result,calculation):
+    def assert_equal(self,result,calculation):
         self.assertequal = self.assertIsNone(np.testing.assert_array_almost_equal(result, calculation))
+
+    def assert_error(self,var):
+        self.asserterror = self.assertIsNone(np.testing.assert_raises(ValueError,var))
+
     def test_relative_humidity(self):
-        self.test_assert_equal(self.rh,tfc.calculate_relative_humidity(self.t2m))
+        self.assert_equal(self.rh,tfc.calculate_relative_humidity(self.t2m))
 
     def test_relative_humidity_percent(self):
-        self.test_assert_equal(self.rhpercent, tfc.calculate_relative_humidity_percent(self.t2m, self.td))
+        self.assert_equal(self.rhpercent, tfc.calculate_relative_humidity_percent(self.t2m, self.td))
 
     def test_heat_index(self):
-        self.test_assert_equal(self.heatindex,tfc.calculate_heat_index(self.t2m))
+        self.assert_equal(self.heatindex,tfc.calculate_heat_index(self.t2m))
+
     def test_solar_zenith_angle(self):
         print('testing solar zenith angle')
         # self.assertIsNone(np.testing.assert_array_almost_equal(self.solarzenithangle,
@@ -61,9 +69,11 @@ class TestThermalCalculator(unittest.TestCase):
         #                                                ThermoFeel.ThermalIndexCalculator.
         #                                                calculate_mean_radiant_temperature(self.t2m)))
         pass
+    def test_validate(self):
+        self.assert_error(self.varnone)
 
     def test_utci(self):
-        self.test_assert_equal(self.utci, tfc.calculate_utci(self.t2m, self.va, self.mrt))
+        self.assert_equal(self.utci, tfc.calculate_utci(self.t2m, self.va, self.mrt))
 
     def test_apparent_temperature(self):
         self.test_assert_equal(self.apparenttemperature, tfc.calculate_apparent_temperature(self.t2m, self.rh, self.va))
