@@ -2,7 +2,7 @@ import unittest
 import ThermoFeel
 import numpy as np
 import pandas as pd
-from ThermoFeel import ThermalIndexCalculator as tfc
+import ThermoFeel as tfc
 
 # combining the pytest library with the functionality of np testing for use with np.array file type
 
@@ -76,22 +76,22 @@ class TestThermalCalculator(unittest.TestCase):
         self.assert_equal(self.utci, tfc.calculate_utci(self.t2m, self.va, self.mrt))
 
     def test_apparent_temperature(self):
-        self.test_assert_equal(self.apparenttemperature, tfc.calculate_apparent_temperature(self.t2m, self.rh, self.va))
+        self.assert_equal(self.apparenttemperature, tfc.calculate_apparent_temperature(self.t2m, self.rh, self.va))
 
     def test_wbgts(self):
-        self.test_assert_equal(self.wbgts, tfc.calculate_wbgts(self.t2m))
+        self.assert_equal(self.wbgts, tfc.calculate_wbgts(self.t2m))
 
     def test_wbgt(self):
-        self.test_assert_equal(self.wbgt, tfc.calculate_wbgt(self.t2m,self.va,self.mrt))
+        self.assert_equal(self.wbgt, tfc.calculate_wbgt(self.t2m,self.va,self.mrt))
 
     def test_net(self):
-        self.test_assert_equal(self.net, tfc.calculate_net_effective_temperature(self.t2m,self.rh,self.va))
+        self.assert_equal(self.net, tfc.calculate_net_effective_temperature(self.t2m,self.rh,self.va))
 
     def test_humidex(self):
-        self.test_assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
+        self.assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
 
     def test_wind_chill(self):
-        self.test_assert_equal(self.windchill, ThermoFeel.ThermalIndexCalculator.calculate_wind_chill(self.t2m, self.va))
+        self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
 
 
 if __name__ == '__main__':
