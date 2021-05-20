@@ -12,6 +12,7 @@ class TestThermalCalculator(unittest.TestCase):
         #variables for use in thermalindexcalculator
         t = pd.read_csv('thermofeeltestcases.csv', delimiter=',')
         self.t2m = t[['t2m']].to_numpy()
+        self.ssr = t[['ssr']].to_numpy()
         self.td = t[['td']].to_numpy()
         self.va = t[['va']].to_numpy()
         self.mrt = t[['mrt']].to_numpy()
@@ -21,8 +22,13 @@ class TestThermalCalculator(unittest.TestCase):
         self.m = t[['m']].to_numpy()
         self.d = t[['d']].to_numpy()
         self.h = t[['h']].to_numpy()
-        self.base = 6
-        self.step = 3
+        self.ssrd = t[['ssrd']].to_numpy()
+        self.strd = t[['strd']].to_numpy()
+        self.fdir = t[['fdir']].to_numpy()
+        self.strr = t[['strr']].to_numpy()
+        self.cossza = t[['cossza']].to_numpy()
+        #self.base = 6
+        #self.step = 3
 
         #variables to raise errors
 
@@ -41,6 +47,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.humidex = tr[['humidex']].to_numpy()
         self.windchill = tr[['windchill']].to_numpy()
 
+
     def assert_equal(self,result,calculation):
         self.assertequal = self.assertIsNone(np.testing.assert_array_almost_equal(result, calculation))
 
@@ -57,18 +64,11 @@ class TestThermalCalculator(unittest.TestCase):
         self.assert_equal(self.heatindex,tfc.calculate_heat_index(self.t2m))
 
     def test_solar_zenith_angle(self):
-        print('testing solar zenith angle')
-        # self.assertIsNone(np.testing.assert_array_almost_equal(self.solarzenithangle,
-        #                                                 ThermoFeel.ThermalIndexCalculator.
-        #                                                 calculate_solar_zenith_angle(self.t2m)))
         pass
 
     def test_mean_radiant_temperature(self):
-        # print('testing mean radiant temperature')
-        # self.assertIsNone(np.testing.assert_array_almost_equal(self.mrt,
-        #                                                ThermoFeel.ThermalIndexCalculator.
-        #                                                calculate_mean_radiant_temperature(self.t2m)))
-        pass
+        self.assert_equal(self.mrt, tfc.calculate_mean_radiant_temperature(self.ssrd,self.ssr,self.fdir,self.strd,
+                                                                           self.strr,self.cossza))
     def test_validate(self):
         self.assert_error(self.varnone)
 
