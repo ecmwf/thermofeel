@@ -1,7 +1,11 @@
-"""
-ThermoFeel Library
-calculates different heat indexes from inputs
-"""
+# (C) Copyright 1996- ECMWF.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
+
 """
   Thermofeel is a library that contains all the methods to calculate different heat indices.
   Relative Humidity Percentage, Relative Humidity [pa],Heat Index,Solar Zenith Angle, Mean Radiant Temperature,
@@ -313,7 +317,6 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
 
     mrt = mrtcal
     mrt = __kelvin_to_celcius(mrt)
-    mrt = mrt/1000
     return mrt
 
 def calculate_utci(t2m, va, mrt, rh=None):
@@ -599,14 +602,14 @@ def calculate_wbgts(t2m):
     https://link.springer.com/article/10.1007/s00484-011-0453-2
     http://www.bom.gov.au/info/thermal_stress/#approximation
     https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
-
+Wind
     returns Wet Bulb Globe Temperature [°C]
     """
     t2m = __wrap(t2m)
     rh = calculate_relative_humidity(t2m)
     rh = __pa_to_hpa(rh)
     t2m = __kelvin_to_celcius(t2m)
-    wbgts = 0.567 * t2m + 0.216 * rh + 3.38
+    wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return (wbgts)
 
 def calculate_wbgt(t2m, mrt, va):
