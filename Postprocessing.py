@@ -83,6 +83,8 @@ def decode_csza(fpath):
 
     f.close()
     return values_list, lat_list, long_list
+
+
 def run_cossza(values):
     h = pd.to_datetime(values[0], format='%Y%m%d %H:%m:%s')
     hours = h.hour
@@ -103,9 +105,13 @@ def run_cossza(values):
                 calculate_solar_zenith_angle_f(lat=lat[i], lon=lon[i], y=years[x], m=months[x], d=days[x], h=hours[x], base=base, step=step))
     print(c1, c2)
     return(c1,c2)
+
+
 def run_heatindex(values):
     output = calculate_heat_index(values[0])
     return(output)
+
+
 def main():
     try:
         #run_cossza(decode_csza(sys.argv[1]))
