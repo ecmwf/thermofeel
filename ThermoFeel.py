@@ -180,7 +180,7 @@ def calculate_cos_solar_zenith_angle(lat, lon, y, m, d, h):
 # csza[csza_filter1] = lsin[csza_filter1]
 # csza[csza_filter2] = 0.0
 
-def calculate_solar_zenith_angle_f(lat, lon, y, m, d, h, base, step):
+def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step):
         """
         calculate solar zenith angle
         :param lat: (int array) latitude [degrees]
@@ -197,6 +197,8 @@ def calculate_solar_zenith_angle_f(lat, lon, y, m, d, h, base, step):
         returns cosine of the solar zenith angle [degrees]
         """
 
+        maxx = 0
+        base_offset = 0
         h_offset = 0
         step_offset = 0
         if base == 0:
@@ -206,7 +208,7 @@ def calculate_solar_zenith_angle_f(lat, lon, y, m, d, h, base, step):
         if base == 18:
             base_offset = 1806
         if base == 12:
-            base_offset = 1212
+            base_offset = 1212 # 1200+12
 
         if step == 1:
             h_offset = 0.5
@@ -218,50 +220,44 @@ def calculate_solar_zenith_angle_f(lat, lon, y, m, d, h, base, step):
             h_offset = 3
             maxx = 100.0
 
-        # convert to julian days
-        jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
-                (y + 4900 + (m - 14) / 12) / 100) / 4
-        jd2 = 1 - 32075 + 1461 * (y + 4800 + (1 - 14) / 12) / 4 + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12 - 3 * (
-                (y + 4900 + (1 - 14) / 12) / 100) / 4
-        jd = jd - jd2 + 1
+        # convert to julian days counting from the beginning of the year
+        jd_ = __julian_date(d, m, y)  # julian date of data
+        jd11_ = __julian_date(1, 1, y)  # julian date 1st Jan
+        jd = jd_ - jd11_ + 1  # days since start of year
 
-        k = 0.01745
         hh = h - base_offset - h_offset
         g = (360 / 365.25) * (jd + hh / 24)
         if g > 360:
             g = g - 360
         gg = np.pi * g / 180
 
-        # solar declination angle
-        d = 0.396372 - 22.91327 * np.cos(gg) + 4.02543 * np.sin(gg) - 0.387205 * np.cos(2 * gg) + 0.051967 * np.sin(
-            2 * gg) - 0.154527 * np.cos(3 * gg) + 0.084798 * np.sin(3 * gg)
-
-        # time correction for solar angle
-        tc = 0.004297 + 0.107029 * np.cos(gg) - 1.837877 * np.sin(gg) - 0.837378 * np.cos(2 * gg) - 2.340475 * np.sin(
-            2 * gg)
+        # declination angle + time correction for solar angle
+        d, tc = __declination_angle(jd, hh)
+        drad = d * to_radians
 
         # solar hour angle
-        sha = (hh - 12) * 15 + (lon + 180) / 2 + tc
-        latrad = lat * np.pi / 180
-        lonrad = (lon + 180) / 2 * np.pi / 180
-        accumulationperiod = step
+        sha = (hh - 12) * 15 + (lon + 180) / 2 + tc # solar hour angle
+        latrad = lat * to_radians
+        lonrad = (lon + 180) / 2 * to_radians
+        accumulationperiod = step # hours
+        # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2; = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
         zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
         zsolartimestart = sha * np.pi / 180 - zhalftimestep
         zsolartimeend = sha * np.pi / 180 + zhalftimestep
-        ztandec = np.sin(d * np.pi / 180) / np.max(np.abs((np.cos(d * np.pi / 180), 1.0e-12)))
-        zcoshouranglesunset = -ztandec * np.sin(latrad) / np.max((math.cos(latrad), 1.0e-12))
-        zsindecsinlat = np.sin(d * np.pi / 180) * np.sin(latrad)
-        zcosdeccoslat = np.cos(d * np.pi / 180) * np.cos(latrad)
+        ztandec = sin(d * np.pi / 180) / max((cos(d * np.pi / 180), 1.0e-12))
+        zcoshouranglesunset = -ztandec * np.sin(latrad) / max(cos(latrad), 1.0e-12)
+        zsindecsinlat = sin(d * np.pi / 180) * sin(latrad)
+        zcosdeccoslat = cos(d * np.pi / 180) * cos(latrad)
 
         # start and end hour
-        def horizon(val, range, lonrad, zsolartimestart, zsolartimeend, maxx):
-            if (val < range * math.pi):
-                zhouranglestart = zsolartimestart + lonrad - ((range - 1.0) * math.pi)
-                zhourangleend = zsolartimeend + lonrad - ((range - 1.0) * math.pi)
+        def horizon(val, rrange, lonrad, zsolartimestart, zsolartimeend, maxx):
+            if (val < rrange * math.pi):
+                zhouranglestart = zsolartimestart + lonrad - ((rrange - 1.0) * math.pi)
+                zhourangleend = zsolartimeend + lonrad - ((rrange - 1.0) * math.pi)
             else:
-                if range < maxx:
-                    zhouranglestart, zhourangleend = horizon(val, range + 2.0, lonrad, zsolartimestart, zsolartimeend,
-                                                             maxx)
+                if rrange < maxx:
+                    zhouranglestart, zhourangleend = \
+                    horizon(val, rrange + 2.0, lonrad, zsolartimestart, zsolartimeend, maxx)
                 else:
                     zhouranglestart = zsolartimestart + lonrad - (maxx + 1.0) * math.pi
                     zhourangleend = zsolartimeend + lonrad - (maxx + 1.0) * math.pi
@@ -269,30 +265,31 @@ def calculate_solar_zenith_angle_f(lat, lon, y, m, d, h, base, step):
             return (zhouranglestart, zhourangleend)
 
         # calculating the solar zenith angle
+        
+        PMU0 = 0
+        
         if zcoshouranglesunset > 1:
             PMU0 = 0
         else:
-            zhouranglestart, zhourangleend = horizon(sha * math.pi / 180 + lonrad, 2, lonrad, zsolartimestart,
-                                                     zsolartimeend, maxx)
+            zhouranglestart, zhourangleend = \
+                horizon(sha * math.pi / 180 + lonrad, 2, lonrad, zsolartimestart, zsolartimeend, maxx)
 
             if zcoshouranglesunset >= -1:
                 zhouranglesunset = math.acos(zcoshouranglesunset)
                 if zhourangleend <= -zhouranglesunset or zhouranglestart >= zhouranglesunset:
                     PMU0 = 0
-                    zhouranglestartmin = min(zhouranglestart, zhouranglesunset)
-                    zhourangleendmin = min(zhourangleend, zhouranglesunset)
-                    zhouranglestart = max(-zhouranglesunset, zhouranglestartmin)
-                    zhourangleend = max(-zhouranglesunset, zhourangleendmin)
 
-            if zhourangleend - zhouranglestart > 1.0e-8:
-                PMU0 = zsindecsinlat + (zcosdeccoslat * (math.sin(zhourangleend) - math.sin
-                (zhouranglestart))) / (zhourangleend - zhouranglestart)
-            if PMU0 < 0.0:
-                PMU0 = 0.0
+                zhouranglestart = max(-zhouranglesunset, min(zhouranglestart, zhouranglesunset))
+                zhourangleend = max(-zhouranglesunset, min(zhourangleend, zhouranglesunset))
+
+            if (zhourangleend - zhouranglestart) > 1.0e-8:
+                PMU0 = zsindecsinlat + (zcosdeccoslat * (sin(zhourangleend) - sin(zhouranglestart))) / (zhourangleend - zhouranglestart)
+                if PMU0 < 0.0:
+                    PMU0 = 0.0
             else:
                 PMU0 = 0.0
 
-            return (PMU0)
+        return PMU0
 
 
 

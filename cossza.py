@@ -83,9 +83,9 @@ def calc_cossza(message):
 
     cossza = []
     for i in range(len(lats)):
-        v = calculate_cos_solar_zenith_angle(
-            lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
-        # v = calculate_solar_zenith_angle_f(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=step)
+        # v = calculate_cos_solar_zenith_angle(
+        #     lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
+        v = calculate_solar_zenith_angle_f(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=3)
         cossza.append(v)
 
     shape = (message["Nj"], message["Ni"])
