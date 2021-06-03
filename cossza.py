@@ -4,11 +4,6 @@ import datetime
 import numpy as np
 import pandas as pd
 
-import datetime
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-from cartopy.feature.nightshade import Nightshade
-
 from ThermoFeel import *
 
 def decode_grib(fpath):
@@ -37,6 +32,9 @@ def decode_grib(fpath):
 
             # time_l = eccodes.codes_get_long(msg, "time")
             # time_f = eccodes.codes_get_double(msg, "time")
+
+            md['Ni'] = eccodes.codes_get_long(msg, "Ni")
+            md['Nj'] = eccodes.codes_get_long(msg, "Nj")
 
             time = eccodes.codes_get_long(msg, "time")
             date = eccodes.codes_get_string(msg, "date")
@@ -68,30 +66,6 @@ def decode_grib(fpath):
     f.close()
     return messages
 
-def plot_colour_map(lats, lons, data):
-    # fig = plt.figure(figsize=(10, 5))
-    # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-
-    # date = datetime.datetime(1999, 12, 31, 12)
-
-    # ax.set_title('Night time shading for {}'.format(date))
-    # ax.stock_img()
-    # ax.add_feature(Nightshade(date, alpha=0.2))
-    # plt.show()
-    fig = plt.figure(figsize=(10, 5))
-    # ax = fig.add_subplot(1, 1, 1, projection=ccrs.Mollweide())
-    # ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(90))
-    # ax = fig.add_subplot(1, 1, 1, projection=ccrs.EckertIV())
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-
-    ax.contourf(lons, lats, data,
-                transform=ccrs.PlateCarree(),
-                cmap='nipy_spectral')
-    ax.coastlines()
-    ax.set_global()
-    plt.show()
-
-
 def calc_cossza(message):
     
     lats = message["lats"]
@@ -104,36 +78,39 @@ def calc_cossza(message):
     date = message["date"]
     time = message["time"]
     step = message["step"]
+
+    print(dt.year, dt.month, dt.day, dt.hour)
+
     cossza = []
-    # c2 = []
     for i in range(len(lats)):
-        v = calculate_solar_zenith_angle(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
+        v = calculate_cos_solar_zenith_angle(
+            lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
+        # v = calculate_solar_zenith_angle_f(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=step)
         cossza.append(v)
-    #     # c2.append(
-    #     #     calculate_solar_zenith_angle_f(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=step))
 
+    shape = (message["Nj"], message["Ni"])
 
-    latsmat = np.reshape(lats, (181, 360))
-    lonsmat = np.reshape(lons, (181, 360))
-    cosszam = np.reshape(cossza, (181, 360))
+    latsmat = np.reshape(lats, shape)
+    lonsmat = np.reshape(lons, shape)
+    valsmat = np.reshape(cossza, shape)
 
-    plot_colour_map(latsmat, lonsmat, cosszam)
+    fname = sys.argv[2]
+    print('=> ', fname)
+    np.savez(fname, lats=latsmat, lons=lonsmat, values=valsmat)
 
     return cossza
 
-
-def calc_heatindex(values):
-    output = calculate_heat_index(values[0])
-    return(output)
-
-
 def main():
     try:
+
         msgs = decode_grib(sys.argv[1])
         print(msgs)
         for m in msgs:
             cossza = calc_cossza(m)
             # print(cossza)
+
+        # print(calculate_solar_zenith_angle_noaa(lat=48.81667,
+        #       lon=2.28972, d=15, m=11, y=2006, h=10.58333))
 
         # calc_heatindex(decode_singleparam(sys.argv[1]))
     except eccodes.CodesInternalError as err:

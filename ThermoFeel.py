@@ -18,7 +18,31 @@ import numpy as np
 import math
 import datetime
 
+from math import cos, sin
 
+to_radians = np.pi / 180
+
+
+def __julian_date(d, m, y):
+    return d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
+        (y + 4900 + (m - 14) / 12) / 100) / 4
+
+# solar declination angle [deg] + time correction for solar angle
+def __declination_angle(jd, h):
+    # jd = int(jd)
+    # print('jd ', jd)
+    g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
+    while (g > 360):
+        g = g - 360
+    grad = g * to_radians
+    # print('g ', g)
+    # declination
+    d = 0.396372 - 22.91327 * np.cos(grad) + 4.02543 * np.sin(grad) - 0.387205 * np.cos(2 * grad) + 0.051967 * np.sin(
+        2 * grad) - 0.154527 * np.cos(3 * grad) + 0.084798 * np.sin(3 * grad)
+    # time correction
+    tc = 0.004297 + 0.107029 * np.cos(grad) - 1.837877 * np.sin(grad) \
+        - 0.837378 * np.cos(2 * grad) - 2.340475 * np.sin(2 * grad)
+    return d, tc
 
 
 #calculate wind speed from components
@@ -88,6 +112,7 @@ def calculate_relative_humidity(t2m):
     ess = np.exp(ess) * 0.01
     return ess
 
+
 def calculate_heat_index(t2m, rh=None):
     """
     Heat Index
@@ -107,69 +132,53 @@ def calculate_heat_index(t2m, rh=None):
          t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
     return hi
 
-def calculate_solar_zenith_angle(lat, lon, y, m, d, h):
+
+def calculate_cos_solar_zenith_angle(lat, lon, y, m, d, h):
     """
-                calculate solar zenith angle
-                :param lat: (int array) latitude [degrees]
-                :param lon: (int array) longitude [degrees]
-                :param y: year [int]
-                :param m: month [int]
-                :param d: day [int]
-                :param h: hour [int]
+    calculate solar zenith angle
+    :param lat: (float array) latitude [degrees]
+    :param lon: (float array) longitude [degrees]
+    :param y: year [int]
+    :param m: month [int]
+    :param d: day [int]
+    :param h: hour [int]
 
-                https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
+    https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
+    
+    see also:
+    http://answers.google.com/answers/threadview/id/782886.html
 
-                returns cosine of the solar zenith angle [degrees]
-                """
+    returns cosine of the solar zenith angle
+    """
 
-    # convert to julian days
-    jd = d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
-            (y + 4900 + (m - 14) / 12) / 100) / 4
-    jd2 = 1 - 32075 + 1461 * (y + 4800 + (1 - 14) / 12) / 4 + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12 - 3 * (
-            (y + 4900 + (1 - 14) / 12) / 100) / 4
-    jd = jd - jd + 1
+    # convert to julian days counting from the beginning of the year
+    jd_ = __julian_date(d, m, y)  # julian date of data
+    jd11_ = __julian_date(1, 1, y)  # julian date 1st Jan
+    jd = jd_ - jd11_ + 1  # days since start of year
 
-    k = 0.01745
-    hh = np.abs(lon) * 24 / 360
-    g = (360 / 365.25) * (jd + hh / 24)
-    g = np.where((g>360), g-360, g)
-    # if g.any() > 360:
-    #     g = g - 360
-    gg = np.pi * g / 180
+    # declination angle + time correction for solar angle
+    d, tc = __declination_angle(jd, h)
+    drad = d * to_radians
 
-    # solar declination angle
-    d = 0.396372 - 22.91327 * np.cos(gg) + 4.02543 * np.sin(gg) - 0.387205 * np.cos(2 * gg) + 0.051967 * np.sin(
-        2 * gg) - 0.154527 * np.cos(3 * gg) + 0.084798 * np.sin(3 * gg)
+    # solar hour angle [h.deg]
+    sha = (h - 12) * 15 + lon + tc
+    sharad = sha * to_radians
+    latrad = lat * to_radians
 
-    # time correction for solar angle
-    tc = 0.004297 + 0.107029 * np.cos(gg) - 1.837877 * np.sin(gg) - 0.837378 * np.cos(2 * gg) - 2.340475 * np.sin(
-        2 * gg)
+    sindec_sinlat = np.sin(drad) * np.sin(latrad)
+    cosdec_coslat = np.cos(drad) * np.cos(latrad)
+    cosh = np.cos(sharad)
 
-    # solar hour angle
-    sha = (hh - 12) * 15 + (lon + 180) / 2 + tc
+    csza = max(0, sindec_sinlat + cosdec_coslat * cosh)
 
-    # solar zenith angle
-    latrad = lat * np.pi / 180
-    lonrad = (lon + 180) / 2 * np.pi / 180
-    lsin = np.sin(latrad) * np.sin(sha)
-    lcos = np.cos(latrad) * np.cos(sha)
-
-    hour0 = lsin / lcos
-
-    csza = (lsin * np.arccos(-hour0) + lcos * np.sqrt(1.0 - hour0 ** 2)) / np.arccos(-hour0)
-
-    csza_filter1 = np.where((hour0 > 1.0))
-    csza_filter2 = np.where((hour0 < -1.0))
-    csza[csza_filter1] = lsin[csza_filter1]
-    csza[csza_filter2] = 0.0
-
-    # if hour0[hour0 > 1.0]:
-    #     csza = lsin
-    # elif hour0[hour0 < -1.0]:
-    #     csza = 0.0
-    # else:
-    #     csza = (lsin * np.arccos(-hour0) + lcos * np.sqrt(1.0 - hour0 ** 2)) / np.arccos(-hour0)
     return csza
+
+
+# csza = (lsin * np.arccos(-hour0) + lcos * np.sqrt(1.0 - hour0 ** 2)) / np.arccos(-hour0)
+# csza_filter1 = np.where((hour0 > 1.0))
+# csza_filter2 = np.where((hour0 < -1.0))
+# csza[csza_filter1] = lsin[csza_filter1]
+# csza[csza_filter2] = 0.0
 
 def calculate_solar_zenith_angle_f(lat, lon, y, m, d, h, base, step):
         """
@@ -214,7 +223,7 @@ def calculate_solar_zenith_angle_f(lat, lon, y, m, d, h, base, step):
                 (y + 4900 + (m - 14) / 12) / 100) / 4
         jd2 = 1 - 32075 + 1461 * (y + 4800 + (1 - 14) / 12) / 4 + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12 - 3 * (
                 (y + 4900 + (1 - 14) / 12) / 100) / 4
-        jd = jd - jd + 1
+        jd = jd - jd2 + 1
 
         k = 0.01745
         hh = h - base_offset - h_offset
@@ -727,10 +736,3 @@ def calculate_wind_chill(t2m, va):
     va = va * 2.23694  # convert to miles per hour
     windchill = 13.12 + 0.6215 * t2m - 11.37 * va ** 0.16 + 0.3965 + t2m + va ** 0.16
     return windchill
-
-
-
-
-# The main method to run the code
-if __name__ == '__main__':
-    main()
