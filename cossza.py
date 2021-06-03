@@ -81,13 +81,16 @@ def calc_cossza(message):
 
     print(dt.year, dt.month, dt.day, dt.hour)
 
+    # scalar computation
     # cossza = []
     # for i in range(len(lats)):
-    #     v = calculate_cos_solar_zenith_angle_integrated(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=3)
+    #     v = calculate_cos_solar_zenith_angle_integrated(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time / 100, step=3)
+    #     # v = calculate_cos_solar_zenith_angle(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
     #     cossza.append(v)
 
-    cossza = calculate_cos_solar_zenith_angle_integrated(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=3)
-    # cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
+    # vectorised computation
+    # cossza = calculate_cos_solar_zenith_angle_integrated(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=3)
+    cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
 
     shape = (message["Nj"], message["Ni"])
 

@@ -171,12 +171,6 @@ def calculate_cos_solar_zenith_angle(lat, lon, y, m, d, h):
     return np.clip(csza, 0, None)
 
 
-# csza = (lsin * np.arccos(-hour0) + lcos * np.sqrt(1.0 - hour0 ** 2)) / np.arccos(-hour0)
-# csza_filter1 = np.where((hour0 > 1.0))
-# csza_filter2 = np.where((hour0 < -1.0))
-# csza[csza_filter1] = lsin[csza_filter1]
-# csza[csza_filter2] = 0.0
-
 def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step):
         """
         calculate solar zenith angle
