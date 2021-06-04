@@ -17,68 +17,7 @@
 import numpy as np
 import math
 
-to_radians = np.pi / 180
-
-
-def __julian_date(d, m, y):
-    return d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
-        (y + 4900 + (m - 14) / 12) / 100) / 4
-
-
-# solar declination angle [degrees] + time correction for solar angle
-def __declination_angle(jd, h):
-    g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
-    while (g > 360):
-        g = g - 360
-    grad = g * to_radians
-    # declination in [degrees]
-    d = 0.396372 - 22.91327 * np.cos(grad) + 4.02543 * np.sin(grad) - 0.387205 * np.cos(2 * grad) + 0.051967 * np.sin(
-        2 * grad) - 0.154527 * np.cos(3 * grad) + 0.084798 * np.sin(3 * grad)
-    # time correction in [ h.degrees ]
-    tc = 0.004297 + 0.107029 * np.cos(grad) - 1.837877 * np.sin(grad) \
-        - 0.837378 * np.cos(2 * grad) - 2.340475 * np.sin(2 * grad)
-    return d, tc
-
-
-# calculate wind speed from components
-def __calculate_wind_speed(u, v):
-    ws = np.sqrt(u ** 2 + v ** 2)
-    return ws
-
-
-# validate data convert int float to numpy array
-def __wrap(variable):
-    if isinstance(variable, int) or isinstance(variable, float):
-        variable = np.array(variable)
-        return variable
-    if variable is None:
-        raise ValueError
-    else:
-        return variable
-
-
-# convert farenheit to kelvin
-def __farenheit_to_kelvin(t2m):
-    t2m = (t2m + 459.67) * 5 / 9
-    return t2m
-
-
-# convert kelvin to celcius
-def __kelvin_to_celcius(t2m):
-    t2m = np.subtract(t2m, 273.15)
-    return t2m
-
-
-# convert celcius to kelvin
-def __celcius_to_kelvin(t2m):
-    t2m = t2m + 273.15
-    return t2m
-
-
-# convert from pa to hpa for e (relative humidity)
-def __pa_to_hpa(rh):
-    rh = rh / 10
-    return rh
+from .helpers import __julian_date, __declination_angle, to_radians
 
 
 def calculate_relative_humidity_percent(t2m, td):
