@@ -170,17 +170,20 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
 
         # solar hour angle
         sha = (hh - 12) * 15 + (lon + 180) / 2 + tc # solar hour angle
+        sharad = sha * to_radians
+
         latrad = lat * to_radians
         lonrad = (lon + 180) / 2 * to_radians
-        accumulationperiod = step # hours
+        accumulationperiod = step  # hours
+        
         # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2; = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
         zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
-        zsolartimestart = sha * np.pi / 180 - zhalftimestep
-        zsolartimeend = sha * np.pi / 180 + zhalftimestep
-        ztandec = math.sin(d * np.pi / 180) / max((math.cos(d * np.pi / 180), 1.0e-12))
+        zsolartimestart = sharad - zhalftimestep
+        zsolartimeend  = sharad + zhalftimestep
+        ztandec = math.sin(drad) / max((math.cos(drad), 1.0e-12))
         zcoshouranglesunset = -ztandec * np.sin(latrad) / np.clip(np.cos(latrad), 1.0e-12, None) 
-        zsindecsinlat = math.sin(d * np.pi / 180) * np.sin(latrad)
-        zcosdeccoslat = math.cos(d * np.pi / 180) * np.cos(latrad)        
+        zsindecsinlat = math.sin(drad) * np.sin(latrad)
+        zcosdeccoslat = math.cos(drad) * np.cos(latrad)        
 
         def solar_zenith_angle_average(lonrad, zcoshouranglesunset, zsindecsinlat, zcosdeccoslat, zsolartimestart, zsolartimeend, sha):
             # start and end hour
