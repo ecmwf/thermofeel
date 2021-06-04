@@ -88,21 +88,29 @@ def calc_cossza(message):
     #     # v = calculate_cos_solar_zenith_angle(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
     #     cossza.append(v)
 
-    # vectorised computation
-    # cossza = calculate_cos_solar_zenith_angle_integrated(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=3)
-    cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
-
     shape = (message["Nj"], message["Ni"])
 
     latsmat = np.reshape(lats, shape)
     lonsmat = np.reshape(lons, shape)
+
+    # vectorised computation
+    cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
     valsmat = np.reshape(cossza, shape)
 
     fname = sys.argv[2]
     print('=> ', fname)
     np.savez(fname, lats=latsmat, lons=lonsmat, values=valsmat)
+    
+    # vectorised computation
+    cossza = calculate_cos_solar_zenith_angle_integrated(
+        lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=3)
+    valsmat = np.reshape(cossza, shape)
 
-    return cossza
+    fname = sys.argv[3]
+    print('=> ', fname)
+    np.savez(fname, lats=latsmat, lons=lonsmat, values=valsmat)
+
+
 
 def main():
     try:
@@ -110,8 +118,7 @@ def main():
         msgs = decode_grib(sys.argv[1])
         print(msgs)
         for m in msgs:
-            cossza = calc_cossza(m)
-            # print(cossza)
+            calc_cossza(m)
 
         # print(calculate_solar_zenith_angle_noaa(lat=48.81667,
         #       lon=2.28972, d=15, m=11, y=2006, h=10.58333))

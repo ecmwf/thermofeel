@@ -13,12 +13,13 @@
   Mean Radiant Temperature from Wet Bulb Globe Temperature, Humidex, Net Effective Temperature,
   Apparent Temperature and Wind Chill
   """
-# import statements
+
 import numpy as np
 import math
 import datetime
 
 from math import cos, sin
+
 
 to_radians = np.pi / 180
 
@@ -27,28 +28,27 @@ def __julian_date(d, m, y):
     return d - 32075 + 1461 * (y + 4800 + (m - 14) / 12) / 4 + 367 * (m - 2 - (m - 14) / 12 * 12) / 12 - 3 * (
         (y + 4900 + (m - 14) / 12) / 100) / 4
 
-# solar declination angle [deg] + time correction for solar angle
+
+# solar declination angle [degrees] + time correction for solar angle
 def __declination_angle(jd, h):
-    # jd = int(jd)
-    # print('jd ', jd)
     g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
     while (g > 360):
         g = g - 360
     grad = g * to_radians
-    # print('g ', g)
-    # declination
+    # declination in [degrees]
     d = 0.396372 - 22.91327 * np.cos(grad) + 4.02543 * np.sin(grad) - 0.387205 * np.cos(2 * grad) + 0.051967 * np.sin(
         2 * grad) - 0.154527 * np.cos(3 * grad) + 0.084798 * np.sin(3 * grad)
-    # time correction
+    # time correction in [ h.degrees ]
     tc = 0.004297 + 0.107029 * np.cos(grad) - 1.837877 * np.sin(grad) \
         - 0.837378 * np.cos(2 * grad) - 2.340475 * np.sin(2 * grad)
     return d, tc
 
 
-#calculate wind speed from components
-def __calculate_wind_speed(u,v):
+# calculate wind speed from components
+def __calculate_wind_speed(u, v):
     ws = np.sqrt(u ** 2 + v ** 2)
     return ws
+
 
 # validate data convert int float to numpy array
 def __wrap(variable):
@@ -60,25 +60,30 @@ def __wrap(variable):
     else:
         return variable
 
+
 # convert farenheit to kelvin
 def __farenheit_to_kelvin(t2m):
     t2m = (t2m + 459.67) * 5 / 9
     return t2m
+
 
 # convert kelvin to celcius
 def __kelvin_to_celcius(t2m):
     t2m = np.subtract(t2m, 273.15)
     return t2m
 
+
 # convert celcius to kelvin
 def __celcius_to_kelvin(t2m):
     t2m = t2m + 273.15
     return t2m
 
+
 # convert from pa to hpa for e (relative humidity)
 def __pa_to_hpa(rh):
     rh = rh / 10
     return rh
+
 
 def calculate_relative_humidity_percent(t2m, td):
     """Relative Humidity in percent
@@ -94,6 +99,7 @@ def calculate_relative_humidity_percent(t2m, td):
     e = 6.11 * 10.0 ** (7.5 * td / (237.7 + td))
     rh = (e / es) * 100
     return rh
+
 
 def calculate_relative_humidity(t2m):
     """Relative Humidity
@@ -211,16 +217,17 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
             h_offset = 3
             maxx = 100.0
 
+        hh = h - base_offset - h_offset
+
+        ### POTENTIAL BUG -- POSSIBLE FIX ????
+        ### This ensures we can integrate but doesn't use hours offsets
+        hh = h
+        maxx = 100.0
+
         # convert to julian days counting from the beginning of the year
         jd_ = __julian_date(d, m, y)  # julian date of data
         jd11_ = __julian_date(1, 1, y)  # julian date 1st Jan
         jd = jd_ - jd11_ + 1  # days since start of year
-
-        hh = h - base_offset - h_offset
-        g = (360 / 365.25) * (jd + hh / 24)
-        if g > 360:
-            g = g - 360
-        gg = np.pi * g / 180
 
         # declination angle + time correction for solar angle
         d, tc = __declination_angle(jd, hh)
@@ -280,9 +287,6 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
         return np.vectorize(solar_zenith_angle_average)(lonrad, zcoshouranglesunset, zsindecsinlat, zcosdeccoslat, zsolartimestart, zsolartimeend, sha)
 
 
-
-
-
 def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     """
             mrt - Mean Radiant Temperature
@@ -314,6 +318,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     mrt = mrtcal
     mrt = __kelvin_to_celcius(mrt)
     return mrt
+
 
 def calculate_utci(t2m, va, mrt, rh=None):
     """
@@ -598,7 +603,7 @@ def calculate_wbgts(t2m):
     https://link.springer.com/article/10.1007/s00484-011-0453-2
     http://www.bom.gov.au/info/thermal_stress/#approximation
     https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
-Wind
+
     returns Wet Bulb Globe Temperature [°C]
     """
     t2m = __wrap(t2m)
@@ -607,6 +612,7 @@ Wind
     t2m = __kelvin_to_celcius(t2m)
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return (wbgts)
+
 
 def calculate_wbgt(t2m, mrt, va):
     """
@@ -636,6 +642,7 @@ def calculate_wbgt(t2m, mrt, va):
                                                                                                                ( 2 / 3)) -(2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3) - rt3 / (rt1 * rt2 ** ( 1 / 3)))
     wbgt_quartic = __kelvin_to_celcius(wbgt_quartic)
     return (wbgt_quartic)
+
 
 def calculate_mrt_from_wbgt(t2m, wbgt, va):
     """
@@ -672,6 +679,7 @@ def calculate_humidex(t2m, td):
     humidex = (t2m + h) - 273.15
     return humidex
 
+
 def calculate_net_effective_temperature(t2m, rh, va):
     """
     Net Effective Temperature used in Hong Kong, Poland and Germany
@@ -691,6 +699,7 @@ def calculate_net_effective_temperature(t2m, rh, va):
     net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
     return net
 
+
 def calculate_apparent_temperature(t2m, rh, va):
     """
     Apparent Temperature version without radiation
@@ -706,6 +715,7 @@ def calculate_apparent_temperature(t2m, rh, va):
     at = t2m + 0.33 * rh - 0.7 * va - 4
     at = np.round(at,4)
     return at
+
 
 def calculate_wind_chill(t2m, va):
     """
