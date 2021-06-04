@@ -16,10 +16,6 @@
 
 import numpy as np
 import math
-import datetime
-
-from math import cos, sin
-
 
 to_radians = np.pi / 180
 
@@ -242,10 +238,10 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
         zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
         zsolartimestart = sha * np.pi / 180 - zhalftimestep
         zsolartimeend = sha * np.pi / 180 + zhalftimestep
-        ztandec = sin(d * np.pi / 180) / max((cos(d * np.pi / 180), 1.0e-12))
+        ztandec = math.sin(d * np.pi / 180) / max((math.cos(d * np.pi / 180), 1.0e-12))
         zcoshouranglesunset = -ztandec * np.sin(latrad) / np.clip(np.cos(latrad), 1.0e-12, None) 
-        zsindecsinlat = sin(d * np.pi / 180) * np.sin(latrad)
-        zcosdeccoslat = cos(d * np.pi / 180) * np.cos(latrad)        
+        zsindecsinlat = math.sin(d * np.pi / 180) * np.sin(latrad)
+        zcosdeccoslat = math.cos(d * np.pi / 180) * np.cos(latrad)        
 
         def solar_zenith_angle_average(lonrad, zcoshouranglesunset, zsindecsinlat, zcosdeccoslat, zsolartimestart, zsolartimeend, sha):
             # start and end hour
@@ -278,7 +274,8 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
                     zhourangleend = max(-zhouranglesunset, min(zhourangleend, zhouranglesunset))
 
                 if (zhourangleend - zhouranglestart) > 1.0e-8:
-                    PMU0 = max(0.0, zsindecsinlat + (zcosdeccoslat * (sin(zhourangleend) - sin(zhouranglestart))) / (zhourangleend - zhouranglestart))
+                    PMU0 = max(0.0, zsindecsinlat + (zcosdeccoslat * (math.sin(
+                        zhourangleend) - math.sin(zhouranglestart))) / (zhourangleend - zhouranglestart))
                 else:
                     PMU0 = 0.0
 

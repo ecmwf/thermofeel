@@ -1,10 +1,11 @@
 import sys
 import eccodes
-import datetime
 import numpy as np
-import pandas as pd
 
-from ThermoFeel import *
+from math import floor
+
+from datetime import datetime, timedelta, timezone
+from thermofeel.thermofeel import *
 
 def decode_grib(fpath):
     messages = []
@@ -36,19 +37,20 @@ def decode_grib(fpath):
             md['Ni'] = eccodes.codes_get_long(msg, "Ni")
             md['Nj'] = eccodes.codes_get_long(msg, "Nj")
 
-            time = eccodes.codes_get_long(msg, "time")
-            date = eccodes.codes_get_string(msg, "date")
-            step = eccodes.codes_get_double(msg, "step")
+            md["time"] = eccodes.codes_get_long(msg, "time")
+            md["date"] = eccodes.codes_get_string(msg, "date")
+            md["step"] = eccodes.codes_get_double(msg, "step")
 
-            dateobj = pd.to_datetime(date, format='%Y%m%d')
+            ldate = eccodes.codes_get_long(msg, "date")
+            yyyy = floor(ldate/10000)
+            mm = floor((ldate-(yyyy*10000))/100)
+            dd = ldate-(yyyy*10000)-mm*100
 
-            forecast_datetime = dateobj + \
-                pd.to_timedelta(60*time/100, unit='min') + \
-                pd.to_timedelta(60*step, unit='min')
+            forecast_datetime = \
+            datetime(yyyy, mm, dd, tzinfo=timezone.utc) \
+                + timedelta(minutes=60 * md["time"] / 100) \
+                + timedelta(minutes=60 * md["step"])
 
-            md["date"] = date
-            md["step"] = step
-            md["time"] = time
             md["datetime"] = forecast_datetime
 
             # decode data
@@ -74,7 +76,7 @@ def calc_cossza(message):
 
     print(lats.size)
 
-    dt = pd.to_datetime(message["datetime"], format='%Y%m%d %H:%m:%s')
+    dt = message["datetime"]
     date = message["date"]
     time = message["time"]
     step = message["step"]
@@ -114,16 +116,11 @@ def calc_cossza(message):
 
 def main():
     try:
-
         msgs = decode_grib(sys.argv[1])
         print(msgs)
         for m in msgs:
             calc_cossza(m)
 
-        # print(calculate_solar_zenith_angle_noaa(lat=48.81667,
-        #       lon=2.28972, d=15, m=11, y=2006, h=10.58333))
-
-        # calc_heatindex(decode_singleparam(sys.argv[1]))
     except eccodes.CodesInternalError as err:
         if eccodes.VERBOSE:
             eccodes.traceback.print_exc(file=sys.stderr)

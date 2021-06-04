@@ -8,10 +8,9 @@
 
 #import statments
 import unittest
-import ThermoFeel
 import numpy as np
 import pandas as pd
-import ThermoFeel as tfc
+import thermofeel as tfc
 
 # combining the pytest library with the functionality of np testing for use with np.array file type
 

@@ -1,9 +1,6 @@
 import sys
-import datetime
 import numpy as np
-import pandas as pd
 
-import datetime
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from cartopy.feature.nightshade import Nightshade
