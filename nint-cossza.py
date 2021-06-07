@@ -31,18 +31,28 @@ def calc_cossza(message):
     latsmat = np.reshape(lats, shape)
     lonsmat = np.reshape(lons, shape)
 
-    # simpsons rule
-    t = [dt.hour - 6, dt.hour, dt.hour + 6]
-    w = (((dt.hour + 6) - (dt.hour - 6)) / 6) * np.array([1, 4, 1])
-
-    print("t = ", t)
-    print("w = ", w)
+    h_begin = 0
+    h_end = 6
+    nsplits = 10
+     
+    time_steps = np.linspace(h_begin, h_end, num=nsplits*h_end-1)
 
     integral = np.zeros(shape)
 
-    for n in range(len(w)):
-        cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=t[n])
-        integral += w[n] * np.reshape(cossza, shape)
+    for s in range(len(time_steps) - 1):
+        print(s)
+        # simpsons rule
+        ti = time_steps[s]
+        tf = time_steps[s+1]
+        t = [ti, (tf + ti) / 2, tf]
+        print(t)
+        w = ((tf - ti) / 6) * np.array([1, 4, 1])
+
+        for n in range(len(w)):
+            cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=t[n])
+            integral += w[n] * np.reshape(cossza, shape)
+
+    print(np.max(integral))
 
     fname = sys.argv[2]
     print('=> ', fname)
