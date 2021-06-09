@@ -7,6 +7,7 @@
 # nor does it submit to any jurisdiction.
 
 from math import cos, sin, pi
+import numpy as np
 
 to_radians = pi / 180
 

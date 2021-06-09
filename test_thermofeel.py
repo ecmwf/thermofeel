@@ -18,23 +18,24 @@ import thermofeel as tfc
 class TestThermalCalculator(unittest.TestCase):
     def setUp(self):
         #variables for use in thermalindexcalculator
-        t = pd.read_csv('thermofeeltestcases.csv', delimiter=',')
-        self.t2m = t[['t2m']].to_numpy()
-        self.ssr = t[['ssr']].to_numpy()
-        self.td = t[['td']].to_numpy()
-        self.va = t[['va']].to_numpy()
-        self.mrt = t[['mrt']].to_numpy()
-        self.lat = t[['lat']].to_numpy()
-        self.lon = t[['lon']].to_numpy()
-        self.y = t[['y']].to_numpy()
-        self.m = t[['m']].to_numpy()
-        self.d = t[['d']].to_numpy()
-        self.h = t[['h']].to_numpy()
-        self.ssrd = t[['ssrd']].to_numpy()
-        self.strd = t[['strd']].to_numpy()
-        self.fdir = t[['fdir']].to_numpy()
-        self.strr = t[['strr']].to_numpy()
-        self.cossza = t[['cossza']].to_numpy()
+        #t = pd.read_csv('thermofeeltestcases.csv', delimiter=',')
+        t=np.genfromtxt('thermofeeltestcases.csv',delimiter=',',names=True)
+        self.t2m = t['t2m']
+        self.ssr = t['ssr']
+        self.td = t['td']
+        self.va = t['va']
+        self.mrt = t['mrt']
+        self.lat = t['lat']
+        self.lon = t['lon']
+        self.y = t['y']
+        self.m = t['m']
+        self.d = t['d']
+        self.h = t['h']
+        self.ssrd = t['ssrd']
+        self.strd = t['strd']
+        self.fdir = t['fdir']
+        self.strr = t['strr']
+        self.cossza = t['cossza']
         #self.base = 6
         #self.step = 3
 
@@ -43,17 +44,18 @@ class TestThermalCalculator(unittest.TestCase):
         self.varnone = np.array([None,None])
 
         #indices
-        tr = pd.read_csv('thermofeeltestresults.csv', delimiter=',')
+        #tr = pd.read_csv('thermofeeltestresults.csv', delimiter=',')
+        tr = np.genfromtxt('thermofeeltestresults.csv', delimiter=',', names=True)
         self.rh = tfc.calculate_relative_humidity(self.t2m)
         self.rhpercent = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
-        self.heatindex = tr[['heatindex']].to_numpy()
-        self.utci = tr[['utci']].to_numpy()
-        self.apparenttemperature = tr[['apparenttemperature']].to_numpy()
-        self.wbgts = tr[['wbgts']].to_numpy()
-        self.wbgt = tr[['wbgt']].to_numpy()
-        self.net = tr[['net']].to_numpy()
-        self.humidex = tr[['humidex']].to_numpy()
-        self.windchill = tr[['windchill']].to_numpy()
+        self.heatindex = tr['heatindex']
+        self.utci = tr['utci']
+        self.apparenttemperature = tr['apparenttemperature']
+        self.wbgts = tr['wbgts']
+        self.wbgt = tr['wbgt']
+        self.net = tr['net']
+        self.humidex = tr['humidex']
+        self.windchill = tr['windchill']
 
 
     def assert_equal(self,result,calculation):

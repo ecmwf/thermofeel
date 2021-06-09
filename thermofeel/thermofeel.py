@@ -17,7 +17,7 @@
 import numpy as np
 import math
 
-from .helpers import __julian_date, __declination_angle, to_radians
+from .helpers import __julian_date, __declination_angle, to_radians, __wrap,__kelvin_to_celcius,__pa_to_hpa
 
 
 def calculate_relative_humidity_percent(t2m, td):
@@ -522,14 +522,20 @@ def calculate_utci(t2m, va, mrt, rh=None):
                   2.47090539E-04 * e_mrt * rh5 + \
                   1.48348065E-03 * rh6
 
-    utci_filtert2m = np.where((50 <= t2m <= -50 ))
-    utci_filterva = np.where(( 17 <= va <=0))
-    utci_filterrh = np.where((rh > 5))
-    utci_filtere_mrt = np.where((70 <= e_mrt <=-30))
+    utci_filtert2m = np.where(50 <= t2m)
+    utci_filtert2m2 = np.where(-50 >= t2m)
+    utci_filterva = np.where(17 <= va)
+    utci_filterva2 = np.where(0 >= va)
+    utci_filterrh = np.where(5 < rh)
+    utci_filtere_mrt = np.where(70 <= e_mrt)
+    utci_filtere_mrt2 = np.where(-30 >= e_mrt)
     utci_approx[utci_filtert2m] = -999
+    utci_approx[utci_filtert2m2] = -999
     utci_approx[utci_filterva] = -999
+    utci_approx[utci_filterva2] = -999
     utci_approx[utci_filterrh] = -999
     utci_approx[utci_filtere_mrt] = -999
+    utci_approx[utci_filtere_mrt2] = -999
     return utci_approx
 
 
