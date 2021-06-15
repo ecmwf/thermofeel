@@ -1,6 +1,12 @@
 Apparent Temperature
 ======================================
+Was developed by *Steadman,1984* to describe the thermal comfort/resistance of an average adult walking
+when they are exposed to certain combination of temperatures, relative humidity's and wind speed.
 
+The method used here follows the Apparent Temperature method used by the *Australian Bureau of Meteorology*
+and *Blazejczyk et al., 2011 Int J Biometeorol*
+
+Apparent temperature is similar to the Heat Index method also avaliable to calculate in *thermofeel*
 
 How To Use
 ======================================
@@ -17,3 +23,10 @@ an approximation of 1.2 meter wind speed.
 
 Interpret the Output
 ======================================
+
+Here is a suggested way to interpret you apparent temperature outputs, it is by no means the only way to go about defining thermal stress.
+
++-------------------------------+----------------------+
+|Apparant Temperature Range(°C) |"Effect on Body"      |
++===============================+======================+
+|Key         |Type                  |

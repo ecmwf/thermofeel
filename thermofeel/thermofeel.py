@@ -662,7 +662,6 @@ def calculate_apparent_temperature(t2m, va, rh= None):
     rh = __wrap(rh)
     va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
     at = t2m + 0.33 * rh - 0.7 * va - 4
-    at = np.round(at,4)
     at = __kelvin_to_celcius(at)
     return at
 
