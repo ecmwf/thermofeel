@@ -2,7 +2,7 @@ Universal Thermal Climate Index (UTCI)
 ======================================
 The universal thermal climate index (UTCI), is a bioclimatological model of an average human body’s response
 to different thermal conditions, where the subject is
-not acclimatised to the climate and is outdoors, doing minimal work
+not acclimatised to the climate and is outdoors, doing minimal work.
 
 
 How To Use

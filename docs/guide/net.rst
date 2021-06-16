@@ -19,4 +19,9 @@ an approximation of 1.2 meter wind speed.
 
 Interpret the Output
 ======================================
+Here is a suggested way for you to interpret Net Effective Temperature outputs, it is by no means the only way to go about defining thermal stress.
 
+.. csv-table:: Humidex Thresholds
+   :file: "netthresolds.csv"
+   :widths: 30, 70
+   :header-rows: 1

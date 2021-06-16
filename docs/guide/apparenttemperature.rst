@@ -6,7 +6,7 @@ when they are exposed to certain combination of temperatures, relative humidity'
 The method used here follows the Apparent Temperature method used by the *Australian Bureau of Meteorology*
 and *Blazejczyk et al., 2011 Int J Biometeorol*
 
-Apparent temperature is similar to the Heat Index method also avaliable to calculate in *thermofeel*
+Apparent temperature is similar to the Heat Index method also available to calculate in *thermofeel*
 
 How To Use
 ======================================
@@ -24,9 +24,10 @@ an approximation of 1.2 meter wind speed.
 Interpret the Output
 ======================================
 
-Here is a suggested way to interpret you apparent temperature outputs, it is by no means the only way to go about defining thermal stress.
+Here is a suggested way for you to interpret apparent temperature outputs, it is by no means the only way to go about defining thermal stress.
 
-+-------------------------------+----------------------+
-|Apparant Temperature Range(°C) |"Effect on Body"      |
-+===============================+======================+
-|Key         |Type                  |
+.. csv-table:: Apparent Temperature Thresholds
+   :file: "atthresolds.csv"
+   :widths: 30, 70
+   :header-rows: 1
+

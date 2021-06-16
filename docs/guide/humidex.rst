@@ -15,3 +15,8 @@ You need 2m temperature in kelvin and dew point temperature in kelvin.
 
 Interpret the Output
 ======================================
+
+.. csv-table:: Humidex Thresholds
+   :file: humidexthresolds.csv
+   :widths: 30, 70
+   :header-rows: 1

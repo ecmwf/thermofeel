@@ -2,9 +2,9 @@
 """
 ThermoFeel Unit/Intergration Tests
 """
-import ThermoFeel
+import thermofeel
 import voidfunction
-from ThermoFeel import *
+from thermofeel import *
 def test():
     import numpy as np
     import pandas as pd
@@ -22,7 +22,7 @@ def test():
     ssr = t[['ssr']].to_numpy()
     #print(calculate_solar_zenith_angle(np.array([40,40]),np.array([60,60]),np.array([2000,2000]),np.array([7,7]),np.array([12,12]),np.array([21,21])))
     #print(calculate_solar_zenith_angle_f(50,50,2000,3,21,14,12,3))
-    np.savetxt("mrt2.csv",calculate_mean_radiant_temperature(ssrd,ssr,fdir,strd,strr,cossza))
+    #np.savetxt("mrt2.csv",calculate_mean_radiant_temperature(ssrd/3600,ssr/3600,fdir/3600,strd/3600,strr/3600,cossza/3600))
     #print(ThermoFeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
     #print(ThermoFeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
     #print(ThermoFeel.ThermalIndexCalculator.calculate_wind_chill(t2m,va))
@@ -33,7 +33,7 @@ def test():
     #print(t2m-273.15,"t2m")
     #np.savetxt("windchill3.csv",ThermalIndexCalculator.calculate_wind_chill(t2m,va))
     #np.savetxt("rh.csv",ThermalIndexCalculator.calculate_relative_humidity(t2m))
-    # #np.savetxt("apparenttemperature.csv",ThermalIndexCalculator.calculate_apparent_temperature(t2m,rh,va))
+    np.savetxt("apparenttemperature.csv",calculate_apparent_temperature(t2m,va))
     # np.savetxt("RelativeHumid.csv",np.ravel(ThermalIndexCalculator.calculate_relative_humidity_percent(t2m,td)))
     #np.savetxt("wbgts2.csv",np.ravel(ThermalIndexCalculator.calculate_wbgts(t2m)))
     #np.savetxt("utci3.csv",calculate_utci(t2m=t2m,va=va,mrt=mrt,rh=None))
@@ -41,7 +41,7 @@ def test():
     # np.savetxt("humi.csv",ThermalIndexCalculator.calculate_humidex(t2m=t2m,td=td))
     #np.savetxt("wbgt2.csv",calculate_wbgt(t2m,mrt=mrt,va=va))
     # np.savetxt("rh.csv",ThermalIndexCalculator.calculate_rh(t2m))
-    #np.savetxt("NET.csv",ThermalIndexCalculator.calculate_net_effective_temperature(t2m, rh, va))
+    #np.savetxt("NET.csv",calculate_net_effective_temperature(t2m,va))
     #tc = ThermalIndexCalculator.calculate_solar_zenith_angle(30,40,2010,12,23,10,6,6)
     #print(tc)
 test()
