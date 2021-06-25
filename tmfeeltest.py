@@ -1,6 +1,6 @@
 
 """
-ThermoFeel Unit/Intergration Tests
+thermofeel Unit/Intergration Tests
 """
 import thermofeel
 import voidfunction
@@ -23,9 +23,9 @@ def test():
     #print(calculate_solar_zenith_angle(np.array([40,40]),np.array([60,60]),np.array([2000,2000]),np.array([7,7]),np.array([12,12]),np.array([21,21])))
     #print(calculate_solar_zenith_angle_f(50,50,2000,3,21,14,12,3))
     #np.savetxt("mrt2.csv",calculate_mean_radiant_temperature(ssrd/3600,ssr/3600,fdir/3600,strd/3600,strr/3600,cossza/3600))
-    #print(ThermoFeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
-    #print(ThermoFeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
-    #print(ThermoFeel.ThermalIndexCalculator.calculate_wind_chill(t2m,va))
+    #print(thermofeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
+    #print(thermofeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
+    #print(thermofeel.ThermalIndexCalculator.calculate_wind_chill(t2m,va))
     #t2m = np.array([330,350])
     #td= np.array([260,270])
     #va = np.array([2,2])
