@@ -10,7 +10,7 @@ import sys
 from context import thermofeel
 from math import cos, pi, radians
 
-def main():
+def test():
     
     # should return ~ 0.360303587797559
     cossza = thermofeel.calculate_cos_solar_zenith_angle(
@@ -28,4 +28,4 @@ def main():
     assert abs(cossza - cos(radians(90.0 - 61.5))) < 1e-2
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(test())
