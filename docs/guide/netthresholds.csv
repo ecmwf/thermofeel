@@ -1,0 +1,8 @@
+﻿NET ranges (°C),Thermal Stress
+< 1,Very Cold
+1 to 9,Cold
+9 to 17,Cool
+17 to 21,Fresh
+21 to 23,Comfortable
+23 to 27,Warm
+> 27,Hot
