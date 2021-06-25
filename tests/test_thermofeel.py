@@ -3,13 +3,13 @@
 thermofeel Unit/Intergration Tests
 """
 import sys
+import numpy as np
+import pandas as pd
 
 from context import thermofeel
 from thermofeel import *
 
 def test():
-    import numpy as np
-    import pandas as pd
     t = pd.read_csv('thermofeeltestcases.csv', delimiter=',')
     t2m = t[['t2m']].to_numpy()
     #t2m = 280
