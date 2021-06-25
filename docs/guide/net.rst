@@ -7,7 +7,7 @@ and an organism’s thermoregulatory capacity.
 
 How To Use
 ======================================
-You need 2m temperature in kelvin, wind speed at 10 meters
+You need 2m temperature in kelvin, wind speed at 10 meters height
 and optional relative humidity as water vapour pressure,
 because this can be calculated from 2m temperature.
 

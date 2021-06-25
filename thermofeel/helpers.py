@@ -9,6 +9,7 @@
 from math import cos, sin, pi
 import numpy as np
 
+
 to_radians = pi / 180
 
 def __julian_date(d, m, y):
@@ -44,13 +45,20 @@ def __wrap(variable):
 
 # convert farenheit to kelvin
 def __farenheit_to_kelvin(t2m):
-    t2m = (t2m + 459.67) * 5 / 9
+    t2m = 5 * (t2m - 273) / 9 + 32
     return t2m
 
+def __kelvin_to_farenheit(t2m):
+    t2m = (t2m - 273.15) * 9 / 5 + 32
+    return t2m
+
+def __farenheit_to_celcius(t2m):
+    t2m = (t2m - 32) * 5 / 9
+    return t2m
 
 # convert kelvin to celcius
 def __kelvin_to_celcius(t2m):
-    t2m = np.subtract(t2m, 273.15)
+    t2m = t2m - 273.15
     return t2m
 
 

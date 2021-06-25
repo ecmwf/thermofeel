@@ -6,51 +6,85 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-"""
-thermofeel unit tests
-"""
-import sys
+import unittest
 import numpy as np
-import pandas as pd
+from context import thermofeel as tfc
 
-from context import thermofeel
-from thermofeel import *
+# combining the pytest library with the functionality of np testing for use with np.array file type
 
-def test():
-    t = pd.read_csv('thermofeeltestcases.csv', delimiter=',')
-    t2m = t[['t2m']].to_numpy()
-    #t2m = 280
-    td = t[['td']].to_numpy()
-    va = t[['va']].to_numpy()
-    mrt = t[['mrt']].to_numpy()
-    ssrd = t[['ssrd']].to_numpy()
-    strd = t[['strd']].to_numpy()
-    fdir = t[['fdir']].to_numpy()
-    strr = t[['strr']].to_numpy()
-    cossza = t[['cossza']].to_numpy()
-    ssr = t[['ssr']].to_numpy()
-    #print(calculate_solar_zenith_angle(np.array([40,40]),np.array([60,60]),np.array([2000,2000]),np.array([7,7]),np.array([12,12]),np.array([21,21])))
-    #print(calculate_solar_zenith_angle_f(50,50,2000,3,21,14,12,3))
-    #np.savetxt("mrt2.csv",calculate_mean_radiant_temperature(ssrd/3600,ssr/3600,fdir/3600,strd/3600,strr/3600,cossza/3600))
-    #print(thermofeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
-    #print(thermofeel.ThermalIndexCalculator.calculate_relative_humidity(t2m))
-    #print(thermofeel.ThermalIndexCalculator.calculate_wind_chill(t2m,va))
-    #t2m = np.array([330,350])
-    #td= np.array([260,270])
-    #va = np.array([2,2])
-    #mrt = np.array([330,350])
-    #print(t2m-273.15,"t2m")
-    #np.savetxt("windchill3.csv",ThermalIndexCalculator.calculate_wind_chill(t2m,va))
-    #np.savetxt("rh.csv",ThermalIndexCalculator.calculate_relative_humidity(t2m))
-    np.savetxt("apparenttemperature.csv",calculate_apparent_temperature(t2m,va))
-    # np.savetxt("RelativeHumid.csv",np.ravel(ThermalIndexCalculator.calculate_relative_humidity_percent(t2m,td)))
-    #np.savetxt("wbgts2.csv",np.ravel(ThermalIndexCalculator.calculate_wbgts(t2m)))
-    #np.savetxt("utci3.csv",calculate_utci(t2m=t2m,va=va,mrt=mrt,rh=None))
-    # np.savetxt("hi.csv",ThermalIndexCalculator.calculate_heat_index(t2m=t2m,rh=rh))
-    # np.savetxt("humi.csv",ThermalIndexCalculator.calculate_humidex(t2m=t2m,td=td))
-    #np.savetxt("wbgt2.csv",calculate_wbgt(t2m,mrt=mrt,va=va))
-    # np.savetxt("rh.csv",ThermalIndexCalculator.calculate_rh(t2m))
-    #np.savetxt("NET.csv",calculate_net_effective_temperature(t2m,va))
-    #tc = ThermalIndexCalculator.calculate_solar_zenith_angle(30,40,2010,12,23,10,6,6)
-    #print(tc)
-test()
+class TestThermalCalculator(unittest.TestCase):
+    def setUp(self):
+        #variables for use in thermalindexcalculator
+        t=np.genfromtxt('thermofeeltestcases.csv',delimiter=',',names=True)
+        self.t2m = t['t2m']
+        self.ssr = t['ssr']
+        self.td = t['td']
+        self.va = t['va']
+        self.mrt = t['mrt']
+        self.lat = t['lat']
+        self.lon = t['lon']
+        self.y = t['y']
+        self.m = t['m']
+        self.d = t['d']
+        self.h = t['h']
+        self.ssrd = t['ssrd']
+        self.strd = t['strd']
+        self.fdir = t['fdir']
+        self.strr = t['strr']
+        self.cossza = t['cossza']
+
+
+        #indices
+        tr = np.genfromtxt('thermofeeltestresults.csv', delimiter=',', names=True)
+        self.rh = tfc.calculate_relative_humidity(self.t2m)
+        self.rhpercent = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
+        self.heatindex = tr['heatindex']
+        self.utci = tr['utci']
+        self.apparenttemperature = tr['apparenttemperature']
+        self.wbgts = tr['wbgts']
+        self.wbgt = tr['wbgt']
+        self.net = tr['net']
+        self.humidex = tr['humidex']
+        self.windchill = tr['windchill']
+        self.mrtr = tr['mrt']
+
+
+    def assert_equal(self,result,calculation):
+        self.assertequal = self.assertIsNone(np.testing.assert_array_almost_equal(result, calculation,decimal=6))
+
+    def test_relative_humidity(self):
+        self.assert_equal(self.rh,tfc.calculate_relative_humidity(self.t2m))
+
+    def test_relative_humidity_percent(self):
+        self.assert_equal(self.rhpercent, tfc.calculate_relative_humidity_percent(self.t2m, self.td))
+
+    def test_heat_index(self):
+        self.assert_equal(self.heatindex,tfc.calculate_heat_index(self.t2m))
+
+    def test_mean_radiant_temperature(self):
+        self.assert_equal(self.mrtr, tfc.calculate_mean_radiant_temperature(self.ssrd/3600,self.ssr/3600,self.fdir/3600,self.strd/3600,
+                                                                           self.strr/3600,self.cossza/3600))
+    def test_utci(self):
+        self.assert_equal(self.utci, tfc.calculate_utci(self.t2m, self.va, self.mrt))
+
+    def test_apparent_temperature(self):
+        self.assert_equal(self.apparenttemperature, tfc.calculate_apparent_temperature(self.t2m, self.va))
+
+    def test_wbgts(self):
+        self.assert_equal(self.wbgts, tfc.calculate_wbgts(self.t2m))
+
+    def test_wbgt(self):
+        self.assert_equal(self.wbgt, tfc.calculate_wbgt(self.t2m,self.va,self.mrt))
+
+    def test_net(self):
+        self.assert_equal(self.net, tfc.calculate_net_effective_temperature(self.t2m,self.va))
+
+    def test_humidex(self):
+        self.assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
+
+    def test_wind_chill(self):
+        self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
+
+
+if __name__ == '__main__':
+    unittest.main()
