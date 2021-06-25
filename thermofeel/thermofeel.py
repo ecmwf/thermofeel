@@ -7,7 +7,7 @@
 # nor does it submit to any jurisdiction.
 
 """
-  Thermofeel is a library that contains all the methods to calculate different heat indices.
+  thermofeel is a library that contains all the methods to calculate different heat indices.
   Relative Humidity Percentage, Relative Humidity [pa],Heat Index,Solar Zenith Angle, Mean Radiant Temperature,
   Universal Thermal Climate Index,Wet Bulb Globe Temperature Simple,Wet Bulb Globe Temperature,
   Mean Radiant Temperature from Wet Bulb Globe Temperature, Humidex, Net Effective Temperature,
