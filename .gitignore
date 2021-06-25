@@ -5,6 +5,7 @@
 __pycache*
 htmlcov
 docs/build/*
+*.csv
 *.grib
 *.npz
 *.png

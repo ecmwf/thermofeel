@@ -2,9 +2,11 @@
 """
 thermofeel Unit/Intergration Tests
 """
-import thermofeel
-# import voidfunction
+import sys
+
+from context import thermofeel
 from thermofeel import *
+
 def test():
     import numpy as np
     import pandas as pd
