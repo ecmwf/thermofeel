@@ -3,7 +3,7 @@
 thermofeel Unit/Intergration Tests
 """
 import thermofeel
-import voidfunction
+# import voidfunction
 from thermofeel import *
 def test():
     import numpy as np
