@@ -11,7 +11,18 @@ import eccodes
 from math import floor
 from datetime import datetime, timedelta, timezone
 
-def decode_grib(fpath):
+def encode_grib(msg, fout):
+    # print(f"grib msg {msg['grib']}")
+    handle = eccodes.codes_clone(msg["grib"])
+    # print(msg["paramId"])
+    eccodes.codes_set_string(handle, "paramId", msg["paramId"])
+    # print(msg["values"])
+    eccodes.codes_set_values(handle, msg["values"])        
+    eccodes.codes_write(handle, fout)
+    eccodes.codes_release(handle)
+
+
+def decode_grib(fpath, keep=False):
     messages = []
     i = 0
     with open(fpath, "rb") as f:
@@ -34,6 +45,8 @@ def decode_grib(fpath):
             #     v = eccodes.codes_get_string(msg, k)
             #     print("%s = %s" % (k, v))
             # eccodes.codes_keys_iterator_delete(it)
+
+            md["paramId"] = eccodes.codes_get_string(msg, "paramId")
 
             md['Ni'] = eccodes.codes_get_long(msg, "Ni")
             md['Nj'] = eccodes.codes_get_long(msg, "Nj")
@@ -62,7 +75,11 @@ def decode_grib(fpath):
             # print(lons)
             md["values"] = eccodes.codes_get_double_array(msg, "values")
             # print(values)
-            eccodes.codes_release(msg)
+            
+            if keep:
+                md["grib"] = msg # dont close message and keep it for writing
+            else:
+                eccodes.codes_release(msg)
 
             messages.append(md)
 

@@ -19,13 +19,6 @@ def calc_cossza(message):
 
     print(dt.year, dt.month, dt.day, dt.hour)
 
-    # scalar computation
-    # cossza = []
-    # for i in range(len(lats)):
-    #     v = calculate_cos_solar_zenith_angle_integrated(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time / 100, step=3)
-    #     # v = calculate_cos_solar_zenith_angle(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
-    #     cossza.append(v)
-
     shape = (message["Nj"], message["Ni"])
 
     latsmat = np.reshape(lats, shape)
@@ -34,28 +27,23 @@ def calc_cossza(message):
     # vectorised computation
     cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
     valsmat = np.reshape(cossza, shape)
-
-    fname = sys.argv[2]
-    print('=> ', fname)
-    np.savez(fname, lats=latsmat, lons=lonsmat, values=valsmat)
     
-    # vectorised computation
-    cossza = calculate_cos_solar_zenith_angle_integrated(
-        lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time/100, step=3)
-    valsmat = np.reshape(cossza, shape)
+    print(valsmat)
 
-    fname = sys.argv[3]
-    print('=> ', fname)
-    np.savez(fname, lats=latsmat, lons=lonsmat, values=valsmat)
+    new_msg = message.copy()
+    new_msg['values'] = valsmat
+    new_msg['paramId'] = "214001" # cossza from GRIB database
 
-
+    return new_msg
 
 def main():
+    fout = open(sys.argv[2], 'wb')
     try:
-        msgs = decode_grib(sys.argv[1])
+        msgs = decode_grib(sys.argv[1], keep=True)
         print(msgs)
         for m in msgs:
-            calc_cossza(m)
+            n = calc_cossza(m)
+            encode_grib(n, fout)
 
     except eccodes.CodesInternalError as err:
         if eccodes.VERBOSE:
