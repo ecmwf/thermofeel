@@ -1,8 +1,14 @@
+import os
 import sys
 import numpy as np
 
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..')))
+
+import thermofeel
+
 from thermofeel.thermofeel import *
-from thermofeel.grib import *
+from grib import *
 
 def calc_cossza(message):
     
