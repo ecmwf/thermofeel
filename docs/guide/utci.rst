@@ -8,7 +8,7 @@ not acclimatised to the climate and is outdoors, doing minimal work.
 How To Use
 ======================================
 You will need 2m temperature in kelvin, mean radiant temperature in kelvin,
-optional relative humidity because it can be calculated from 2m temperature and 10 meter wind speed.
+optional relative humidity because it can be calculated from 2m temperature and 10 meter height wind speed.
 
 .. code-block:: python
     calculate_utci(2m temperature,mean radiant temperature,

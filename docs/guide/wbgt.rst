@@ -20,7 +20,7 @@ You need 2m Temperature in Kelvin
 
 **This method is not tested for Windows**
 
-You need 2m Temperature in Kelvin, Mean Radiant Temperature in Kelvin and 10 meter wind speed.
+You need 2m Temperature in Kelvin, Mean Radiant Temperature in Kelvin and 10 meter height wind speed.
 
 .. code-block:: python
     calculate_wbgt(2m temperature, mean radiant temperature, wind speed)

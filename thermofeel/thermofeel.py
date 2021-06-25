@@ -16,8 +16,8 @@
 
 import numpy as np
 import math
-
-from .helpers import __julian_date, __declination_angle, to_radians, __wrap,__kelvin_to_celcius,__pa_to_hpa
+from .helpers import __julian_date, __declination_angle, to_radians, __wrap, __kelvin_to_celcius, __pa_to_hpa
+from .helpers import __kelvin_to_farenheit, __farenheit_to_celcius
 
 
 def calculate_relative_humidity_percent(t2m, td):
@@ -52,27 +52,6 @@ def calculate_relative_humidity(t2m):
         ess = ess + g[i] * pow(tk, (i - 2))
     ess = np.exp(ess) * 0.01
     return ess
-
-
-def calculate_heat_index(t2m, rh=None):
-    """
-    Heat Index
-       :param t2m: np.array 2m temperature [K]
-       :param rh: Relative Humidity [pa]
-       returns heat index [°C]
-       """
-    t2m = __wrap(t2m)
-    if rh is None:
-        rh = calculate_relative_humidity(t2m)
-    t2m = __kelvin_to_celcius(t2m)
-    rh = __pa_to_hpa(rh)
-    hiarray = [8.784695, 1.61139411, 2.338549, 0.14611605, 1.2308094E-2, 2.211732E-3,
-               7.2546E-4, 3.58E-6]
-    hi = -hiarray[0] + hiarray[1] * t2m + hiarray[2] * rh - hiarray[3] * t2m * \
-         rh - hiarray[4] * rh ** 2 + hiarray[5] * t2m ** 2 * rh + hiarray[6] * \
-         t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
-    return hi
-
 
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
@@ -109,11 +88,12 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     # solar hour angle [h.deg]
     sharad = ((h - 12) * 15 + lon + tc) * to_radians
     csza = sindec_sinlat + cosdec_coslat * np.cos(sharad)
+
     return np.clip(csza, 0, None)
 
 
 def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step):
-        """
+    """
         calculate solar zenith angle
         :param lat: (int array) latitude [degrees]
         :param lon: (int array) longitude [degrees]
@@ -129,101 +109,103 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
         returns cosine of the solar zenith angle [degrees]
         """
 
-        maxx = 0
+    maxx = 0
+    base_offset = 0
+    h_offset = 0
+    step_offset = 0
+    if base == 0:
         base_offset = 0
-        h_offset = 0
-        step_offset = 0
-        if base == 0:
-            base_offset = 0
-        if base == 6:
-            base_offset = 594
-        if base == 18:
-            base_offset = 1806
-        if base == 12:
-            base_offset = 1212 # 1200+12
+    if base == 6:
+        base_offset = 594
+    if base == 18:
+        base_offset = 1806
+    if base == 12:
+        base_offset = 1212  # 1200+12
 
-        if step == 1:
-            h_offset = 0.5
-            maxx = 32.0
-        if step == 3:
-            h_offset = 1.5
-            maxx = 14.0
-        if step == 6:
-            h_offset = 3
-            maxx = 100.0
-
-        hh = h - base_offset - h_offset
-
-        ### POTENTIAL BUG -- POSSIBLE FIX ????
-        ### This ensures we can integrate but doesn't use hours offsets
-        hh = h
+    if step == 1:
+        h_offset = 0.5
+        maxx = 32.0
+    if step == 3:
+        h_offset = 1.5
+        maxx = 14.0
+    if step == 6:
+        h_offset = 3
         maxx = 100.0
 
-        # convert to julian days counting from the beginning of the year
-        jd_ = __julian_date(d, m, y)  # julian date of data
-        jd11_ = __julian_date(1, 1, y)  # julian date 1st Jan
-        jd = jd_ - jd11_ + 1  # days since start of year
+    hh = h - base_offset - h_offset
 
-        # declination angle + time correction for solar angle
-        d, tc = __declination_angle(jd, hh)
-        drad = d * to_radians
+    ### POTENTIAL BUG -- POSSIBLE FIX ????
+    ### This ensures we can integrate but doesn't use hours offsets
+    hh = h
+    maxx = 100.0
 
-        # solar hour angle
-        sha = (hh - 12) * 15 + (lon + 180) / 2 + tc # solar hour angle
-        sharad = sha * to_radians
+    # convert to julian days counting from the beginning of the year
+    jd_ = __julian_date(d, m, y)  # julian date of data
+    jd11_ = __julian_date(1, 1, y)  # julian date 1st Jan
+    jd = jd_ - jd11_ + 1  # days since start of year
 
-        latrad = lat * to_radians
-        lonrad = (lon + 180) / 2 * to_radians
-        accumulationperiod = step  # hours
-        
-        # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2; = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
-        zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
-        zsolartimestart = sharad - zhalftimestep
-        zsolartimeend  = sharad + zhalftimestep
-        ztandec = math.sin(drad) / max((math.cos(drad), 1.0e-12))
-        zcoshouranglesunset = -ztandec * np.sin(latrad) / np.clip(np.cos(latrad), 1.0e-12, None) 
-        zsindecsinlat = math.sin(drad) * np.sin(latrad)
-        zcosdeccoslat = math.cos(drad) * np.cos(latrad)        
+    # declination angle + time correction for solar angle
+    d, tc = __declination_angle(jd, hh)
+    drad = d * to_radians
 
-        def solar_zenith_angle_average(lonrad, zcoshouranglesunset, zsindecsinlat, zcosdeccoslat, zsolartimestart, zsolartimeend, sha):
-            # start and end hour
-            def horizon(val, rrange, lonrad, zsolartimestart, zsolartimeend, maxx):
-                if (val < rrange * math.pi):
-                    zhouranglestart = zsolartimestart + lonrad - ((rrange - 1.0) * math.pi)
-                    zhourangleend = zsolartimeend + lonrad - ((rrange - 1.0) * math.pi)
-                else:
-                    if rrange < maxx:
-                        zhouranglestart, zhourangleend = \
+    # solar hour angle
+    sha = (hh - 12) * 15 + (lon + 180) / 2 + tc  # solar hour angle
+    sharad = sha * to_radians
+
+    latrad = lat * to_radians
+    lonrad = (lon + 180) / 2 * to_radians
+    accumulationperiod = step  # hours
+
+    # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2; = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
+    zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
+    zsolartimestart = sharad - zhalftimestep
+    zsolartimeend = sharad + zhalftimestep
+    ztandec = math.sin(drad) / max((math.cos(drad), 1.0e-12))
+    zcoshouranglesunset = -ztandec * np.sin(latrad) / np.clip(np.cos(latrad), 1.0e-12, None)
+    zsindecsinlat = math.sin(drad) * np.sin(latrad)
+    zcosdeccoslat = math.cos(drad) * np.cos(latrad)
+
+    def solar_zenith_angle_average(lonrad, zcoshouranglesunset, zsindecsinlat, zcosdeccoslat, zsolartimestart,
+                                   zsolartimeend, sha):
+        # start and end hour
+        def horizon(val, rrange, lonrad, zsolartimestart, zsolartimeend, maxx):
+            if (val < rrange * math.pi):
+                zhouranglestart = zsolartimestart + lonrad - ((rrange - 1.0) * math.pi)
+                zhourangleend = zsolartimeend + lonrad - ((rrange - 1.0) * math.pi)
+            else:
+                if rrange < maxx:
+                    zhouranglestart, zhourangleend = \
                         horizon(val, rrange + 2.0, lonrad, zsolartimestart, zsolartimeend, maxx)
-                    else:
-                        zhouranglestart = zsolartimestart + lonrad - (maxx + 1.0) * math.pi
-                        zhourangleend = zsolartimeend + lonrad - (maxx + 1.0) * math.pi
-
-                return (zhouranglestart, zhourangleend)
-
-            # calculating the solar zenith angle
-            
-            PMU0 = 0    
-            if zcoshouranglesunset <= 1:
-                zhouranglestart, zhourangleend = \
-                    horizon(sha * math.pi / 180 + lonrad, 2, lonrad, zsolartimestart, zsolartimeend, maxx)
-
-                if zcoshouranglesunset >= -1:
-                    zhouranglesunset = math.acos(zcoshouranglesunset)
-                    if zhourangleend <= -zhouranglesunset or zhouranglestart >= zhouranglesunset:
-                        PMU0 = 0
-                    zhouranglestart = max(-zhouranglesunset, min(zhouranglestart, zhouranglesunset))
-                    zhourangleend = max(-zhouranglesunset, min(zhourangleend, zhouranglesunset))
-
-                if (zhourangleend - zhouranglestart) > 1.0e-8:
-                    PMU0 = max(0.0, zsindecsinlat + (zcosdeccoslat * (math.sin(
-                        zhourangleend) - math.sin(zhouranglestart))) / (zhourangleend - zhouranglestart))
                 else:
-                    PMU0 = 0.0
+                    zhouranglestart = zsolartimestart + lonrad - (maxx + 1.0) * math.pi
+                    zhourangleend = zsolartimeend + lonrad - (maxx + 1.0) * math.pi
 
-            return PMU0
-        
-        return np.vectorize(solar_zenith_angle_average)(lonrad, zcoshouranglesunset, zsindecsinlat, zcosdeccoslat, zsolartimestart, zsolartimeend, sha)
+            return (zhouranglestart, zhourangleend)
+
+        # calculating the solar zenith angle
+
+        PMU0 = 0
+        if zcoshouranglesunset <= 1:
+            zhouranglestart, zhourangleend = \
+                horizon(sha * math.pi / 180 + lonrad, 2, lonrad, zsolartimestart, zsolartimeend, maxx)
+
+            if zcoshouranglesunset >= -1:
+                zhouranglesunset = math.acos(zcoshouranglesunset)
+                if zhourangleend <= -zhouranglesunset or zhouranglestart >= zhouranglesunset:
+                    PMU0 = 0
+                zhouranglestart = max(-zhouranglesunset, min(zhouranglestart, zhouranglesunset))
+                zhourangleend = max(-zhouranglesunset, min(zhourangleend, zhouranglesunset))
+
+            if (zhourangleend - zhouranglestart) > 1.0e-8:
+                PMU0 = max(0.0, zsindecsinlat + (zcosdeccoslat * (math.sin(
+                    zhourangleend) - math.sin(zhouranglestart))) / (zhourangleend - zhouranglestart))
+            else:
+                PMU0 = 0.0
+
+        return PMU0
+
+    return np.vectorize(solar_zenith_angle_average)(lonrad, zcoshouranglesunset, zsindecsinlat, zcosdeccoslat,
+                                                    zsolartimestart, zsolartimeend, sha)
 
 
 def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
@@ -242,18 +224,18 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     rsw = ssrd - ssr
     lur = strd - strr
 
-
     # calculate fp projected factor area
     gamma = np.arcsin(cossza) * 180 / np.pi
     fp = 0.308 * np.cos(np.pi / 180) * gamma * 0.998 - gamma * gamma / 50000
 
-    #filter statement for solar zenith angle
+    # filter statement for solar zenith angle
     csza_filter1 = np.where((cossza > 0.01))
     print(csza_filter1)
-    fdir[csza_filter1] = fdir[csza_filter1]/cossza[csza_filter1]
+    fdir[csza_filter1] = fdir[csza_filter1] / cossza[csza_filter1]
 
     # calculate mean radiant temperature
-    mrtcal = np.power(((1/0.0000000567) * (0.5 * strd + 0.5 * lur + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * fdir))),0.25)
+    mrtcal = np.power(
+        ((1 / 0.0000000567) * (0.5 * strd + 0.5 * lur + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * fdir))), 0.25)
 
     mrt = mrtcal
     mrt = __kelvin_to_celcius(mrt)
@@ -263,7 +245,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
 def calculate_utci(t2m, va, mrt, rh=None):
     """
         UTCI
-        :param t: (float array) is 2m temperature [K]
+        :param t2m: (float array) is 2m temperature [K]
         :param va: (float array) is wind speed at 10 meters [m/s]
         :param mrt:(float array) is mean radiant temperature [K]
         :param rh: (float array) is relative humidity [pa]
@@ -584,8 +566,9 @@ def calculate_wbgt(t2m, mrt, va):
         va = 0
     wbgt_quartic = - 1 / 2 * np.sqrt(rt3 / (rt1 * rt2 ** (1 / 3)) + \
                                      (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)) + 1 / 2 * np.sqrt((4 * a) /
-                                                                                                       np.sqrt(rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 **
-                                                                                                               ( 2 / 3)) -(2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3) - rt3 / (rt1 * rt2 ** ( 1 / 3)))
+                                     np.sqrt(rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** \
+                                     (2 / 3)) - (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3) - rt3 / (rt1 * rt2 ** \
+                                     (1 / 3)))
     wbgt_quartic = __kelvin_to_celcius(wbgt_quartic)
     return (wbgt_quartic)
 
@@ -609,6 +592,7 @@ def calculate_mrt_from_wbgt(t2m, wbgt, va):
     mrtcalculation = wbgt4 + f * dit
     mrtcalc2 = pow(mrtcalculation, 0.25)
     return (mrtcalc2)
+
 
 def calculate_humidex(t2m, td):
     """
@@ -647,7 +631,7 @@ def calculate_net_effective_temperature(t2m, va, rh=None):
     return net
 
 
-def calculate_apparent_temperature(t2m, va, rh= None):
+def calculate_apparent_temperature(t2m, va, rh=None):
     """
     Apparent Temperature version without radiation
     :param t2m: 2m Temperature [K]
@@ -678,7 +662,62 @@ def calculate_wind_chill(t2m, va):
     t2m = __wrap(t2m)
     va = __wrap(va)
     t2m = __kelvin_to_celcius(t2m)
-    va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
     va = va * 2.23694  # convert to miles per hour
     windchill = 13.12 + 0.6215 * t2m - 11.37 * va ** 0.16 + 0.3965 + t2m + va ** 0.16
     return windchill
+
+def calculate_heat_index_simplified(t2m, rh=None):
+    """
+    Heat Index
+       :param t2m: np.array 2m temperature [K]
+       :param rh: Relative Humidity [pa]
+       returns heat index [°C]
+       """
+    t2m = __wrap(t2m)
+    if rh is None:
+        rh = calculate_relative_humidity(t2m)
+    t2m = __kelvin_to_celcius(t2m)
+    rh = __pa_to_hpa(rh)
+
+    hiarray = [-8.784695, 1.61139411, 2.338549, 0.14611605, 1.2308094E-2, 2.211732E-3,
+               7.2546E-4, 3.58E-6]
+
+    hi = -hiarray[0] + hiarray[1] * t2m + hiarray[2] * rh - hiarray[3] * t2m * \
+         rh - hiarray[4] * rh ** 2 + hiarray[5] * t2m ** 2 * rh + hiarray[6] * \
+         t2m * rh ** 2 - hiarray[7] * t2m ** 2 * rh ** 2
+
+    return hi
+
+
+def calculate_heat_index_adjusted(t2m, td):
+    t2m = __wrap(t2m)
+    td = __wrap(td)
+
+    rh = calculate_relative_humidity_percent(t2m, td)
+    t2m = __kelvin_to_farenheit(t2m)
+
+    hiarray = [42.379, 2.04901523, 10.1433312, 0.22475541, 0.00683783, 0.05481717,
+               0.00122874, 0.00085282, 0.00000199]
+
+    hi = - hiarray[0] + hiarray[1] * t2m + hiarray[2] * rh - hiarray[3] * t2m * rh - \
+         hiarray[4] * t2m ** 2 - hiarray[5] * rh ** 2 + hiarray[6] * t2m ** 2 * rh + \
+         hiarray[7] * t2m * rh ** 2 - hiarray[8] * t2m ** 2 * rh ** 2
+
+    hi_filter1 = np.where(t2m > 80)
+    hi_filter2 = np.where(t2m < 112)
+    hi_filter3 = np.where(rh <= 13)
+    hi_filter4 = np.where(t2m < 87)
+    hi_filter5 = np.where(rh > 85)
+    hi_filter6 = np.where(t2m < 80)
+
+    adjustment1 = (13 - rh[hi_filter1 and hi_filter2 and hi_filter3]) / 4 * \
+                  np.sqrt(17 - np.abs(t2m[hi_filter1 and hi_filter2 and hi_filter3] - 0.95) / 17)
+    adjustment2 = (rh[hi_filter1 and hi_filter4 and hi_filter5] - 85) * \
+                  ((87 - t2m[hi_filter1 and hi_filter4 and hi_filter5]) / 5)
+    adjustment3 = 0.5 * (t2m[hi_filter6] + 61.0 + ((t2m[hi_filter6] - 68.0) * 1.2) + (rh[hi_filter6] * 0.094))
+
+    hi[hi_filter1 and hi_filter2 and hi_filter3] = hi[hi_filter1 and hi_filter2 and hi_filter3] - adjustment1
+    hi[hi_filter1 and hi_filter4 and hi_filter5] = hi[hi_filter1 and hi_filter4 and hi_filter5] - adjustment2
+    hi[hi_filter6] = adjustment3
+    hi = __farenheit_to_celcius(hi)
+    return hi
