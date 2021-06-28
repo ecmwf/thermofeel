@@ -3,7 +3,8 @@
 Currently available indexes:
  * Relative Humidity Percentage
  * Relative Humidity [pa]
- * Heat Index
+ * Heat Index Simplified
+ * Heat Index Adjusted
  * Solar Zenith Angle
  * Mean Radiant Temperature
  * Universal Thermal Climate Index
@@ -12,7 +13,8 @@ Currently available indexes:
  * Mean Radiant Temperature from Wet Bulb Globe Temperature
  * Humidex
  * Net Effective Temperature
- * Apparent Temperature and Wind Chill
+ * Apparent Temperature 
+ * and Wind Chill
 
 Installation
 ============
