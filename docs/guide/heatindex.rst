@@ -7,6 +7,12 @@ to be an indication of how hot it feels.
 The method of this index uses a multiple regression and Apparent Temperature's
 calculation of relative humidity.
 
+Here we have two methods Heat Index Simplified and Heat Index Adjusted.
+As is set out by https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml \
+
+We carry out the calculation in farenheit and then convert to celcius in keeping \
+with the other thermal indicies in this library.
+
 How To Use
 ======================================
 You need 2m temperature in kelvin and optional relative humidity
