@@ -45,6 +45,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.rh = tfc.calculate_relative_humidity(self.t2m)
         self.rhpercent = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
         self.heatindex = tr["heatindex"]
+        self.heatindexadjusted = tr["heatindexadjust"]
         self.utci = tr["utci"]
         self.apparenttemperature = tr["apparenttemperature"]
         self.wbgts = tr["wbgts"]
