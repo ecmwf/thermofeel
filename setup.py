@@ -41,7 +41,7 @@ assert version
 setuptools.setup(
     name="thermofeel",
     version=version,
-    description="A library to calculate different human comfort heat indices",
+    description="A library to calculate thermal comfort indexes",
     long_description=read("README.rst"),
     author="European Centre for Medium-Range Weather Forecasts (ECMWF)",
     author_email="software.support@ecmwf.int",
