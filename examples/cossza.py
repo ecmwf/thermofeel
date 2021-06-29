@@ -11,12 +11,9 @@ import sys
 
 import eccodes
 import numpy as np
+
 from grib import decode_grib, encode_grib
-
 from thermofeel.thermofeel import calculate_cos_solar_zenith_angle
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 
 def calc_cossza(message):
 
