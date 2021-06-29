@@ -21,7 +21,7 @@ class TestThermalCalculator(unittest.TestCase):
     def setUp(self):
         # variables for use in thermalindexcalculator
         t = np.genfromtxt(
-            data_file("thermofeeltestcases.csv"),
+            data_file("thermofeel_testcases.csv"),
             delimiter=",",
             names=True,
         )
@@ -38,7 +38,7 @@ class TestThermalCalculator(unittest.TestCase):
 
         # indices
         tr = np.genfromtxt(
-            data_file("thermofeeltestresults.csv"),
+            data_file("thermofeel_test_results.csv"),
             delimiter=",",
             names=True,
         )
