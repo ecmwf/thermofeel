@@ -9,14 +9,16 @@
 import os
 import sys
 
+import eccodes
 import numpy as np
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from grib import decode_grib, encode_grib
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
 import thermofeel
-from thermofeel.thermofeel import *
+from thermofeel.thermofeel import calculate_cos_solar_zenith_angle
 
 
 def calc_cossza(message):
