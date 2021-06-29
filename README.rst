@@ -76,6 +76,18 @@ In applying this licence, ECMWF does not waive the privileges and immunities
 granted to it by virtue of its status as an intergovernmental organisation nor
 does it submit to any jurisdiction.
 
+Citing
+======
+
+In publications, please use our paper in SoftwarX as the main citation for **thermofeel** |softwarex_doi|. 
+For referring to the latest release of **thermofeel** please use: |zenodo_doi|.
+
+Acknowledgements
+================
+Past and current funding and support for **thermofeel** is listed in the adjoning Acknowledgements_
+
+
+.. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
 
 .. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
     :target: https://badge.fury.io/py/thermofeel
