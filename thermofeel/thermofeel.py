@@ -31,7 +31,8 @@ from .helpers import (
 
 
 def calculate_relative_humidity_percent(t2m, td):
-    """Relative Humidity in percent
+    """
+    Calculate relative humidity in percent
     :param t2m: (float array) 2m temperature [K]
     :param td: (float array) dew point temperature [K]
 
@@ -46,14 +47,15 @@ def calculate_relative_humidity_percent(t2m, td):
     return rh
 
 
-def calculate_relative_humidity(t2m):
-    """Relative Humidity
+def calculate_saturation_vapour_pressure(t2m):
+    """
+    Calculate saturation vapour pressure over water
     :param t2m: (float array) 2m temperature [K]
      returns relative humidity [pa]
     """
-    t2m = __wrap(t2m)
-    t2m = __kelvin_to_celcius(t2m)
-    t2m = __kelvin_to_celcius(t2m)
+    
+    tk = __wrap(t2m)
+    tc = __kelvin_to_celcius(tk)
     g = [
         -2.8365744e3,
         -6.028076559e3,
@@ -64,10 +66,9 @@ def calculate_relative_humidity(t2m):
         -1.8680009e-13,
         2.7150305,
     ]
-    tk = t2m + 273.15
-    ess = g[7] * np.log(tk)
+    ess = g[7] * np.log(tc)
     for i in range(7):
-        ess = ess + g[i] * pow(tk, (i - 2))
+        ess += g[i] * np.power(tc, (i - 2))
     ess = np.exp(ess) * 0.01
     return ess
 
@@ -330,7 +331,7 @@ def calculate_utci(t2m, va, mrt, rh=None):
     mrt = __kelvin_to_celcius(mrt)
 
     if rh is None:
-        rh = calculate_relative_humidity(t2m)
+        rh = calculate_saturation_vapour_pressure(t2m)
 
     t2m = __kelvin_to_celcius(t2m)
     e_mrt = np.subtract(mrt, t2m)
@@ -604,7 +605,7 @@ def calculate_wbgts(t2m):
     returns Wet Bulb Globe Temperature [°C]
     """
     t2m = __wrap(t2m)
-    rh = calculate_relative_humidity(t2m)
+    rh = calculate_saturation_vapour_pressure(t2m)
     rh = __pa_to_hpa(rh)
     t2m = __kelvin_to_celcius(t2m)
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
@@ -695,7 +696,7 @@ def calculate_net_effective_temperature(t2m, va, rh=None):
     returns net effective temperature [°C]
     """
     if rh is None:
-        rh = calculate_relative_humidity(t2m)
+        rh = calculate_saturation_vapour_pressure(t2m)
     t2m = __wrap(t2m)
     va = __wrap(va)
     rh = __wrap(rh)
@@ -715,7 +716,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     returns apparent temperature [K]
     """
     if rh is None:
-        rh = calculate_relative_humidity(t2m)
+        rh = calculate_saturation_vapour_pressure(t2m)
     t2m = __wrap(t2m)
     va = __wrap(va)
     rh = __wrap(rh)
@@ -751,7 +752,7 @@ def calculate_heat_index_simplified(t2m, rh=None):
     """
     t2m = __wrap(t2m)
     if rh is None:
-        rh = calculate_relative_humidity(t2m)
+        rh = calculate_saturation_vapour_pressure(t2m)
     t2m = __kelvin_to_celcius(t2m)
     rh = __pa_to_hpa(rh)
 
