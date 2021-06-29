@@ -19,6 +19,7 @@ an approximation of 1.2 meter wind speed.
 
 
 .. highlight:: python
+
    import * from thermofeel
    calculate_heat_index(2m temperature,relative humidity,wind speed)
     
