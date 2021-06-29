@@ -6,14 +6,14 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-import os
 import sys
 
 import eccodes
 import numpy as np
-
 from grib import decode_grib, encode_grib
+
 from thermofeel.thermofeel import calculate_cos_solar_zenith_angle
+
 
 def calc_cossza(message):
 
