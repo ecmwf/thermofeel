@@ -287,7 +287,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
 
     # filter statement for solar zenith angle
     csza_filter1 = np.where((cossza > 0.01))
-    print(csza_filter1)
+    # print(csza_filter1)
     fdir[csza_filter1] = fdir[csza_filter1] / cossza[csza_filter1]
 
     # calculate mean radiant temperature
