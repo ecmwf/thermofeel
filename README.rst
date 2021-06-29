@@ -1,20 +1,22 @@
 **thermofeel** is a library to calculate human thermal comfort indexes.
 
-Currently available indexes:
- * Relative Humidity Percentage
- * Relative Humidity [pa]
+Currently calculates the thermal indexes:
+ * Universal Thermal Climate Index
+ * Mean Radiant Temperature
+ * Mean Radiant Temperature from Wet Bulb Globe Temperature
  * Heat Index Simplified
  * Heat Index Adjusted
- * Solar Zenith Angle
- * Mean Radiant Temperature
- * Universal Thermal Climate Index
- * Wet Bulb Globe Temperature Simple
- * Wet Bulb Globe Temperature
- * Mean Radiant Temperature from Wet Bulb Globe Temperature
  * Humidex
- * Net Effective Temperature
  * Apparent Temperature
  * Wind Chill
+ * Net Effective Temperature
+
+In support of the above indexes, it also calculates:
+ * Solar Zenith Angle
+ * Relative Humidity Percentage
+ * Saturation vapour pressure
+ * Wet Bulb Globe Temperature Simple
+ * Wet Bulb Globe Temperature
 
 Status
 ======
@@ -80,6 +82,7 @@ Citing
 ======
 
 In publications, please use our paper in SoftwarX as the main citation for **thermofeel** |softwarex_doi|. 
+
 For referring to the latest release of **thermofeel** please use: |zenodo_doi|.
 
 Acknowledgements
