@@ -51,7 +51,7 @@ Main contributors:
 - Chloe Brimicombe - `ECMWF <https://ecmwf.int>`_
 - Tiago Quintino - `ECMWF <https://ecmwf.int>`_
 
-See also the list of `contributors <https://github.com/ecmwf-projects/thermofeel/contributors>`_ who participated in this project.
+See also the `contributors <https://github.com/ecmwf-projects/thermofeel/contributors>`_ for a more complete list.
 
 
 License
