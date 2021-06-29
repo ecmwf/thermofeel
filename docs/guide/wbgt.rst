@@ -34,5 +34,6 @@ Here is a suggested way for you to interpret wet bulb globe temperature outputs,
 These are based upon the Wet Bulb Globe Temperature and as such might have a different accuracy for the approximation.
 
 .. csv-table:: WBGT Thresholds
+
    :file: wbgtthresholds.csv
    :header-rows: 1
