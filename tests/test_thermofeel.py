@@ -71,7 +71,11 @@ class TestThermalCalculator(unittest.TestCase):
 
     @pytest.mark.skipif(True, reason="Nope")
     def test_heat_index(self):
-        self.assert_equal(self.heatindex, tfc.calculate_heat_index(self.t2m))
+        self.assert_equal(self.heatindex, tfc.calculate_heat_index_simplified(self.t2m))
+
+    @pytest.mark.skipif(True, reason="Nope")
+    def test_heat_index_adjusted(self):
+        self.assert_equal(self.heatindex, tfc.calculate_heat_index_adjusted(self.t2m,self.td))
 
     @pytest.mark.skipif(True, reason="Nope")
     def test_mean_radiant_temperature(self):
