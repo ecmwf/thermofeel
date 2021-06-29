@@ -44,14 +44,11 @@ The main repository is hosted on GitHub, testing, bug reports and contributions 
 
 https://github.com/ecmwf-projects/thermofeel
 
-Please see the CONTRIBUTING.rst document for the best way to help.
-
-Lead developer:
-
-- Chloe Brimicombe - `ECMWF <https://ecmwf.int>`_
+Please see the _Contributing document for the best way to help.
 
 Main contributors:
 
+- Chloe Brimicombe - `ECMWF <https://ecmwf.int>`_
 - Tiago Quintino - `ECMWF <https://ecmwf.int>`_
 
 See also the list of `contributors <https://github.com/ecmwf-projects/thermofeel/contributors>`_ who participated in this project.
@@ -91,6 +88,7 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 
 .. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
+.. _Contributing: https://github.com/ecmwf-projects/thermofeel/blob/master/CONTRIBUTING.rst
 
 .. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
     :target: https://badge.fury.io/py/thermofeel
