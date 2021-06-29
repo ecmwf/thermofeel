@@ -129,32 +129,33 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
     returns cosine of the solar zenith angle [degrees]
     """
 
-    maxx = 0
-    base_offset = 0
-    h_offset = 0
-    # step_offset = 0
-    if base == 0:
-        base_offset = 0
-    if base == 6:
-        base_offset = 594
-    if base == 18:
-        base_offset = 1806
-    if base == 12:
-        base_offset = 1212  # 1200+12
+    # OLD CODE
+    # maxx = 0
+    # base_offset = 0
+    # h_offset = 0
+    # # step_offset = 0
+    # if base == 0:
+    #     base_offset = 0
+    # if base == 6:
+    #     base_offset = 594
+    # if base == 18:
+    #     base_offset = 1806
+    # if base == 12:
+    #     base_offset = 1212  # 1200+12
 
-    if step == 1:
-        h_offset = 0.5
-        maxx = 32.0
-    if step == 3:
-        h_offset = 1.5
-        maxx = 14.0
-    if step == 6:
-        h_offset = 3
-        maxx = 100.0
+    # if step == 1:
+    #     h_offset = 0.5
+    #     maxx = 32.0
+    # if step == 3:
+    #     h_offset = 1.5
+    #     maxx = 14.0
+    # if step == 6:
+    #     h_offset = 3
+    #     maxx = 100.0
 
-    hh = h - base_offset - h_offset
+    # hh = h - base_offset - h_offset
 
-    # POTENTIAL BUG -- POSSIBLE FIX ????
+    # POTENTIAL BUG in OLD CODE ABOVE -- POSSIBLE FIX BELOW -- Needs checking
     # This ensures we can integrate but doesn't use hours offsets
     hh = h
     maxx = 100.0
