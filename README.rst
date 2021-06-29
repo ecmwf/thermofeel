@@ -1,18 +1,3 @@
-.. image:: https://badge.fury.io/py/thermofeel.svg
-    :target: https://badge.fury.io/py/thermofeel
-
-.. image:: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel.svg
-    :target: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel
-
-.. image:: https://codecov.io/gh/ecmwf-projects/thermofeel/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/ecmwf-projects/thermofeel
-
-.. image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/python-publish.yml/badge.svg
-  :target: https://github.com/ecmwf-projects/thermofeel/actions
-
-.. image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/test-coverage.yml/badge.svg
-  :target: https://github.com/ecmwf-projects/thermofeel/actions
-
 **thermofeel** is a library to calculate human thermal comfort indexes.
 
 Currently available indexes:
@@ -30,6 +15,11 @@ Currently available indexes:
  * Net Effective Temperature
  * Apparent Temperature
  * Wind Chill
+
+Status
+======
+
+|pypi_release| |tag_release| |codecov| |python-publish| |test-coverage|
 
 Installation
 ============
@@ -85,3 +75,19 @@ limitations under the License.
 In applying this licence, ECMWF does not waive the privileges and immunities
 granted to it by virtue of its status as an intergovernmental organisation nor
 does it submit to any jurisdiction.
+
+
+.. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
+    :target: https://badge.fury.io/py/thermofeel
+
+.. |tag_release| image:: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel.svg
+    :target: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel
+
+.. |codecov| image:: https://codecov.io/gh/ecmwf-projects/thermofeel/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/ecmwf-projects/thermofeel
+
+.. |python-publish| image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/python-publish.yml/badge.svg
+  :target: https://github.com/ecmwf-projects/thermofeel/actions
+
+.. |test-coverage| image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/test-coverage.yml/badge.svg
+  :target: https://github.com/ecmwf-projects/thermofeel/actions
