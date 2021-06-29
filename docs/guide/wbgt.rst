@@ -35,5 +35,5 @@ These are based upon the Wet Bulb Globe Temperature and as such might have a dif
 
 .. csv-table:: WBGT Thresholds
 
-   :file: wbgtthresholds.csv
+   :file: "wbgtthresholds.csv"
    :header-rows: 1
