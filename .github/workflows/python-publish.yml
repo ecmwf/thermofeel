@@ -28,7 +28,10 @@ jobs:
 
   tests:
     name: Unit tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     needs: quality
     steps:
     - uses: actions/checkout@v2
@@ -39,11 +42,16 @@ jobs:
         python-version: '3.x'
     - run: python setup.py develop
     - run: pip install -r tests/requirements.txt
-    - run: pip install coverage
-    - run: pip freeze
-    - run: env | sort
-    # - run: pytest
-    - run: coverage run -m pytest
+    - name: Print environment
+      run: |
+        pip freeze
+        env | sort
+    - name: Run tests
+      run: pytest
+    - name: Generate Coverage
+      run: |
+        pip install coverage
+        coverage run -m pytest
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v1
       with:

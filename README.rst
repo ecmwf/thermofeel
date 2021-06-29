@@ -4,6 +4,9 @@
 .. image:: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel.svg
     :target: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel
 
+.. image:: https://codecov.io/gh/ecmwf-projects/thermofeel/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/ecmwf-projects/thermofeel
+
 **thermofeel** is a library to calculate human thermal comfort indexes.
 
 Currently available indexes:
