@@ -30,12 +30,6 @@ class TestThermalCalculator(unittest.TestCase):
         self.td = t["td"]
         self.va = t["va"]
         self.mrt = t["mrt"]
-        self.lat = t["lat"]
-        self.lon = t["lon"]
-        self.y = t["y"]
-        self.m = t["m"]
-        self.d = t["d"]
-        self.h = t["h"]
         self.ssrd = t["ssrd"]
         self.strd = t["strd"]
         self.fdir = t["fdir"]
@@ -77,7 +71,11 @@ class TestThermalCalculator(unittest.TestCase):
 
     @pytest.mark.skipif(True, reason="Nope")
     def test_heat_index(self):
-        self.assert_equal(self.heatindex, tfc.calculate_heat_index(self.t2m))
+        self.assert_equal(self.heatindex, tfc.calculate_heat_index_simplified(self.t2m))
+
+    @pytest.mark.skipif(True, reason="Nope")
+    def test_heat_index_adjusted(self):
+        self.assert_equal(self.heatindex, tfc.calculate_heat_index_adjusted(self.t2m,self.td))
 
     @pytest.mark.skipif(True, reason="Nope")
     def test_mean_radiant_temperature(self):
