@@ -24,16 +24,10 @@ def calc_cossza(message):
     print(lats.size)
 
     dt = message["datetime"]
-    # date = message["date"]
-    # time = message["time"]
-    # step = message["step"]
 
     print(dt.year, dt.month, dt.day, dt.hour)
 
     shape = (message["Nj"], message["Ni"])
-
-    # latsmat = np.reshape(lats, shape)
-    # lonsmat = np.reshape(lons, shape)
 
     # vectorised computation
     cossza = calculate_cos_solar_zenith_angle(
