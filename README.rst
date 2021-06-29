@@ -10,6 +10,9 @@
 .. image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/python-publish.yml/badge.svg
   :target: https://github.com/ecmwf-projects/thermofeel/actions
 
+.. image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/test-coverage.yml/badge.svg
+  :target: https://github.com/ecmwf-projects/thermofeel/actions
+
 **thermofeel** is a library to calculate human thermal comfort indexes.
 
 Currently available indexes:
