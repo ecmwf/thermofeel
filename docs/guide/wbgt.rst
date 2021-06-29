@@ -14,7 +14,8 @@ How To Use
 You need 2m Temperature in Kelvin
 
 .. code-block:: python
-    calculate_wbgts(2m temperature)
+   
+   calculate_wbgts(2m temperature)
 
 **Wet Bulb Globe Temperature**
 
@@ -23,7 +24,8 @@ You need 2m Temperature in Kelvin
 You need 2m Temperature in Kelvin, Mean Radiant Temperature in Kelvin and 10 meter height wind speed.
 
 .. code-block:: python
-    calculate_wbgt(2m temperature, mean radiant temperature, wind speed)
+
+   calculate_wbgt(2m temperature, mean radiant temperature, wind speed)
 
 Interpret the Output
 ======================================
