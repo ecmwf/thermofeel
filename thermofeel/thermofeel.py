@@ -131,7 +131,7 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
     maxx = 0
     base_offset = 0
     h_offset = 0
-    step_offset = 0
+    # step_offset = 0
     if base == 0:
         base_offset = 0
     if base == 6:

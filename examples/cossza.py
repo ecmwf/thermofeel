@@ -6,17 +6,13 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-import os
 import sys
 
+import eccodes
 import numpy as np
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from grib import decode_grib, encode_grib
 
-import thermofeel
-from thermofeel.thermofeel import *
+from thermofeel.thermofeel import calculate_cos_solar_zenith_angle
 
 
 def calc_cossza(message):
@@ -28,16 +24,10 @@ def calc_cossza(message):
     print(lats.size)
 
     dt = message["datetime"]
-    # date = message["date"]
-    # time = message["time"]
-    # step = message["step"]
 
     print(dt.year, dt.month, dt.day, dt.hour)
 
     shape = (message["Nj"], message["Ni"])
-
-    latsmat = np.reshape(lats, shape)
-    lonsmat = np.reshape(lons, shape)
 
     # vectorised computation
     cossza = calculate_cos_solar_zenith_angle(

@@ -9,8 +9,7 @@
 import sys
 
 import numpy as np
-
-from thermofeel.grib import decode_grib
+from grib import decode_grib
 
 
 def save(message):
@@ -34,17 +33,9 @@ def save(message):
 
 
 def main():
-    try:
-        msgs = decode_grib(sys.argv[1])
-        for m in msgs:
-            save(m)
-
-    except eccodes.CodesInternalError as err:
-        if eccodes.VERBOSE:
-            eccodes.traceback.print_exc(file=sys.stderr)
-        else:
-            sys.stderr.write(err.msg + "\n")
-        return 1
+    msgs = decode_grib(sys.argv[1])
+    for m in msgs:
+        save(m)
 
 
 if __name__ == "__main__":

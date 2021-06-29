@@ -6,16 +6,12 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-import os
 import sys
 
 import numpy as np
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from grib import decode_grib
 
-from thermofeel.thermofeel import *
+from thermofeel.thermofeel import calculate_cos_solar_zenith_angle
 
 
 def calc_cossza(message):
@@ -27,18 +23,8 @@ def calc_cossza(message):
     print(lats.size)
 
     dt = message["datetime"]
-    date = message["date"]
-    time = message["time"]
-    step = message["step"]
 
     print(dt.year, dt.month, dt.day, dt.hour)
-
-    # scalar computation
-    # cossza = []
-    # for i in range(len(lats)):
-    #     v = calculate_cos_solar_zenith_angle_integrated(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=time / 100, step=3)
-    #     # v = calculate_cos_solar_zenith_angle(lat=lats[i], lon=lons[i], y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
-    #     cossza.append(v)
 
     shape = (message["Nj"], message["Ni"])
 
@@ -76,19 +62,10 @@ def calc_cossza(message):
 
 
 def main():
-    try:
-        msgs = decode_grib(sys.argv[1])
-        print(msgs)
-        for m in msgs:
-            calc_cossza(m)
-
-    except eccodes.CodesInternalError as err:
-        if eccodes.VERBOSE:
-            eccodes.traceback.print_exc(file=sys.stderr)
-        else:
-            sys.stderr.write(err.msg + "\n")
-
-        return 1
+    msgs = decode_grib(sys.argv[1])
+    print(msgs)
+    for m in msgs:
+        calc_cossza(m)
 
 
 if __name__ == "__main__":
