@@ -9,7 +9,7 @@
 import sys
 from math import cos, pi, radians
 
-from context import thermofeel
+import thermofeel
 
 
 def test():
