@@ -14,7 +14,7 @@ Currently available indexes:
  * Humidex
  * Net Effective Temperature
  * Apparent Temperature
- * and Wind Chill
+ * Wind Chill
 
 Installation
 ============

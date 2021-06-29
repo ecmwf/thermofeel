@@ -21,7 +21,7 @@ class TestThermalCalculator(unittest.TestCase):
     def setUp(self):
         # variables for use in thermalindexcalculator
         t = np.genfromtxt(
-            data_file("thermofeeltestcases.csv"),
+            data_file("thermofeel_testcases.csv"),
             delimiter=",",
             names=True,
         )
@@ -38,13 +38,14 @@ class TestThermalCalculator(unittest.TestCase):
 
         # indices
         tr = np.genfromtxt(
-            data_file("thermofeeltestresults.csv"),
+            data_file("thermofeel_test_results.csv"),
             delimiter=",",
             names=True,
         )
-        self.rh = tfc.calculate_relative_humidity(self.t2m)
+        self.rh = tfc.calculate_saturation_vapour_pressure(self.t2m)
         self.rhpercent = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
         self.heatindex = tr["heatindex"]
+        self.heatindexadjusted = tr["heatindexadjust"]
         self.utci = tr["utci"]
         self.apparenttemperature = tr["apparenttemperature"]
         self.wbgts = tr["wbgts"]
@@ -59,25 +60,17 @@ class TestThermalCalculator(unittest.TestCase):
             np.testing.assert_array_almost_equal(result, calculation, decimal=6)
         )
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_relative_humidity(self):
-        self.assert_equal(self.rh, tfc.calculate_relative_humidity(self.t2m))
+        self.assert_equal(self.rh, tfc.calculate_saturation_vapour_pressure(self.t2m))
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_relative_humidity_percent(self):
         self.assert_equal(
             self.rhpercent, tfc.calculate_relative_humidity_percent(self.t2m, self.td)
         )
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_heat_index(self):
         self.assert_equal(self.heatindex, tfc.calculate_heat_index_simplified(self.t2m))
 
-    @pytest.mark.skipif(True, reason="Nope")
-    def test_heat_index_adjusted(self):
-        self.assert_equal(self.heatindex, tfc.calculate_heat_index_adjusted(self.t2m,self.td))
-
-    @pytest.mark.skipif(True, reason="Nope")
     def test_mean_radiant_temperature(self):
         self.assert_equal(
             self.mrtr,
@@ -91,38 +84,38 @@ class TestThermalCalculator(unittest.TestCase):
             ),
         )
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_utci(self):
         self.assert_equal(self.utci, tfc.calculate_utci(self.t2m, self.va, self.mrt))
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_apparent_temperature(self):
         self.assert_equal(
             self.apparenttemperature,
             tfc.calculate_apparent_temperature(self.t2m, self.va),
         )
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_wbgts(self):
         self.assert_equal(self.wbgts, tfc.calculate_wbgts(self.t2m))
 
-    @pytest.mark.skipif(True, reason="Nope")
-    def test_wbgt(self):
-        self.assert_equal(self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt))
-
-    @pytest.mark.skipif(True, reason="Nope")
     def test_net(self):
         self.assert_equal(
             self.net, tfc.calculate_net_effective_temperature(self.t2m, self.va)
         )
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_humidex(self):
         self.assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_wind_chill(self):
         self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
+
+    @pytest.mark.skipif(True, reason="Nope")
+    def test_heat_index_adjusted(self):
+        self.assert_equal(
+            self.heatindex, tfc.calculate_heat_index_adjusted(self.t2m, self.td)
+        )
+
+    @pytest.mark.skipif(True, reason="Nope")
+    def test_wbgt(self):
+        self.assert_equal(self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt))
 
 
 if __name__ == "__main__":
