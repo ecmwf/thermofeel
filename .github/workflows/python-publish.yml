@@ -39,9 +39,15 @@ jobs:
         python-version: '3.x'
     - run: python setup.py develop
     - run: pip install -r tests/requirements.txt
+    - run: pip install coverage
     - run: pip freeze
     - run: env | sort
-    - run: pytest
+    # - run: pytest
+    - run: coverage run -m pytest
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: true
 
   deploy:
     if: ${{ github.event_name == 'release' }}
