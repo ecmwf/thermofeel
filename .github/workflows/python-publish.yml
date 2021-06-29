@@ -64,9 +64,9 @@ jobs:
 
     - name: Check version
       run: |
-      release=${GITHUB_REF##*/}
-      version=$(python setup.py --version)
-      test "$release" == "$version"
+        release=${GITHUB_REF##*/}
+        version=$(python setup.py --version)
+        test "$release" == "$version"
 
     - name: Build and publish
       env:
