@@ -53,7 +53,7 @@ def calculate_saturation_vapour_pressure(t2m):
     :param t2m: (float array) 2m temperature [K]
      returns relative humidity [pa]
     """
-    
+
     tk = __wrap(t2m)
     tc = __kelvin_to_celcius(tk)
     g = [
