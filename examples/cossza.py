@@ -11,14 +11,11 @@ import sys
 
 import eccodes
 import numpy as np
-
 from grib import decode_grib, encode_grib
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-
-import thermofeel
 from thermofeel.thermofeel import calculate_cos_solar_zenith_angle
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 def calc_cossza(message):
@@ -38,8 +35,8 @@ def calc_cossza(message):
 
     shape = (message["Nj"], message["Ni"])
 
-    latsmat = np.reshape(lats, shape)
-    lonsmat = np.reshape(lons, shape)
+    # latsmat = np.reshape(lats, shape)
+    # lonsmat = np.reshape(lons, shape)
 
     # vectorised computation
     cossza = calculate_cos_solar_zenith_angle(
