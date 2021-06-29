@@ -13,6 +13,7 @@
 import datetime
 import os
 import sys
+
 import thermofeel
 
 top = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
@@ -22,8 +23,8 @@ master_doc = "index"
 pygments_style = "sphinx"
 # -- Project information -----------------------------------------------------
 
-project = 'thermofeel'
-author = 'ECMWF'
+project = "thermofeel"
+author = "ECMWF"
 year = datetime.datetime.now().year
 if year == 2021:
     years = "2021"
@@ -33,10 +34,8 @@ else:
 copyright = "%s, ECMWF" % (years,)
 
 
-
 # The full version, including alpha/beta/rc tags
-release = 'v1'
-
+release = "v1"
 
 
 # -- General configuration ---------------------------------------------------

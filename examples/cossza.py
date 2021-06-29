@@ -8,18 +8,19 @@
 
 import os
 import sys
+
 import numpy as np
 
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import thermofeel
-
-from thermofeel.thermofeel import *
 from grib import *
 
+import thermofeel
+from thermofeel.thermofeel import *
+
+
 def calc_cossza(message):
-    
+
     lats = message["lats"]
     lons = message["lons"]
     assert lats.size == lons.size
@@ -39,19 +40,22 @@ def calc_cossza(message):
     lonsmat = np.reshape(lons, shape)
 
     # vectorised computation
-    cossza = calculate_cos_solar_zenith_angle(lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour)
+    cossza = calculate_cos_solar_zenith_angle(
+        lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour
+    )
     valsmat = np.reshape(cossza, shape)
-    
+
     print(valsmat)
 
     new_msg = message.copy()
-    new_msg['values'] = valsmat
-    new_msg['paramId'] = "214001" # cossza from GRIB database
+    new_msg["values"] = valsmat
+    new_msg["paramId"] = "214001"  # cossza from GRIB database
 
     return new_msg
 
+
 def main():
-    fout = open(sys.argv[2], 'wb')
+    fout = open(sys.argv[2], "wb")
     try:
         msgs = decode_grib(sys.argv[1], keep=True)
         print(msgs)
@@ -63,7 +67,7 @@ def main():
         if eccodes.VERBOSE:
             eccodes.traceback.print_exc(file=sys.stderr)
         else:
-            sys.stderr.write(err.msg + '\n')
+            sys.stderr.write(err.msg + "\n")
 
         return 1
 

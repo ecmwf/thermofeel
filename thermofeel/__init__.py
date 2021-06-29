@@ -6,3 +6,5 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 from .thermofeel import *
+
+__version__ = "0.1.0"

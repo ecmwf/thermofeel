@@ -7,13 +7,15 @@
 # nor does it submit to any jurisdiction.
 
 import sys
+from datetime import datetime, timedelta, timezone
+
 import numpy as np
 
 from thermofeel.grib import *
-from datetime import datetime, timedelta, timezone
+
 
 def save(message):
-    
+
     lats = message["lats"]
     lons = message["lons"]
     vals = message["values"]
@@ -31,6 +33,7 @@ def save(message):
 
     np.savez(sys.argv[2], lats=latsmat, lons=lonsmat, values=valsmat)
 
+
 def main():
     try:
         msgs = decode_grib(sys.argv[1])
@@ -41,8 +44,8 @@ def main():
         if eccodes.VERBOSE:
             eccodes.traceback.print_exc(file=sys.stderr)
         else:
-            sys.stderr.write(err.msg + '\n')
-        return 1    
+            sys.stderr.write(err.msg + "\n")
+        return 1
 
 
 if __name__ == "__main__":

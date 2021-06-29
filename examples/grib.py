@@ -6,10 +6,11 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+from datetime import datetime, timedelta, timezone
+from math import floor
+
 import eccodes
 
-from math import floor
-from datetime import datetime, timedelta, timezone
 
 def encode_grib(msg, fout):
     # print(f"grib msg {msg['grib']}")
@@ -17,7 +18,7 @@ def encode_grib(msg, fout):
     # print(msg["paramId"])
     eccodes.codes_set_string(handle, "paramId", msg["paramId"])
     # print(msg["values"])
-    eccodes.codes_set_values(handle, msg["values"])        
+    eccodes.codes_set_values(handle, msg["values"])
     eccodes.codes_write(handle, fout)
     eccodes.codes_release(handle)
 
@@ -48,22 +49,23 @@ def decode_grib(fpath, keep=False):
 
             md["paramId"] = eccodes.codes_get_string(msg, "paramId")
 
-            md['Ni'] = eccodes.codes_get_long(msg, "Ni")
-            md['Nj'] = eccodes.codes_get_long(msg, "Nj")
+            md["Ni"] = eccodes.codes_get_long(msg, "Ni")
+            md["Nj"] = eccodes.codes_get_long(msg, "Nj")
 
             md["time"] = eccodes.codes_get_long(msg, "time")
             md["date"] = eccodes.codes_get_string(msg, "date")
             md["step"] = eccodes.codes_get_double(msg, "step")
 
             ldate = eccodes.codes_get_long(msg, "date")
-            yyyy = floor(ldate/10000)
-            mm = floor((ldate-(yyyy*10000))/100)
-            dd = ldate-(yyyy*10000)-mm*100
+            yyyy = floor(ldate / 10000)
+            mm = floor((ldate - (yyyy * 10000)) / 100)
+            dd = ldate - (yyyy * 10000) - mm * 100
 
-            forecast_datetime = \
-                datetime(yyyy, mm, dd, tzinfo=timezone.utc) \
-                + timedelta(minutes=60 * md["time"] / 100) \
+            forecast_datetime = (
+                datetime(yyyy, mm, dd, tzinfo=timezone.utc)
+                + timedelta(minutes=60 * md["time"] / 100)
                 + timedelta(minutes=60 * md["step"])
+            )
 
             md["datetime"] = forecast_datetime
 
@@ -75,9 +77,9 @@ def decode_grib(fpath, keep=False):
             # print(lons)
             md["values"] = eccodes.codes_get_double_array(msg, "values")
             # print(values)
-            
+
             if keep:
-                md["grib"] = msg # dont close message and keep it for writing
+                md["grib"] = msg  # dont close message and keep it for writing
             else:
                 eccodes.codes_release(msg)
 
