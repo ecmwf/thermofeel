@@ -5,6 +5,7 @@
 # In applying this licence, ECMWF does not waive the privileges and immunities
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
-from .thermofeel import *
+
+from .thermofeel import *  # noqa
 
 __version__ = "0.1.0"
