@@ -1,4 +1,4 @@
-**thermofeel** is a library to calculate thermal comfort indexes
+**thermofeel** is a library to calculate human thermal comfort indexes.
 
 Currently available indexes:
  * Relative Humidity Percentage

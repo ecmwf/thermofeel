@@ -9,10 +9,11 @@
 import unittest
 
 import numpy as np
+import pytest
 from context import data_file
 
 import thermofeel as tfc
-import pytest 
+
 # combining the pytest library with the functionality of np testing for use with np.array file type
 
 

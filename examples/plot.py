@@ -11,7 +11,6 @@ import sys
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
-from cartopy.feature.nightshade import Nightshade
 
 
 def plot(lats, lons, vals):

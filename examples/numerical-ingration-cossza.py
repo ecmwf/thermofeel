@@ -13,7 +13,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from grib import *
+from grib import decode_grib
 
 from thermofeel.thermofeel import *
 

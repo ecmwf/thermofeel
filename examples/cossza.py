@@ -13,7 +13,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from grib import *
+from grib import decode_grib, encode_grib
 
 import thermofeel
 from thermofeel.thermofeel import *
@@ -28,9 +28,9 @@ def calc_cossza(message):
     print(lats.size)
 
     dt = message["datetime"]
-    date = message["date"]
-    time = message["time"]
-    step = message["step"]
+    # date = message["date"]
+    # time = message["time"]
+    # step = message["step"]
 
     print(dt.year, dt.month, dt.day, dt.hour)
 

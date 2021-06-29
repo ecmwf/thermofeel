@@ -153,8 +153,8 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
 
     hh = h - base_offset - h_offset
 
-    ### POTENTIAL BUG -- POSSIBLE FIX ????
-    ### This ensures we can integrate but doesn't use hours offsets
+    # POTENTIAL BUG -- POSSIBLE FIX ????
+    # This ensures we can integrate but doesn't use hours offsets
     hh = h
     maxx = 100.0
 
@@ -175,7 +175,8 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
     lonrad = (lon + 180) / 2 * to_radians
     accumulationperiod = step  # hours
 
-    # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2; = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
+    # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2;
+    # = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
     zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
     zsolartimestart = sharad - zhalftimestep
     zsolartimeend = sharad + zhalftimestep

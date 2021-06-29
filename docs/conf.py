@@ -14,8 +14,6 @@ import datetime
 import os
 import sys
 
-import thermofeel
-
 top = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, top)
 source_suffix = ".rst"

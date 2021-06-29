@@ -8,7 +8,6 @@
 
 import sys
 
-import numpy as np
 from Magics import macro as magics
 
 

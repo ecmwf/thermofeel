@@ -7,11 +7,10 @@
 # nor does it submit to any jurisdiction.
 
 import sys
-from datetime import datetime, timedelta, timezone
 
 import numpy as np
 
-from thermofeel.grib import *
+from thermofeel.grib import decode_grib
 
 
 def save(message):

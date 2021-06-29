@@ -7,7 +7,7 @@
 # nor does it submit to any jurisdiction.
 
 import sys
-from math import cos, pi, radians
+from math import cos, radians
 
 import thermofeel
 
