@@ -16,12 +16,10 @@ It contains in total 14 methods including 9 thermal indices:
 * Universal Thermal Climate Index (UTCI)
 * Wet Bulb Globe Temperature from Mean Radiant Temperature
 * Wet Bulb Globe Temperature Approx.
-* Heat Index
+* Heat Index (Simplified and Adjusted)
 * Humidex
 * Net Effective Temperature
 * Apparent Temperature
 * Wind Chill
 
 
-Flow Diagram of thermofeel
-======================================
