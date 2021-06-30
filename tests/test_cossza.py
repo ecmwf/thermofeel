@@ -41,5 +41,5 @@ def test_calculate_cos_solar_zenith_angle_integrated():
 
 
 if __name__ == "__main__":
-    test_calculate_cos_solar_zenith_angle()
-    test_calculate_cos_solar_zenith_angle_integrated()
+    test_calculate_cos_solar_zenith_angle()  # pragma: no cover
+    test_calculate_cos_solar_zenith_angle_integrated()  # pragma: no cover
