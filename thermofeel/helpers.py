@@ -62,31 +62,27 @@ def __wrap(variable):
 
 
 # convert farenheit to kelvin
-#def __farenheit_to_kelvin(t2m):
-#    t2m = 5 * (t2m - 273) / 9 + 32
-#    return t2m
+# def __farenheit_to_kelvin(tf):
+#     tk = 5 * (tf - 273) / 9 + 32
+#     return tk
 
 
-def __kelvin_to_farenheit(t2m):
-    t2m = (t2m - 273.15) * 9 / 5 + 32
-    return t2m
-
-#convert farenheit to celcius
-def __farenheit_to_celcius(t2m):
-    t2m = (t2m - 32) * 5 / 9
-    return t2m
+# convert kelvin to farenheit
+def __kelvin_to_farenheit(tk):
+    tf = (tk - 273.15) * 9 / 5 + 32
+    return tf
 
 
 # convert kelvin to celcius
-def __kelvin_to_celcius(t2m):
-    t2m = t2m - 273.15
-    return t2m
+def __kelvin_to_celcius(tk):
+    tc = tk - 273.15
+    return tc
 
 
 # convert celcius to kelvin
-#def __celcius_to_kelvin(t2m):
-#    t2m = t2m + 273.15
-#    return t2m
+# def __celcius_to_kelvin(tc):
+#     tk = tc + 273.15
+#     return tk
 
 
 # convert from pa to hpa for e (saturation water vapour pressure)
