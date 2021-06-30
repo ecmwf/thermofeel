@@ -348,6 +348,8 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         0.25,
     )
 
+    # print(f"mrt {mrt}")
+
     return mrt
 
 
@@ -370,13 +372,16 @@ def calculate_utci(t2m, va, mrt, rh=None):
     va = __wrap(va)
     mrt = __wrap(mrt)
 
-    mrt = kelvin_to_celcius(mrt)
+    mrt_c = kelvin_to_celcius(mrt)
 
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
 
     t2m = kelvin_to_celcius(t2m)
-    e_mrt = np.subtract(mrt, t2m)
+    e_mrt = np.subtract(mrt_c, t2m)
+
+    # print(f"e_mrt {e_mrt}")
+
     rh = rh / 10.0
 
     t2m2 = t2m * t2m

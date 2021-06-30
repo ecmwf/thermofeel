@@ -37,7 +37,7 @@ def decode_grib(fpath, keep=False):
                 break
 
             i += 1
-            print("message ", i)
+            # print("message ", i)
 
             md = dict()
 
@@ -53,6 +53,10 @@ def decode_grib(fpath, keep=False):
 
             md["paramId"] = eccodes.codes_get_string(msg, "paramId")
             md["shortName"] = eccodes.codes_get_string(msg, "shortName")
+
+            sname = md["shortName"]
+
+            print(f"reading grib {sname}")
 
             md["Ni"] = eccodes.codes_get_long(msg, "Ni")
             md["Nj"] = eccodes.codes_get_long(msg, "Nj")
