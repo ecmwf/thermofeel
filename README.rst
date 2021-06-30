@@ -48,6 +48,8 @@ https://github.com/ecmwf-projects/thermofeel
 
 Please see the _Contributing document for the best way to help.
 
+.. _Contributing: https://github.com/ecmwf-projects/thermofeel/blob/master/CONTRIBUTING.rst
+
 Main contributors:
 
 - Chloe Brimicombe - `ECMWF <https://ecmwf.int>`_
@@ -90,7 +92,6 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 
 .. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
-.. _Contributing: https://github.com/ecmwf-projects/thermofeel/blob/master/CONTRIBUTING.rst
 
 .. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
     :target: https://badge.fury.io/py/thermofeel
