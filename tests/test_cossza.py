@@ -40,6 +40,21 @@ def test_calculate_cos_solar_zenith_angle_integrated():
     assert abs(cossza - 0.34495713937581207) < 1e-6
 
 
+def test_solar_declination_angle():
+    sda1, tc1 = thermofeel.solar_declination_angle(jd=166, h=0)
+    assert abs(sda1 - 23.32607701732299) < 1e-6
+    assert abs(tc1 - -0.054061457069008334) < 1e-6
+
+    sda2, tc2 = thermofeel.solar_declination_angle(jd=4, h=12)
+    assert abs(sda2 - -22.64240042915207) < 1e-6
+    assert abs(tc2 - -1.219397058249299) < 1e-6
+
+    sda3, tc3 = thermofeel.solar_declination_angle(jd=600, h=3)
+    assert abs(sda3 - 11.471993171760428) < 1e-6
+    assert abs(tc3 - -0.7161824119549858) < 1e-6
+
+
 if __name__ == "__main__":
     test_calculate_cos_solar_zenith_angle()  # pragma: no cover
     test_calculate_cos_solar_zenith_angle_integrated()  # pragma: no cover
+    test_solar_declination_angle()  # pragma: no cover

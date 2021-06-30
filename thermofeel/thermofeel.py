@@ -21,6 +21,7 @@
     * Net Effective Temperature
 
     In support of the above indexes, it also calculates:
+    * Solar Declination Angle
     * Solar Zenith Angle
     * Relative Humidity Percentage
     * Saturation vapour pressure
@@ -34,7 +35,6 @@ import math
 import numpy as np
 
 from .helpers import (
-    __declination_angle,
     __farenheit_to_celcius,
     __julian_date,
     __kelvin_to_celcius,
@@ -43,6 +43,33 @@ from .helpers import (
     __wrap,
     to_radians,
 )
+
+
+# solar declination angle [degrees] + time correction for solar angle
+def solar_declination_angle(jd, h):
+    g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
+    while g > 360:
+        g = g - 360
+    grad = g * to_radians
+    # declination in [degrees]
+    d = (
+        0.396372
+        - 22.91327 * math.cos(grad)
+        + 4.025430 * math.sin(grad)
+        - 0.387205 * math.cos(2 * grad)
+        + 0.051967 * math.sin(2 * grad)
+        - 0.154527 * math.cos(3 * grad)
+        + 0.084798 * math.sin(3 * grad)
+    )
+    # time correction in [ h.degrees ]
+    tc = (
+        0.004297
+        + 0.107029 * math.cos(grad)
+        - 1.837877 * math.sin(grad)
+        - 0.837378 * math.cos(2 * grad)
+        - 2.340475 * math.sin(2 * grad)
+    )
+    return d, tc
 
 
 def calculate_relative_humidity_percent(t2m, td):
@@ -112,7 +139,7 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     jd = jd_ - jd11_ + 1  # days since start of year
 
     # declination angle + time correction for solar angle
-    d, tc = __declination_angle(jd, h)
+    d, tc = solar_declination_angle(jd, h)
     drad = d * to_radians
 
     latrad = lat * to_radians
@@ -181,7 +208,7 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
     jd = jd_ - jd11_ + 1  # days since start of year
 
     # declination angle + time correction for solar angle
-    d, tc = __declination_angle(jd, hh)
+    d, tc = solar_declination_angle(jd, hh)
     drad = d * to_radians
 
     # solar hour angle
