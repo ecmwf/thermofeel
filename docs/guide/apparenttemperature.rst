@@ -30,7 +30,7 @@ Interpret the Output
 Here is a suggested way for you to interpret apparent temperature outputs, it is by no means the only way to go about defining thermal stress.
 
 .. csv-table:: Apparent Temperature
-   :file: "atthresholds.csv"
+   :file: atthresholds.csv
    :header-rows: 1
    :class: longtable
    :widths: 1 1
