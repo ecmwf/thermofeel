@@ -45,7 +45,7 @@ The main repository is hosted on GitHub, testing, bug reports and contributions 
 
 https://github.com/ecmwf-projects/thermofeel
 
-Please see the _Contributing document for the best way to help.
+Please see the _Contributing_ document for the best way to help.
 
 Main contributors:
 
