@@ -1,20 +1,27 @@
 **thermofeel** is a library to calculate human thermal comfort indexes.
 
-Currently available indexes:
- * Relative Humidity Percentage
- * Relative Humidity [pa]
+Currently calculates the thermal indexes:
+ * Universal Thermal Climate Index
+ * Mean Radiant Temperature
+ * Mean Radiant Temperature from Wet Bulb Globe Temperature
  * Heat Index Simplified
  * Heat Index Adjusted
- * Solar Zenith Angle
- * Mean Radiant Temperature
- * Universal Thermal Climate Index
- * Wet Bulb Globe Temperature Simple
- * Wet Bulb Globe Temperature
- * Mean Radiant Temperature from Wet Bulb Globe Temperature
  * Humidex
- * Net Effective Temperature
  * Apparent Temperature
  * Wind Chill
+ * Net Effective Temperature
+
+In support of the above indexes, it also calculates:
+ * Solar Zenith Angle
+ * Relative Humidity Percentage
+ * Saturation vapour pressure
+ * Wet Bulb Globe Temperature Simple
+ * Wet Bulb Globe Temperature
+
+Status
+======
+
+|pypi_release| |tag_release| |codecov| |python-publish| |test-coverage|
 
 Installation
 ============
@@ -37,17 +44,14 @@ The main repository is hosted on GitHub, testing, bug reports and contributions 
 
 https://github.com/ecmwf-projects/thermofeel
 
-Please see the CONTRIBUTING.rst document for the best way to help.
-
-Lead developer:
-
-- Chloe Brimicombe - `ECMWF <https://ecmwf.int>`_
+Please see the _Contributing document for the best way to help.
 
 Main contributors:
 
+- Chloe Brimicombe - `ECMWF <https://ecmwf.int>`_
 - Tiago Quintino - `ECMWF <https://ecmwf.int>`_
 
-See also the list of `contributors <https://github.com/ecmwf-projects/thermofeel/contributors>`_ who participated in this project.
+See also the `contributors <https://github.com/ecmwf-projects/thermofeel/contributors>`_ for a more complete list.
 
 
 License
@@ -70,3 +74,33 @@ limitations under the License.
 In applying this licence, ECMWF does not waive the privileges and immunities
 granted to it by virtue of its status as an intergovernmental organisation nor
 does it submit to any jurisdiction.
+
+Citing
+======
+
+In publications, please use our paper in SoftwarX as the main citation for **thermofeel** |softwarex_doi|. 
+
+For referring to the latest release of **thermofeel** please use: |zenodo_doi|.
+
+Acknowledgements
+================
+Past and current funding and support for **thermofeel** is listed in the adjoning Acknowledgements_
+
+
+.. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
+.. _Contributing: https://github.com/ecmwf-projects/thermofeel/blob/master/CONTRIBUTING.rst
+
+.. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
+    :target: https://badge.fury.io/py/thermofeel
+
+.. |tag_release| image:: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel.svg
+    :target: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel
+
+.. |codecov| image:: https://codecov.io/gh/ecmwf-projects/thermofeel/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/ecmwf-projects/thermofeel
+
+.. |python-publish| image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/python-publish.yml/badge.svg
+  :target: https://github.com/ecmwf-projects/thermofeel/actions
+
+.. |test-coverage| image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/test-coverage.yml/badge.svg
+  :target: https://github.com/ecmwf-projects/thermofeel/actions
