@@ -107,11 +107,11 @@ class TestThermalCalculator(unittest.TestCase):
     def test_wind_chill(self):
         self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
 
-    #@pytest.mark.skipif(True, reason="Nope")
+    # @pytest.mark.skipif(True, reason="Nope")
     def test_heat_index_adjusted(self):
-        self.assert_equal(self.heatindexadjusted, 
-                          tfc.calculate_heat_index_adjusted(self.t2m, self.td))
-
+        self.assert_equal(
+            self.heatindexadjusted, tfc.calculate_heat_index_adjusted(self.t2m, self.td)
+        )
 
     @pytest.mark.skipif(True, reason="Nope")
     def test_wbgt(self):
