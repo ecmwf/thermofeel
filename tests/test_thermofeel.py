@@ -12,7 +12,7 @@ import numpy as np
 from context import data_file
 
 import thermofeel.thermofeel as tfc
-from thermofeel.thermofeel.helpers import __celcius_to_kelvin as celcius_to_kelvin
+from thermofeel.helpers import __celcius_to_kelvin as celcius_to_kelvin
 
 # import pytest
 
