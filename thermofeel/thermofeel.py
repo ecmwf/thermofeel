@@ -671,7 +671,6 @@ def calculate_mrt_from_wbgt(t2m, wbgt, va):
     :param t2m: 2m temperature [K]
     :param wbgt: wet bulb globe temperature in kelvin [K]
     :param va: wind speed at 10 meters [m/s]
-
     returns mean radiant temperature [K]
     """
     t2m = __wrap(t2m)

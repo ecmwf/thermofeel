@@ -13,7 +13,7 @@ import pytest
 from context import data_file
 
 import thermofeel.thermofeel as tfc
-from thermofeel.helpers import __celcius_to_kelvin as celcius_to_kelvin
+from thermofeel.thermofeel.helpers import __celcius_to_kelvin as celcius_to_kelvin
 
 # combining the pytest library with the functionality of np testing for use with np.array file type
 
@@ -55,17 +55,16 @@ class TestThermalCalculator(unittest.TestCase):
         self.humidex = tr["humidex"]
         self.windchill = tr["windchill"]
         self.mrtr = tr["mrt"]
+        self.mrtw =tr["mrtw"]
 
     def assert_equal(self, result, calculation):
         self.assertequal = self.assertIsNone(
             np.testing.assert_array_almost_equal(result, calculation, decimal=6)
         )
-
     def assert_equal_less_precise(self, result, calculation):
         self.assertequal = self.assertIsNone(
             np.testing.assert_array_almost_equal(result, calculation, decimal=1)
         )
-
     def test_relative_humidity(self):
         self.assert_equal(self.rh, tfc.calculate_saturation_vapour_pressure(self.t2m))
 
@@ -119,17 +118,12 @@ class TestThermalCalculator(unittest.TestCase):
         )
 
     def test_wbgt(self):
-        self.assert_equal_less_precise(
-            self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt)
-        )
+        self.assert_equal_less_precise(self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt))
 
-    # needs checking
-    @pytest.mark.skipif(True, reason="Nope")
     def test_mrt_from_wbgt(self):
         wbgt_k = celcius_to_kelvin(self.wbgt)
         mrt = tfc.calculate_mrt_from_wbgt(self.t2m, wbgt_k, self.va)
-        self.assert_equal_less_precise(self.mrtr, mrt)
-
+        self.assert_equal_less_precise(self.mrtw, mrt)
 
 if __name__ == "__main__":
-    unittest.main()  # pragma: no cover
+    unittest.main()
