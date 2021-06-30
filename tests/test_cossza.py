@@ -52,7 +52,8 @@ def test_solar_declination_angle():
     sda3, tc3 = thermofeel.solar_declination_angle(jd=600, h=3)
     assert abs(sda3 - 11.471993171760428) < 1e-6
     assert abs(tc3 - -0.7161824119549858) < 1e-6
-    
+
+
 if __name__ == "__main__":
     test_calculate_cos_solar_zenith_angle()  # pragma: no cover
     test_calculate_cos_solar_zenith_angle_integrated()  # pragma: no cover
