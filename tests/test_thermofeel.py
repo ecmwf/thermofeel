@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 from context import data_file
 
-import thermofeel as tfc
+import thermofeel.thermofeel as tfc
 
 # combining the pytest library with the functionality of np testing for use with np.array file type
 
@@ -107,11 +107,10 @@ class TestThermalCalculator(unittest.TestCase):
     def test_wind_chill(self):
         self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
 
-    @pytest.mark.skipif(True, reason="Nope")
+    #@pytest.mark.skipif(True, reason="Nope")
     def test_heat_index_adjusted(self):
-        self.assert_equal(
-            self.heatindex, tfc.calculate_heat_index_adjusted(self.t2m, self.td)
-        )
+        self.assert_equal(self.heatindexadjusted, tfc.calculate_heat_index_adjusted(self.t2m, self.td))
+
 
     @pytest.mark.skipif(True, reason="Nope")
     def test_wbgt(self):
