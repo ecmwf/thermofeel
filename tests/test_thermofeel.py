@@ -59,7 +59,10 @@ class TestThermalCalculator(unittest.TestCase):
         self.assertequal = self.assertIsNone(
             np.testing.assert_array_almost_equal(result, calculation, decimal=6)
         )
-
+    def assert_equal_less_precise(self, result, calculation):
+        self.assertequal = self.assertIsNone(
+            np.testing.assert_array_almost_equal(result, calculation, decimal=1)
+        )
     def test_relative_humidity(self):
         self.assert_equal(self.rh, tfc.calculate_saturation_vapour_pressure(self.t2m))
 
@@ -107,15 +110,17 @@ class TestThermalCalculator(unittest.TestCase):
     def test_wind_chill(self):
         self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
 
-    #@pytest.mark.skipif(True, reason="Nope")
     def test_heat_index_adjusted(self):
         self.assert_equal(self.heatindexadjusted, tfc.calculate_heat_index_adjusted(self.t2m, self.td))
 
 
-    @pytest.mark.skipif(True, reason="Nope")
     def test_wbgt(self):
-        self.assert_equal(self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt))
+        self.assert_equal_less_precise(self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt))
 
+    #needs checking
+    def test_mrt_from_wbgt(self):
+        self.assert_equal_less_precise(self.mrtr,
+                                       tfc.calculate_mrt_from_wbgt(self.t2m,self.wbgt,self.va))
 
 if __name__ == "__main__":
     unittest.main()
