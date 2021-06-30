@@ -21,6 +21,7 @@
     * Net Effective Temperature
 
     In support of the above indexes, it also calculates:
+    * Solar Declination Angle
     * Solar Zenith Angle
     * Relative Humidity Percentage
     * Saturation vapour pressure
