@@ -21,7 +21,8 @@ Interpret the Output
 ======================================
 Here is a suggested way for you to interpret Net Effective Temperature outputs, it is by no means the only way to go about defining thermal stress.
 
-.. csv-table:: Humidex Thresholds
-   :file: "netthresolds.csv"
-   :widths: 30, 70
+.. csv-table:: NET Thresholds
+   :file: netthresholds.csv
    :header-rows: 1
+   :class: longtable
+   :widths: 1 1

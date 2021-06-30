@@ -17,3 +17,9 @@ optional relative humidity because it can be calculated from 2m temperature and 
 
 Interpret the Output
 ======================================
+
+.. csv-table:: UTCI Thresholds
+   :file: utcithresholds.csv
+   :header-rows: 1
+   :class: longtable
+   :widths: 1 1

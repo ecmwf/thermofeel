@@ -28,6 +28,7 @@ Here is a suggested way for you to interpret heat index outputs, it is by no mea
 Heat Index and Apparent Temperature have the same thresholds.
 
 .. csv-table:: Heat Index Thresholds
-   :file: atthresolds.csv
-   :widths: 30, 70
+   :file: atthresholds.csv
    :header-rows: 1
+   :class: longtable
+   :widths: 1 1

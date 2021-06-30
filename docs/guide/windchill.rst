@@ -15,3 +15,8 @@ this method converts wind speed to 2 meter as an approximation for 1.2 meter win
 
 Interpret the Output
 ======================================
+.. csv-table:: Wind Chill Thresholds
+   :file: windchillthresholds.csv
+   :header-rows: 1
+   :class: longtable
+   :widths: 1 1
