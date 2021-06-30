@@ -111,8 +111,9 @@ class TestThermalCalculator(unittest.TestCase):
         self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
 
     def test_heat_index_adjusted(self):
-        self.assert_equal(self.heatindexadjusted, tfc.calculate_heat_index_adjusted(self.t2m, self.td))
-
+        self.assert_equal(
+            self.heatindexadjusted, tfc.calculate_heat_index_adjusted(self.t2m, self.td)
+        )
 
     def test_wbgt(self):
         self.assert_equal_less_precise(self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt))
