@@ -18,8 +18,11 @@ def encode_grib(msg, fout):
     if "edition" in msg:
         eccodes.codes_set_long(handle, "edition", msg["edition"])
 
-    eccodes.codes_set_string(handle, "paramId", msg["paramId"])
+    paramId = msg["paramId"]
+    print(f"grib {paramId}")
+    eccodes.codes_set_string(handle, "paramId", paramId)
     eccodes.codes_set_values(handle, msg["values"])
+
     eccodes.codes_write(handle, fout)
     eccodes.codes_release(handle)
 

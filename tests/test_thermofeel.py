@@ -12,7 +12,7 @@ import numpy as np
 from context import data_file
 
 import thermofeel.thermofeel as tfc
-from thermofeel.helpers import __celcius_to_kelvin as celcius_to_kelvin
+from thermofeel.helpers import celcius_to_kelvin
 
 # import pytest
 
@@ -82,7 +82,7 @@ class TestThermalCalculator(unittest.TestCase):
 
     def test_mean_radiant_temperature(self):
         self.assert_equal(
-            self.mrtr,
+            celcius_to_kelvin(self.mrtr),
             tfc.calculate_mean_radiant_temperature(
                 self.ssrd / 3600,
                 self.ssr / 3600,

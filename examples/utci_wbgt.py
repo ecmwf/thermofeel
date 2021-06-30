@@ -41,12 +41,12 @@ def calc_10m_wind_speed(messages):
 
 def calc_mrt(messages):
 
-    ssrd = messages["ssrd"]["values"]
-    ssr = messages["ssr"]["values"]
-    fdir = messages["fdir"]["values"]
-    strd = messages["strd"]["values"]
-    strr = messages["str"]["values"]
-    cossza = messages["uvcossza"]["values"]
+    ssrd = messages["ssrd"]["values"] / 3600
+    ssr = messages["ssr"]["values"] / 3600
+    fdir = messages["fdir"]["values"] / 3600
+    strd = messages["strd"]["values"] / 3600
+    strr = messages["str"]["values"] / 3600
+    cossza = messages["uvcossza"]["values"] / 3600
 
     mrt = calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza)
 
@@ -64,7 +64,13 @@ def calc_utci(messages):
     speed = messages["10si"]["values"]
     mrt = messages["mrt"]["values"]
 
+    print(f"{t2m}")
+    print(f"{speed}")
+    print(f"{mrt}")
+
     utci = calculate_utci(t2m, speed, mrt)
+
+    print(f"{utci}")
 
     m = messages["2t"].copy()
     m["values"] = utci

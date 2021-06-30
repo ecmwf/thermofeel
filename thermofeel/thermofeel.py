@@ -35,12 +35,12 @@ import math
 import numpy as np
 
 from .helpers import (
-    __farenheit_to_celcius,
-    __julian_date,
-    __kelvin_to_celcius,
-    __kelvin_to_farenheit,
-    __pa_to_hpa,
     __wrap,
+    farenheit_to_celcius,
+    kelvin_to_celcius,
+    kelvin_to_farenheit,
+    pa_to_hpa,
+    to_julian_date,
     to_radians,
 )
 
@@ -97,7 +97,8 @@ def calculate_saturation_vapour_pressure(t2m):
     """
 
     tk = __wrap(t2m)
-    tc = __kelvin_to_celcius(tk)
+    tc = kelvin_to_celcius(tk).clip(min=0.0001)
+
     g = [
         -2.8365744e3,
         -6.028076559e3,
@@ -134,8 +135,8 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
 
     # convert to julian days counting from the beginning of the year
-    jd_ = __julian_date(d, m, y)  # julian date of data
-    jd11_ = __julian_date(1, 1, y)  # julian date 1st Jan
+    jd_ = to_julian_date(d, m, y)  # julian date of data
+    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
     jd = jd_ - jd11_ + 1  # days since start of year
 
     # declination angle + time correction for solar angle
@@ -203,8 +204,8 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
     maxx = 100.0
 
     # convert to julian days counting from the beginning of the year
-    jd_ = __julian_date(d, m, y)  # julian date of data
-    jd11_ = __julian_date(1, 1, y)  # julian date 1st Jan
+    jd_ = to_julian_date(d, m, y)  # julian date of data
+    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
     jd = jd_ - jd11_ + 1  # days since start of year
 
     # declination angle + time correction for solar angle
@@ -335,7 +336,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     fdir[csza_filter1] = fdir[csza_filter1] / cossza[csza_filter1]
 
     # calculate mean radiant temperature
-    mrtcal = np.power(
+    mrt = np.power(
         (
             (1 / 0.0000000567)
             * (
@@ -347,8 +348,6 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         0.25,
     )
 
-    mrt = mrtcal
-    mrt = __kelvin_to_celcius(mrt)
     return mrt
 
 
@@ -371,12 +370,12 @@ def calculate_utci(t2m, va, mrt, rh=None):
     va = __wrap(va)
     mrt = __wrap(mrt)
 
-    mrt = __kelvin_to_celcius(mrt)
+    mrt = kelvin_to_celcius(mrt)
 
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
 
-    t2m = __kelvin_to_celcius(t2m)
+    t2m = kelvin_to_celcius(t2m)
     e_mrt = np.subtract(mrt, t2m)
     rh = rh / 10.0
 
@@ -649,8 +648,8 @@ def calculate_wbgts(t2m):
     """
     t2m = __wrap(t2m)
     rh = calculate_saturation_vapour_pressure(t2m)
-    rh = __pa_to_hpa(rh)
-    t2m = __kelvin_to_celcius(t2m)
+    rh = pa_to_hpa(rh)
+    t2m = kelvin_to_celcius(t2m)
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
@@ -688,7 +687,7 @@ def calculate_wbgt(t2m, mrt, va):
         - (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
         - rt3 / (rt1 * rt2 ** (1 / 3))
     )
-    wbgt_quartic = __kelvin_to_celcius(wbgt_quartic)
+    wbgt_quartic = kelvin_to_celcius(wbgt_quartic)
     return wbgt_quartic
 
 
@@ -708,7 +707,7 @@ def calculate_mrt_from_wbgt(t2m, wbgt, va):
     wbgt4 = wbgt ** 4
     mrtc = wbgt4 + f * (wbgt - t2m)
     mrtc2 = np.sqrt(np.sqrt(mrtc))
-    return __kelvin_to_celcius(mrtc2)
+    return kelvin_to_celcius(mrtc2)
 
 
 def calculate_humidex(t2m, td):
@@ -741,8 +740,8 @@ def calculate_net_effective_temperature(t2m, va, rh=None):
     t2m = __wrap(t2m)
     va = __wrap(va)
     rh = __wrap(rh)
-    t2m = __kelvin_to_celcius(t2m)
-    rh = __pa_to_hpa(rh)
+    t2m = kelvin_to_celcius(t2m)
+    rh = pa_to_hpa(rh)
     ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
     net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
     return net
@@ -763,7 +762,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     rh = __wrap(rh)
     va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
     at = t2m + 0.33 * rh - 0.7 * va - 4
-    at = __kelvin_to_celcius(at)
+    at = kelvin_to_celcius(at)
     return at
 
 
@@ -778,7 +777,7 @@ def calculate_wind_chill(t2m, va):
     """
     t2m = __wrap(t2m)
     va = __wrap(va)
-    t2m = __kelvin_to_celcius(t2m)
+    t2m = kelvin_to_celcius(t2m)
     va = va * 2.23694  # convert to miles per hour
     windchill = 13.12 + 0.6215 * t2m - 11.37 * va ** 0.16 + 0.3965 + t2m + va ** 0.16
     return windchill
@@ -794,8 +793,8 @@ def calculate_heat_index_simplified(t2m, rh=None):
     t2m = __wrap(t2m)
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
-    t2m = __kelvin_to_celcius(t2m)
-    rh = __pa_to_hpa(rh)
+    t2m = kelvin_to_celcius(t2m)
+    rh = pa_to_hpa(rh)
 
     hiarray = [
         -8.784695,
@@ -827,7 +826,7 @@ def calculate_heat_index_adjusted(t2m, td):
     td = __wrap(td)
 
     rh = calculate_relative_humidity_percent(t2m, td)
-    t2m = __kelvin_to_farenheit(t2m)
+    t2m = kelvin_to_farenheit(t2m)
 
     hiarray = [
         42.379,
@@ -884,5 +883,5 @@ def calculate_heat_index_adjusted(t2m, td):
         hi[hi_filter1 and hi_filter4 and hi_filter5] - adjustment2
     )
     hi[hi_filter6] = adjustment3
-    hi = __farenheit_to_celcius(hi)
+    hi = farenheit_to_celcius(hi)
     return hi
