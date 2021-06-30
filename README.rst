@@ -10,14 +10,15 @@ Currently calculates the thermal indexes:
  * Apparent Temperature
  * Wind Chill
  * Net Effective Temperature
-
+ * Wet Bulb Globe Temperature Simple
+ * Wet Bulb Globe Temperature
+ 
 In support of the above indexes, it also calculates:
  * Solar Declination Angle
  * Solar Zenith Angle
  * Relative Humidity Percentage
  * Saturation vapour pressure
- * Wet Bulb Globe Temperature Simple
- * Wet Bulb Globe Temperature
+
 
 Status
 ======
