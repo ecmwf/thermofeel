@@ -19,6 +19,7 @@ You need 2m temperature in kelvin and optional relative humidity
 as water vapour pressure, because this can be calculated from 2m temperature.
 
 .. code-block:: python
+
     calculate_heat_index(2m temperature,relative humidity)
 
 
@@ -28,7 +29,7 @@ Here is a suggested way for you to interpret heat index outputs, it is by no mea
 Heat Index and Apparent Temperature have the same thresholds.
 
 .. csv-table:: Heat Index Thresholds
-   :file: atthresholds.csv
+   :file: "atthresholds.csv"
    :header-rows: 1
    :class: longtable
    :widths: 1 1
