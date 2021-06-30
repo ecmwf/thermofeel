@@ -6,11 +6,12 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-from math import cos, pi, sin
+import math
+from math import cos, sin
 
 import numpy as np
 
-to_radians = pi / 180
+to_radians = math.pi / 180
 
 
 def __julian_date(d, m, y):
@@ -86,9 +87,9 @@ def __farenheit_to_celcius(tf):
 
 
 # convert celcius to kelvin
-# def __celcius_to_kelvin(tc):
-#     tk = tc + 273.15
-#     return tk
+def __celcius_to_kelvin(tc):
+    tk = tc + 273.15
+    return tk
 
 
 # convert from pa to hpa for e (saturation water vapour pressure)

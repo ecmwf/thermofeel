@@ -680,10 +680,9 @@ def calculate_mrt_from_wbgt(t2m, wbgt, va):
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
     wbgt4 = wbgt ** 4
-    dit = wbgt - t2m
-    mrtcalculation = wbgt4 + f * dit
-    mrtcalc2 = pow(mrtcalculation, 0.25)
-    return mrtcalc2
+    mrtc = wbgt4 + f * (wbgt - t2m)
+    mrtc2 = np.sqrt(np.sqrt(mrtc))
+    return __kelvin_to_celcius(mrtc2)
 
 
 def calculate_humidex(t2m, td):
