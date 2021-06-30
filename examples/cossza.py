@@ -40,6 +40,7 @@ def calc_cossza(message):
     new_msg = message.copy()
     new_msg["values"] = valsmat
     new_msg["paramId"] = "214001"  # cossza from GRIB database
+    new_msg["shortName"] = "cossza"  # cossza from GRIB database
 
     return new_msg
 

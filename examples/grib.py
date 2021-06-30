@@ -13,11 +13,12 @@ import eccodes
 
 
 def encode_grib(msg, fout):
-    # print(f"grib msg {msg['grib']}")
+    # print(f"{msg}")
     handle = eccodes.codes_clone(msg["grib"])
-    # print(msg["paramId"])
+    if "edition" in msg:
+        eccodes.codes_set_long(handle, "edition", msg["edition"])
+
     eccodes.codes_set_string(handle, "paramId", msg["paramId"])
-    # print(msg["values"])
     eccodes.codes_set_values(handle, msg["values"])
     eccodes.codes_write(handle, fout)
     eccodes.codes_release(handle)
@@ -48,6 +49,7 @@ def decode_grib(fpath, keep=False):
             # eccodes.codes_keys_iterator_delete(it)
 
             md["paramId"] = eccodes.codes_get_string(msg, "paramId")
+            md["shortName"] = eccodes.codes_get_string(msg, "shortName")
 
             md["Ni"] = eccodes.codes_get_long(msg, "Ni")
             md["Nj"] = eccodes.codes_get_long(msg, "Nj")
