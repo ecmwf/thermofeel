@@ -21,20 +21,22 @@ the scope of these methods.
 
 Indices and tables
 ==================
+
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
-   guide/overview
-   guide/relativehumidity
-   guide/heatindex
-   guide/solarzenithangle
-   guide/mrt
-   guide/wbgt
-   guide/utci
-   guide/humidex
-   guide/net
-   guide/apparenttemperature
-   guide/windchill
+
+   overview
+   relativehumidity
+   heatindex
+   solarzenithangle
+   mrt
+   wbgt
+   utci
+   humidex
+   net
+   apparenttemperature
+   windchill
 
 License
 -------
