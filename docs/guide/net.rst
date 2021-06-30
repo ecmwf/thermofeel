@@ -5,6 +5,8 @@ Net effective temperature (NET) is also known as normal effective temperature. I
 the effects on comfort through air temperature and relative humidity \
 and an organism’s thermoregulatory capacity.
 
+More Information:https://www.sciencedirect.com/topics/engineering/effective-temperature
+
 How To Use
 ======================================
 You need 2m temperature in kelvin, wind speed at 10 meters height
@@ -22,7 +24,7 @@ Interpret the Output
 Here is a suggested way for you to interpret Net Effective Temperature outputs, it is by no means the only way to go about defining thermal stress.
 
 .. csv-table:: NET Thresholds
-   :file: netthresholds.csv
-   :header-rows: 1
-   :class: longtable
-   :widths: 1 1
+    :file: netthresholds.csv
+    :header-rows: 1
+    :class: longtable
+    :widths: 1 1

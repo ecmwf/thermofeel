@@ -1,6 +1,6 @@
 Mean Radiant Temperature
 ======================================
-Is the incidence of raditation on the body from all directions. 
+Is the incidence of radiation on the body from all directions.
 It is a key component of calculating Wet Bulb Globe Temperature and Universal Thermal Climate Index.
 More information: https://link.springer.com/article/10.1007/s00484-020-01900-5
 

@@ -4,6 +4,8 @@ The universal thermal climate index (UTCI), is a bioclimatological model of an a
 to different thermal conditions, where the subject is
 not acclimatised to the climate and is outdoors, doing minimal work.
 
+More Information: https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/gdj3.102
+
 
 How To Use
 ======================================
@@ -19,7 +21,7 @@ Interpret the Output
 ======================================
 
 .. csv-table:: UTCI Thresholds
-   :file: utcithresholds.csv
-   :header-rows: 1
-   :class: longtable
-   :widths: 1 1
+    :file: utcithresholds.csv
+    :header-rows: 1
+    :class: longtable
+    :widths: 1 1

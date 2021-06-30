@@ -6,6 +6,8 @@ Traditionally it is calculated using natural wet-bulb temperature, globe tempera
 Here we present a contemporary WBGT method from *De Dear* calculated using Mean Radiant Temperature and one of WBGT
 approximations from the Australian Bureau of Meteorology.
 
+More Information: https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
+
 How To Use
 ======================================
 
@@ -34,7 +36,7 @@ Here is a suggested way for you to interpret wet bulb globe temperature outputs,
 These are based upon the Wet Bulb Globe Temperature and as such might have a different accuracy for the approximation.
 
 .. csv-table:: WBGT Thresholds
-   :file: wbgtthresholds.csv
-   :header-rows: 1
-   :class: longtable
-   :widths: 1 1
+    :file: wbgtthresholds.csv
+    :header-rows: 1
+    :class: longtable
+    :widths: 1 1
