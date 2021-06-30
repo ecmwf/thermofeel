@@ -9,7 +9,6 @@
 import unittest
 
 import numpy as np
-import pytest
 from context import data_file
 
 import thermofeel.thermofeel as tfc
