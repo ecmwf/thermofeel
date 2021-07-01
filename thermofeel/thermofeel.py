@@ -94,6 +94,7 @@ def calculate_saturation_vapour_pressure(t2m):
     Calculate saturation vapour pressure over water
     :param t2m: (float array) 2m temperature [K]
      returns relative humidity [hPa]
+    http://www.thunderscientific.com/tech_info/reflibrary/its90formulas.pdf
     """
 
     tk = __wrap(t2m)

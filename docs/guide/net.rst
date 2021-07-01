@@ -9,15 +9,13 @@ More Information:https://www.sciencedirect.com/topics/engineering/effective-temp
 
 How To Use
 ======================================
-You need 2m temperature in kelvin, wind speed at 10 meters height
-and optional relative humidity as water vapour pressure,
-because this can be calculated from 2m temperature.
+You need 2m temperature in kelvin, wind speed at 10 meters height and 2m dew point temperature.
 
 The wind speed in this method is converted to 2 meters as
 an approximation of 1.2 meter wind speed.
 
 .. code-block:: python
-    calculate_heat_index(2m temperature,wind speed, relative humidity)
+    calculate_net_effective_temperature(2m temperature,wind speed, 2m dew point temperature)
 
 Interpret the Output
 ======================================
