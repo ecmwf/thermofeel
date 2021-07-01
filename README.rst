@@ -82,9 +82,10 @@ does it submit to any jurisdiction.
 Citing
 ======
 
-In publications, please use our paper in SoftwarX as the main citation for **thermofeel** |softwarex_doi|. 
+..
+  In publications, please use our paper in SoftwarX as the main citation for **thermofeel**. 
 
-For referring to the latest release of **thermofeel** please use this CodeDOI_.
+For referring to the latest release of **thermofeel** please use this DOI_.
 
 Acknowledgements
 ================
@@ -93,7 +94,7 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 .. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
 
-.. _CodeDOI: https://doi.org/10.21957/mp6v-fd16
+.. _DOI: https://doi.org/10.21957/mp6v-fd16
 
 .. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
     :target: https://badge.fury.io/py/thermofeel
