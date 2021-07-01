@@ -111,8 +111,8 @@ def calculate_saturation_vapour_pressure(t2m):
     ess = g[7] * np.log(tk)
     for i in range(7):
         ess += g[i] * np.power(tk, (i - 2))
-    
-    ess = np.exp(ess) * 0.01 # hPa
+
+    ess = np.exp(ess) * 0.01  # hPa
 
     return ess
 
@@ -330,7 +330,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     # calculate fp projected factor area
 
     gamma = np.arcsin(cossza) * 180 / np.pi
-    fp = 0.308 * np.cos( to_radians * gamma * 0.998 - ( gamma * gamma / 50000) ) 
+    fp = 0.308 * np.cos(to_radians * gamma * 0.998 - (gamma * gamma / 50000))
 
     # filter statement for solar zenith angle
     csza_filter1 = np.where((cossza > 0.01))
@@ -372,11 +372,11 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
     va = __wrap(va_ms)
     mrt_kw = __wrap(mrt_k)
     ehPa = __wrap(e_hPa)
-    
-    rh = ehPa / 10.0 # rh in kPa
 
-    t2m = kelvin_to_celcius(t2)     # polynomial approx. is in Celsius
-    mrt = kelvin_to_celcius(mrt_kw) # polynomial approx. is in Celsius
+    rh = ehPa / 10.0  # rh in kPa
+
+    t2m = kelvin_to_celcius(t2)  # polynomial approx. is in Celsius
+    mrt = kelvin_to_celcius(mrt_kw)  # polynomial approx. is in Celsius
 
     e_mrt = np.subtract(mrt, t2m)
 
@@ -625,7 +625,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
     utci_filterva = np.where(17 <= va)
     utci_filterva2 = np.where(0 >= va)
     utci_filterrh = np.where(5 < rh)
-    utci_filtere_mrt = np.where(e_mrt >= 100.)
+    utci_filtere_mrt = np.where(e_mrt >= 100.0)
     utci_filtere_mrt2 = np.where(e_mrt <= -30)
 
     utci[utci_filtert2m] = -9999
