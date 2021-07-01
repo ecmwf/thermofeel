@@ -119,8 +119,6 @@ class TestThermalCalculator(unittest.TestCase):
             tfc.calculate_net_effective_temperature(self.t2m, self.va, self.td),
         )
 
-    # np.savetxt("net.csv",tfc.calculate_net_effective_temperature(self.t2m, self.va,self.td))
-
     def test_humidex(self):
         self.assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
 
