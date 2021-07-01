@@ -740,17 +740,17 @@ def calculate_humidex(t2m, td):
     return humidex
 
 
-def calculate_net_effective_temperature(t2m, va, rh=None):
+def calculate_net_effective_temperature(t2m, va, td):
     """
     Net Effective Temperature used in Hong Kong, Poland and Germany
     :param t2m: 2m temperature [K]
+    :param td: 2m dew point temperature [K]
     :param rh: Relative Humidity [pa]
     :param va: Wind speed at 10 meters [m/s]
 
     returns net effective temperature [°C]
     """
-    if rh is None:
-        rh = calculate_saturation_vapour_pressure(t2m)
+    rh = calculate_relative_humidity_percent(t2m,td)
     t2m = __wrap(t2m)
     va = __wrap(va)
     rh = __wrap(rh)
