@@ -33,8 +33,6 @@ def calc_10m_wind_speed(messages):
 
     print(f"va --> {va}")
 
-    # print(f"va --> {va}")
-
     m = m10u.copy()
     m["values"] = va
     m["paramId"] = "207"
@@ -82,16 +80,19 @@ def calc_utci(messages):
     print(f"ehPa --> {ehPa}")
 
     utci = calculate_utci(t2m, va, mrt, ehPa)  # in Celsius
-    # TODO: REMOVE THIS HACK
+
+    # convert to Kelvin
     missingValueFilter = np.where(utci != -9999)
     utci[missingValueFilter] = utci[missingValueFilter] + 273.15
+
+    # TODO: REMOVE THIS HACK
     missingValueFilter = np.where(utci == -9999)
     utci[missingValueFilter] = 9999
     print(f"utci --> {utci}")
 
     m = messages["2t"].copy()
     m["values"] = utci
-    # TODO: REMOVE THIS HACK
+    # TODO: REMOVE THIS HACK -- writes UTCI as 2t  
     # m["paramId"] = "261001"  # from GRIB database
     # m["shortName"] = "utci"
     # m["edition"] = 2
@@ -106,13 +107,14 @@ def calc_wbgt(messages):
     va = messages["10si"]["values"]  # m/s
 
     wbgt = calculate_wbgt(t2m, mrt, va)
-    # TODO: REMOVE THIS HACK
-    wbgt = wbgt + 273.15
+    wbgt = celcius_to_kelvin(wbgt)
+    
     print(f"wbgt --> {wbgt}")
 
-    m = messages["2t"].copy()
+    m = messages["2t"].copy() 
     m["values"] = wbgt
-    # m["paramId"] = "000000"  # no currently on GRIB database
+    # no currently on GRIB database -- so we write this as 2t
+    # m["paramId"] = "000000"  
     # m["shortName"] = "wbgt"
 
     messages["wbgt"] = m
@@ -169,9 +171,6 @@ def main():
     calc_mrt(msgs)
     calc_utci(msgs)
     calc_wbgt(msgs)
-
-    # for m in msgs:
-    #     print(f"{m} --> {msgs[m]}")
 
     utci_grib = open("utci.grib", "wb")
     encode_grib(msgs["utci"], utci_grib)
