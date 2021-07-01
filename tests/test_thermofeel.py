@@ -12,7 +12,6 @@ import numpy as np
 from context import data_file
 
 import thermofeel.thermofeel as tfc
-from thermofeel.thermofeel.helpers import celcius_to_kelvin
 
 # import pytest
 
@@ -139,7 +138,7 @@ class TestThermalCalculator(unittest.TestCase):
         )
 
     def test_mrt_from_wbgt(self):
-        wbgt_k = celcius_to_kelvin(self.wbgt)
+        wbgt_k = tfc.celcius_to_kelvin(self.wbgt)
         mrt = tfc.calculate_mrt_from_wbgt(self.t2m, wbgt_k, self.va)
         self.assert_equal_less_precise(self.mrtw, mrt)
 

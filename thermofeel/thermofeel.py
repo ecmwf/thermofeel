@@ -37,7 +37,6 @@ import numpy as np
 from .helpers import (
     __wrap,
     farenheit_to_celcius,
-    kelvin_to_celcius,
     kelvin_to_farenheit,
     kPa_to_hPa,
     to_julian_date,
@@ -906,3 +905,17 @@ def calculate_heat_index_adjusted(t2m, td):
     hi[hi_filter6] = adjustment3
     hi = farenheit_to_celcius(hi)
     return hi
+
+
+# Helpers
+
+# convert celcius to kelvin
+def celcius_to_kelvin(tc):
+    tk = tc + 273.15
+    return tk
+
+
+# convert kelvin to celcius
+def kelvin_to_celcius(tk):
+    tc = tk - 273.15
+    return tc

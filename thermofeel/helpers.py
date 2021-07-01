@@ -46,22 +46,10 @@ def kelvin_to_farenheit(tk):
     return tf
 
 
-# convert kelvin to celcius
-def kelvin_to_celcius(tk):
-    tc = tk - 273.15
-    return tc
-
-
 # convert farenheit to celcius
 def farenheit_to_celcius(tf):
     tc = (tf - 32) * 5 / 9
     return tc
-
-
-# convert celcius to kelvin
-def celcius_to_kelvin(tc):
-    tk = tc + 273.15
-    return tk
 
 
 # convert from kPa to hPa for e (saturation water vapour pressure)

@@ -11,7 +11,6 @@ import sys
 import numpy as np
 from grib import decode_grib, encode_grib
 
-from thermofeel.helpers import celcius_to_kelvin
 from thermofeel.thermofeel import (
     calculate_cos_solar_zenith_angle_integrated,
     calculate_mean_radiant_temperature,
@@ -19,6 +18,7 @@ from thermofeel.thermofeel import (
     calculate_saturation_vapour_pressure,
     calculate_utci,
     calculate_wbgt,
+    celcius_to_kelvin,
 )
 
 
