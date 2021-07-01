@@ -82,16 +82,15 @@ class TestThermalCalculator(unittest.TestCase):
 
 
     def test_mean_radiant_temperature(self):
-         self.assert_equal(
-             celcius_to_kelvin(self.mrtr),
+          self.assert_equal_less_precise(self.mrtr,
              tfc.calculate_mean_radiant_temperature(
                  self.ssrd / 3600,
                  self.ssr / 3600,
                 self.fdir / 3600,
                  self.strd / 3600,
-                 self.strr / 3600,
-                 self.cossza / 3600,
-             ),
+                self.strr / 3600,
+                self.cossza / 3600,
+            ),
          )
 
 
@@ -112,8 +111,8 @@ class TestThermalCalculator(unittest.TestCase):
 
     def test_net(self):
          self.assert_equal_less_precise(
-             self.net, tfc.calculate_net_effective_temperature(self.t2m, self.va,self.td)
-         )
+             self.net, tfc.calculate_net_effective_temperature(self.t2m, self.va,self.td))
+        #np.savetxt("net.csv",tfc.calculate_net_effective_temperature(self.t2m, self.va,self.td))
 
     def test_humidex(self):
         self.assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
