@@ -2,9 +2,7 @@
   :width: 600
   :alt: thermofeel logo
 
-**thermofeel** is a library to calculate human thermal comfort indexes.\
-
-pronounced therm-mo-feel
+**thermofeel** (pronounced *thermo-feel*) is a library to calculate human thermal comfort indexes.
 
 Currently calculates the thermal indexes:
  * Universal Thermal Climate Index
