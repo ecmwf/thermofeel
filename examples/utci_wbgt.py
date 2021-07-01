@@ -11,6 +11,7 @@ import sys
 import numpy as np
 from grib import decode_grib, encode_grib
 
+from thermofeel.helpers import celcius_to_kelvin
 from thermofeel.thermofeel import (
     calculate_cos_solar_zenith_angle_integrated,
     calculate_mean_radiant_temperature,
@@ -92,7 +93,7 @@ def calc_utci(messages):
 
     m = messages["2t"].copy()
     m["values"] = utci
-    # TODO: REMOVE THIS HACK -- writes UTCI as 2t  
+    # TODO: REMOVE THIS HACK -- writes UTCI as 2t
     # m["paramId"] = "261001"  # from GRIB database
     # m["shortName"] = "utci"
     # m["edition"] = 2
@@ -108,13 +109,13 @@ def calc_wbgt(messages):
 
     wbgt = calculate_wbgt(t2m, mrt, va)
     wbgt = celcius_to_kelvin(wbgt)
-    
+
     print(f"wbgt --> {wbgt}")
 
-    m = messages["2t"].copy() 
+    m = messages["2t"].copy()
     m["values"] = wbgt
     # no currently on GRIB database -- so we write this as 2t
-    # m["paramId"] = "000000"  
+    # m["paramId"] = "000000"
     # m["shortName"] = "wbgt"
 
     messages["wbgt"] = m
