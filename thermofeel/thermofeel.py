@@ -39,7 +39,7 @@ from .helpers import (
     farenheit_to_celcius,
     kelvin_to_celcius,
     kelvin_to_farenheit,
-    pa_to_hpa,
+    kPa_to_hPa,
     to_julian_date,
     to_radians,
 )
@@ -93,11 +93,10 @@ def calculate_saturation_vapour_pressure(t2m):
     """
     Calculate saturation vapour pressure over water
     :param t2m: (float array) 2m temperature [K]
-     returns relative humidity [pa]
+     returns relative humidity [hPa]
     """
 
     tk = __wrap(t2m)
-    tc = kelvin_to_celcius(tk).clip(min=0.0001)
 
     g = [
         -2.8365744e3,
@@ -109,10 +108,12 @@ def calculate_saturation_vapour_pressure(t2m):
         -1.8680009e-13,
         2.7150305,
     ]
-    ess = g[7] * np.log(tc)
+    ess = g[7] * np.log(tk)
     for i in range(7):
-        ess += g[i] * np.power(tc, (i - 2))
-    ess = np.exp(ess) * 0.01
+        ess += g[i] * np.power(tk, (i - 2))
+    
+    ess = np.exp(ess) * 0.01 # hPa
+
     return ess
 
 
@@ -164,8 +165,8 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step
     :param m: month [int]
     :param d: day [int]
     :param h: hour [int]
-    :param base: base time of forecast enum [0,6,18,12]
-    :param step: step interval of forecast enum [1,3,6]
+    :param base: base time of forecast enum [0,6,12,18]
+    :param step: step interval of forecast enum [0,1,3,6,..]
 
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
 
@@ -327,8 +328,9 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     lur = strd - strr
 
     # calculate fp projected factor area
+
     gamma = np.arcsin(cossza) * 180 / np.pi
-    fp = 0.308 * np.cos(np.pi / 180) * gamma * 0.998 - gamma * gamma / 50000
+    fp = 0.308 * np.cos( to_radians * gamma * 0.998 - ( gamma * gamma / 50000) ) 
 
     # filter statement for solar zenith angle
     csza_filter1 = np.where((cossza > 0.01))
@@ -348,18 +350,16 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
         0.25,
     )
 
-    # print(f"mrt {mrt}")
-
     return mrt
 
 
-def calculate_utci(t2m, va, mrt, rh=None):
+def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
     """
     UTCI
     :param t2m: (float array) is 2m temperature [K]
     :param va: (float array) is wind speed at 10 meters [m/s]
     :param mrt:(float array) is mean radiant temperature [K]
-    :param rh: (float array) is relative humidity [pa]
+    :param ehPa: (float array) is water vapour pressure [hPa]
 
     Calculate UTCI with a 6th order polynomial approximation according to:
     Brode, P. et al. Deriving the operational procedure for the
@@ -368,21 +368,17 @@ def calculate_utci(t2m, va, mrt, rh=None):
     returns UTCI [°C]
 
     """
-    t2m = __wrap(t2m)
-    va = __wrap(va)
-    mrt = __wrap(mrt)
+    t2 = __wrap(t2_k)
+    va = __wrap(va_ms)
+    mrt_kw = __wrap(mrt_k)
+    ehPa = __wrap(e_hPa)
+    
+    rh = ehPa / 10.0 # rh in kPa
 
-    mrt_c = kelvin_to_celcius(mrt)
+    t2m = kelvin_to_celcius(t2)     # polynomial approx. is in Celsius
+    mrt = kelvin_to_celcius(mrt_kw) # polynomial approx. is in Celsius
 
-    if rh is None:
-        rh = calculate_saturation_vapour_pressure(t2m)
-
-    t2m = kelvin_to_celcius(t2m)
-    e_mrt = np.subtract(mrt_c, t2m)
-
-    # print(f"e_mrt {e_mrt}")
-
-    rh = rh / 10.0
+    e_mrt = np.subtract(mrt, t2m)
 
     t2m2 = t2m * t2m
     t2m3 = t2m2 * t2m
@@ -408,7 +404,7 @@ def calculate_utci(t2m, va, mrt, rh=None):
     rh5 = rh4 * rh
     rh6 = rh5 * rh
 
-    utci_approx = (
+    utci = (
         t2m
         + 6.07562052e-01
         + -2.27712343e-02 * t2m
@@ -622,21 +618,34 @@ def calculate_utci(t2m, va, mrt, rh=None):
         + 1.48348065e-03 * rh6
     )
 
-    utci_filtert2m = np.where(50 <= t2m)
-    utci_filtert2m2 = np.where(-50 >= t2m)
+    print(f"utci {utci}")
+
+    utci_filtert2m = np.where(t2m >= 70)
+    utci_filtert2m2 = np.where(t2m <= -70)
     utci_filterva = np.where(17 <= va)
     utci_filterva2 = np.where(0 >= va)
     utci_filterrh = np.where(5 < rh)
-    utci_filtere_mrt = np.where(70 <= e_mrt)
-    utci_filtere_mrt2 = np.where(-30 >= e_mrt)
-    utci_approx[utci_filtert2m] = -999
-    utci_approx[utci_filtert2m2] = -999
-    utci_approx[utci_filterva] = -999
-    utci_approx[utci_filterva2] = -999
-    utci_approx[utci_filterrh] = -999
-    utci_approx[utci_filtere_mrt] = -999
-    utci_approx[utci_filtere_mrt2] = -999
-    return utci_approx
+    utci_filtere_mrt = np.where(e_mrt >= 100.)
+    utci_filtere_mrt2 = np.where(e_mrt <= -30)
+
+    utci[utci_filtert2m] = -9999
+    # print(f"utci f1 {utci}")
+    utci[utci_filtert2m2] = -9999
+    # print(f"utci f2 {utci}")
+    utci[utci_filterva] = -9999
+    # print(f"utci f3 {utci}")
+    utci[utci_filterva2] = -9999
+    # print(f"utci f4 {utci}")
+    utci[utci_filterrh] = -9999
+    # print(f"utci f5 {utci}")
+    utci[utci_filtere_mrt] = -9999
+    # print(f"utci f6 {utci}")
+    utci[utci_filtere_mrt2] = -9999
+    # print(f"utci f7 {utci}")
+
+    print(f"utci {utci}")
+
+    return utci
 
 
 def calculate_wbgts(t2m):
@@ -653,7 +662,7 @@ def calculate_wbgts(t2m):
     """
     t2m = __wrap(t2m)
     rh = calculate_saturation_vapour_pressure(t2m)
-    rh = pa_to_hpa(rh)
+    rh = kPa_to_hPa(rh)
     t2m = kelvin_to_celcius(t2m)
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
@@ -746,7 +755,7 @@ def calculate_net_effective_temperature(t2m, va, rh=None):
     va = __wrap(va)
     rh = __wrap(rh)
     t2m = kelvin_to_celcius(t2m)
-    rh = pa_to_hpa(rh)
+    rh = kPa_to_hPa(rh)
     ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
     net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
     return net
@@ -799,7 +808,7 @@ def calculate_heat_index_simplified(t2m, rh=None):
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
     t2m = kelvin_to_celcius(t2m)
-    rh = pa_to_hpa(rh)
+    rh = kPa_to_hPa(rh)
 
     hiarray = [
         -8.784695,
@@ -827,6 +836,12 @@ def calculate_heat_index_simplified(t2m, rh=None):
 
 
 def calculate_heat_index_adjusted(t2m, td):
+    """
+    Heat Index adjusted
+       :param t2m: np.array 2m temperature [K]
+       :param td: np.array 2m dewpoint temperature  [K]
+       returns heat index [°C]
+    """
     t2m = __wrap(t2m)
     td = __wrap(td)
 

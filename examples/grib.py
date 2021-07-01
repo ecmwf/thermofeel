@@ -20,6 +20,7 @@ def encode_grib(msg, fout):
 
     paramId = msg["paramId"]
     print(f"grib {paramId}")
+    # eccodes.codes_set_long(handle, "missingValue", -9999)
     eccodes.codes_set_string(handle, "paramId", paramId)
     eccodes.codes_set_values(handle, msg["values"])
 
@@ -70,13 +71,15 @@ def decode_grib(fpath, keep=False):
             mm = floor((ldate - (yyyy * 10000)) / 100)
             dd = ldate - (yyyy * 10000) - mm * 100
 
+            md["base_datetime"] = datetime(yyyy, mm, dd, tzinfo=timezone.utc)
+
             forecast_datetime = (
                 datetime(yyyy, mm, dd, tzinfo=timezone.utc)
                 + timedelta(minutes=60 * md["time"] / 100)
                 + timedelta(minutes=60 * md["step"])
             )
 
-            md["datetime"] = forecast_datetime
+            md["forecast_datetime"] = forecast_datetime
 
             # decode data
             # get the lats, lons, values

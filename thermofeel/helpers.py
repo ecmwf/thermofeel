@@ -64,7 +64,7 @@ def celcius_to_kelvin(tc):
     return tk
 
 
-# convert from pa to hpa for e (saturation water vapour pressure)
-def pa_to_hpa(rh):
-    rh = rh / 10
-    return rh
+# convert from kPa to hPa for e (saturation water vapour pressure)
+def kPa_to_hPa(rh_kpa):
+    rh_hpa = rh_kpa / 10
+    return rh_hpa

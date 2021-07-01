@@ -156,6 +156,20 @@ def main():
         legend="on",
     )
 
+    # contour = magics.mcont(
+    # contour = 'off',
+    # contour_hilo = 'off',
+    # # contour_interval = 2.0,
+    # contour_label = 'off',
+    # # contour_level_selection_type = 'interval',
+    # contour_shade = 'on',
+    # contour_shade_colour_method = 'calculate',
+    # # contour_shade_max_level = 22.0,
+    # contour_shade_method = 'area_fill',
+    # # contour_shade_min_level = -28.0,
+    # legend = 'on'
+    # )
+
     magics.plot(output, projection, data, contour, coast, legend)
 
 

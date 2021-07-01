@@ -22,7 +22,7 @@ def calc_cossza(message):
 
     print(lats.size)
 
-    dt = message["datetime"]
+    dt = message["forecast_datetime"]
 
     print(dt.year, dt.month, dt.day, dt.hour)
 
