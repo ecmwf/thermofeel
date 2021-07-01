@@ -3,6 +3,7 @@
   :alt: thermofeel logo
 
 **thermofeel** (pronounced *thermo-feel*)
+
 A library to calculate human thermal comfort indexes.
 
 Currently calculates the thermal indexes:
