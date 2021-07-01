@@ -751,7 +751,7 @@ def calculate_net_effective_temperature(t2m, va, td):
 
     returns net effective temperature [°C]
     """
-    rh = calculate_relative_humidity_percent(t2m,td)
+    rh = calculate_relative_humidity_percent(t2m, td)
     t2m = __wrap(t2m)
     va = __wrap(va)
     rh = __wrap(rh)
