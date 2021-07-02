@@ -89,9 +89,13 @@ Citing
 ======
 
 ..
-  In publications, please use our paper in SoftwarX as the main citation for **thermofeel**. 
+  In publications, please use our paper in SoftwareX as the main citation for **thermofeel**. 
+  
+  To cite **thermofeel** the code currently please use: 
+  Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2021, 
+  *thermofeel: a python thermal comfort indices library*, https://doi.org/10.21957/mp6v-fd16
 
-For referring to the latest release of **thermofeel** please use this DOI_.
+For referring to the latest release of **thermofeel** please use this DOI:https://doi.org/10.21957/mp6v-fd16_.
 
 Acknowledgements
 ================
@@ -100,7 +104,7 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 .. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
 
-.. _DOI: https://doi.org/10.21957/mp6v-fd16
+.. DOI:https://doi.org/10.21957/mp6v-fd16: https://doi.org/10.21957/mp6v-fd16
 
 .. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
     :target: https://badge.fury.io/py/thermofeel
