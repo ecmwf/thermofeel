@@ -81,7 +81,6 @@ def calculate_relative_humidity_percent(t2m, td):
     """
     t2m = __wrap(t2m)
     td = __wrap(td)
-    
     t2m = __kelvin_to_celcius(t2m)
     td = __kelvin_to_celcius(t2m)
     
