@@ -82,6 +82,9 @@ def calculate_relative_humidity_percent(t2m, td):
     t2m = __wrap(t2m)
     td = __wrap(td)
 
+    t2m= kelvin_to_celcius(t2m)
+    td = kelvin_to_celcius(t2m)
+
     es = 6.11 * 10.0 ** (7.5 * t2m / (237.7 + t2m))
     e = 6.11 * 10.0 ** (7.5 * td / (237.7 + td))
     rh = (e / es) * 100
