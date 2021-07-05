@@ -71,6 +71,13 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
+def calculate_es(t2m):
+    t2m = __wrap(t2m)
+    t2m = kelvin_to_celcius(t2m)
+    es = 6.11 * 10.0 ** (7.5 * t2m / (237.3 + t2m))
+    return es
+
+
 def calculate_relative_humidity_percent(t2m, td):
     """
     Calculate relative humidity in percent
@@ -81,11 +88,14 @@ def calculate_relative_humidity_percent(t2m, td):
     """
     t2m = __wrap(t2m)
     td = __wrap(td)
-    t2m = __kelvin_to_celcius(t2m)
-    td = __kelvin_to_celcius(t2m)
-    
-    es = 6.11 * 10.0 ** (7.5 * t2m / (237.7 + t2m))
-    e = 6.11 * 10.0 ** (7.5 * td / (237.7 + td))
+
+    t2m = kelvin_to_celcius(t2m)
+    td = kelvin_to_celcius(td)
+
+    # saturated vapour pressure
+    es = 6.11 * 10.0 ** (7.5 * t2m / (237.3 + t2m))
+    # vapour pressure
+    e = 6.11 * 10.0 ** (7.5 * td / (237.3 + td))
     rh = (e / es) * 100
     return rh
 
@@ -620,7 +630,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
         + 1.48348065e-03 * rh6
     )
 
-    print(f"utci {utci}")
+    # print(f"utci {utci}")
 
     utci_filtert2m = np.where(t2m >= 70)
     utci_filtert2m2 = np.where(t2m <= -70)
@@ -645,7 +655,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
     utci[utci_filtere_mrt2] = -9999
     # print(f"utci f7 {utci}")
 
-    print(f"utci {utci}")
+    # print(f"utci {utci}")
 
     return utci
 
