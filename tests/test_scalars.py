@@ -8,7 +8,18 @@
 
 from math import cos, radians
 
+import pytest
+
 import thermofeel
+
+
+def test_relative_humidity_percent():
+    t2mk = thermofeel.celcius_to_kelvin(30.0)
+    t2dk = thermofeel.celcius_to_kelvin(28.0)
+
+    rhpc = thermofeel.calculate_relative_humidity_percent(t2mk, t2dk)
+
+    assert rhpc == pytest.approx(89.08526710467393, abs=1e-6)
 
 
 def test_calculate_cos_solar_zenith_angle():
@@ -55,6 +66,7 @@ def test_solar_declination_angle():
 
 
 if __name__ == "__main__":
+    test_relative_humidity_percent()
     test_calculate_cos_solar_zenith_angle()  # pragma: no cover
     test_calculate_cos_solar_zenith_angle_integrated()  # pragma: no cover
     test_solar_declination_angle()  # pragma: no cover

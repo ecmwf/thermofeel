@@ -85,8 +85,10 @@ def calculate_relative_humidity_percent(t2m, td):
     t2m = kelvin_to_celcius(t2m)
     td = kelvin_to_celcius(td)
 
-    es = 6.11 * 10.0 ** (7.5 * t2m / (237.7 + t2m))
-    e = 6.11 * 10.0 ** (7.5 * td / (237.7 + td))
+    # saturated vapour pressure
+    es = 6.11 * 10.0 ** (7.5 * t2m / (237.3 + t2m))
+    # vapour pressure
+    e = 6.11 * 10.0 ** (7.5 * td / (237.3 + td))
     rh = (e / es) * 100
     return rh
 
