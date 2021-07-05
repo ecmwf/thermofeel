@@ -103,6 +103,7 @@ class TestThermalCalculator(unittest.TestCase):
                 t2_k=self.t2m, va_ms=self.va, mrt_k=self.mrt, e_hPa=ehPa
             ),
         )
+
     def test_relative_humidity_percent(self):
         rh_pc = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
         self.assert_equal(self.rhpercent, rh_pc)
