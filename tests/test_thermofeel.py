@@ -46,7 +46,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.net = np.loadtxt(data_file("net.csv"))
         self.heatindexadjusted = np.loadtxt(data_file("hia.csv"))
         self.heatindex = np.loadtxt(data_file("heatindex.csv"))
-        self.at = np.loadtxt(data_file("apparenttemperature.csv"))
+        self.at = np.loadtxt(data_file("at.csv"))
         self.wbgts = np.loadtxt(data_file("wbgts.csv"))
         self.wbgt = np.loadtxt(data_file("wbgt.csv"))
         self.humidex = np.loadtxt(data_file("humidex.csv"))
@@ -61,18 +61,18 @@ class TestThermalCalculator(unittest.TestCase):
 
     def test_saturation_vapour_pressure(self):
         es = tfc.calculate_saturation_vapour_pressure(self.t2m)
-        self.assert_equal(self.es, es)
         # np.savetxt("es.csv", es)
+        self.assert_equal(self.es, es)
 
     def test_relative_humidity_percent(self):
         rh = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
-        self.assert_equal(self.rh, rh)
         # np.savetxt("rh.csv", rh)
+        self.assert_equal(self.rh, rh)
 
     def test_heat_index(self):
         heatindex = tfc.calculate_heat_index_simplified(self.t2m)
-        self.assert_equal(self.heatindex, heatindex)
         # np.savetxt("heatindex.csv", heatindex)
+        self.assert_equal(self.heatindex, heatindex)
 
     def test_mean_radiant_temperature(self):
         mrtr = tfc.calculate_mean_radiant_temperature(
@@ -83,8 +83,8 @@ class TestThermalCalculator(unittest.TestCase):
             self.strr / 3600,
             self.cossza / 3600,
         )
-        self.assert_equal(self.mrtr, mrtr)
         # np.savetxt("mrtr.csv", mrtr)
+        self.assert_equal(self.mrtr, mrtr)
 
     def test_utci(self):
         rh_pc = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
@@ -92,49 +92,49 @@ class TestThermalCalculator(unittest.TestCase):
         utci = tfc.calculate_utci(
             t2_k=self.t2m, va_ms=self.va, mrt_k=self.mrt, e_hPa=ehPa
         )
-        self.assert_equal(self.utci, utci)
         # np.savetxt("utci.csv", utci)
+        self.assert_equal(self.utci, utci)
 
     def test_apparent_temperature(self):
         at = tfc.calculate_apparent_temperature(self.t2m, self.va)
-        self.assert_equal(self.apparenttemperature, at)
-        # np.savetxt("apparenttemperature.csv", at)
+        # np.savetxt("at.csv", at)
+        self.assert_equal(self.at, at)
 
     def test_net_effective_temperature(self):
         net = tfc.calculate_net_effective_temperature(self.t2m, self.va, self.td)
-        self.assert_equal(self.net, net)
         # np.savetxt("net.csv", net)
+        self.assert_equal(self.net, net)
 
     def test_humidex(self):
         humidex = tfc.calculate_humidex(self.t2m, self.td)
-        self.assert_equal(self.humidex, humidex)
         # np.savetxt("humidex.csv", humidex)
+        self.assert_equal(self.humidex, humidex)
 
     def test_wind_chill(self):
         windchill = tfc.calculate_wind_chill(self.t2m, self.va)
-        self.assert_equal(self.windchill, windchill)
         # np.savetxt("windchill.csv", windchill)
+        self.assert_equal(self.windchill, windchill)
 
     def test_heat_index_adjusted(self):
         hia = tfc.calculate_heat_index_adjusted(self.t2m, self.td)
-        self.assert_equal(self.heatindexadjusted, hia)
         # np.savetxt("hia.csv", hia)
+        self.assert_equal(self.heatindexadjusted, hia)
 
     def test_wbgt(self):
         wbgt = tfc.calculate_wbgt(self.t2m, self.va, self.mrt)
-        self.assert_equal(self.wbgt, wbgt)
         # np.savetxt("wbgt.csv", wbgt)
+        self.assert_equal(self.wbgt, wbgt)
 
     def test_wbgts(self):
         wbgts = tfc.calculate_wbgts(self.t2m)
-        self.assert_equal(self.wbgts, wbgts)
         # np.savetxt("wbgts.csv", wbgts)
+        self.assert_equal(self.wbgts, wbgts)
 
     def test_mrt_from_wbgt(self):
         wbgt_k = tfc.celcius_to_kelvin(self.wbgt)
         mrtw = tfc.calculate_mrt_from_wbgt(self.t2m, wbgt_k, self.va)
-        self.assert_equal(self.mrtw, mrtw)
         # np.savetxt("mrtw.csv", mrtw)
+        self.assert_equal(self.mrtw, mrtw)
 
 
 if __name__ == "__main__":
