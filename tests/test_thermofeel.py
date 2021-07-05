@@ -6,14 +6,16 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+import os
 import unittest
 
 import numpy as np
-from context import data_file
 
 import thermofeel.thermofeel as tfc
 
-# import pytest
+
+def data_file(name):
+    return os.path.join(os.path.dirname(__file__), name)
 
 
 # combining the pytest library with the functionality of np testing for use with np.array file type
@@ -47,9 +49,9 @@ class TestThermalCalculator(unittest.TestCase):
         self.rh = tfc.calculate_saturation_vapour_pressure(self.t2m)
         self.rhpercent = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
 
-        self.utci = np.loadtxt("utci.csv")
-        self.net = np.loadtxt("net.csv")
-        self.heatindexadjusted = np.loadtxt("hia.csv")
+        self.utci = np.loadtxt(data_file("utci.csv"))
+        self.net = np.loadtxt(data_file("net.csv"))
+        self.heatindexadjusted = np.loadtxt(data_file("hia.csv"))
 
         self.heatindex = tr["heatindex"]
         self.apparenttemperature = tr["apparenttemperature"]
