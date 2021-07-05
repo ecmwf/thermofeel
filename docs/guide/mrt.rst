@@ -9,10 +9,11 @@ How To Use
 
 These methods will return slightly different values. This is to be anticipated.
 
+
 **Mean Radiant Temperature**
-
+Please use numpy arrays
 .. code-block:: python
-
+https://github.com/ecmwf-projects/thermofeel.git
     calculate_mean_radiant_temperature(surface-solar-radiation-downwards,surface-net-solar-radiation,
     Total-sky-direct-solar-radiation-at-surface, Surface-thermal-radiation-downwards,Surface-net-thermal-radiation,
     cosine-of-solar-zenith-angle)
