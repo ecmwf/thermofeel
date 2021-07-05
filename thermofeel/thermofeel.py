@@ -623,7 +623,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
         + 1.48348065e-03 * rh6
     )
 
-    print(f"utci {utci}")
+    # print(f"utci {utci}")
 
     utci_filtert2m = np.where(t2m >= 70)
     utci_filtert2m2 = np.where(t2m <= -70)
@@ -648,7 +648,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
     utci[utci_filtere_mrt2] = -9999
     # print(f"utci f7 {utci}")
 
-    print(f"utci {utci}")
+    # print(f"utci {utci}")
 
     return utci
 
