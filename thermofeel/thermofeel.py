@@ -71,6 +71,13 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
+def calculate_es(t2m):
+    t2m = __wrap(t2m)
+    t2m = kelvin_to_celcius(t2m)
+    es = 6.11 * 10.0 ** (7.5 * t2m / (237.3 + t2m))
+    return es
+
+
 def calculate_relative_humidity_percent(t2m, td):
     """
     Calculate relative humidity in percent

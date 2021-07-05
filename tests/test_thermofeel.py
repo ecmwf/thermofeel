@@ -40,110 +40,102 @@ class TestThermalCalculator(unittest.TestCase):
         self.strr = t["strr"]
         self.cossza = t["cossza"]
 
-        # indices
-        tr = np.genfromtxt(
-            data_file("thermofeel_test_results.csv"),
-            delimiter=",",
-            names=True,
-        )
-        self.rh = tfc.calculate_saturation_vapour_pressure(self.t2m)
-        self.rhpercent = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
-
+        self.rh = np.loadtxt(data_file("rh.csv"))
+        self.es = np.loadtxt(data_file("es.csv"))
         self.utci = np.loadtxt(data_file("utci.csv"))
         self.net = np.loadtxt(data_file("net.csv"))
         self.heatindexadjusted = np.loadtxt(data_file("hia.csv"))
+        self.heatindex = np.loadtxt(data_file("heatindex.csv"))
+        self.at = np.loadtxt(data_file("apparenttemperature.csv"))
+        self.wbgts = np.loadtxt(data_file("wbgts.csv"))
+        self.wbgt = np.loadtxt(data_file("wbgt.csv"))
+        self.humidex = np.loadtxt(data_file("humidex.csv"))
+        self.windchill = np.loadtxt(data_file("windchill.csv"))
+        self.mrtr = np.loadtxt(data_file("mrtr.csv"))
+        self.mrtw = np.loadtxt(data_file("mrtw.csv"))
 
-        self.heatindex = tr["heatindex"]
-        self.apparenttemperature = tr["apparenttemperature"]
-        self.wbgts = tr["wbgts"]
-        self.wbgt = tr["wbgt"]
-        self.humidex = tr["humidex"]
-        self.windchill = tr["windchill"]
-        self.mrtr = tr["mrt"]
-        self.mrtw = tr["mrtw"]
-
-    def assert_equal(self, result, calculation):
+    def assert_equal(self, expected, result, decimal=6):
         self.assertequal = self.assertIsNone(
-            np.testing.assert_array_almost_equal(result, calculation, decimal=6)
+            np.testing.assert_array_almost_equal(expected, result, decimal)
         )
 
-    def assert_equal_less_precise(self, result, calculation):
-        self.assertequal = self.assertIsNone(
-            np.testing.assert_array_almost_equal(result, calculation, decimal=1)
-        )
-
-    def test_relative_humidity(self):
-        self.assert_equal(self.rh, tfc.calculate_saturation_vapour_pressure(self.t2m))
+    def test_saturation_vapour_pressure(self):
+        es = tfc.calculate_saturation_vapour_pressure(self.t2m)
+        self.assert_equal(self.es, es)
+        # np.savetxt("es.csv", es)
 
     def test_relative_humidity_percent(self):
-        self.assert_equal(
-            self.rhpercent, tfc.calculate_relative_humidity_percent(self.t2m, self.td)
-        )
+        rh = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
+        self.assert_equal(self.rh, rh)
+        # np.savetxt("rh.csv", rh)
 
     def test_heat_index(self):
-        self.assert_equal_less_precise(
-            self.heatindex, tfc.calculate_heat_index_simplified(self.t2m)
-        )
+        heatindex = tfc.calculate_heat_index_simplified(self.t2m)
+        self.assert_equal(self.heatindex, heatindex)
+        # np.savetxt("heatindex.csv", heatindex)
 
     def test_mean_radiant_temperature(self):
-        self.assert_equal_less_precise(
-            self.mrtr,
-            tfc.calculate_mean_radiant_temperature(
-                self.ssrd / 3600,
-                self.ssr / 3600,
-                self.fdir / 3600,
-                self.strd / 3600,
-                self.strr / 3600,
-                self.cossza / 3600,
-            ),
+        mrtr = tfc.calculate_mean_radiant_temperature(
+            self.ssrd / 3600,
+            self.ssr / 3600,
+            self.fdir / 3600,
+            self.strd / 3600,
+            self.strr / 3600,
+            self.cossza / 3600,
         )
+        self.assert_equal(self.mrtr, mrtr)
+        # np.savetxt("mrtr.csv", mrtr)
 
     def test_utci(self):
         rh_pc = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
         ehPa = tfc.calculate_saturation_vapour_pressure(self.t2m) * rh_pc / 100.0
-        self.assert_equal_less_precise(
-            self.utci,
-            tfc.calculate_utci(
-                t2_k=self.t2m, va_ms=self.va, mrt_k=self.mrt, e_hPa=ehPa
-            ),
+        utci = tfc.calculate_utci(
+            t2_k=self.t2m, va_ms=self.va, mrt_k=self.mrt, e_hPa=ehPa
         )
+        self.assert_equal(self.utci, utci)
+        # np.savetxt("utci.csv", utci)
 
     def test_apparent_temperature(self):
-        self.assert_equal_less_precise(
-            self.apparenttemperature,
-            tfc.calculate_apparent_temperature(self.t2m, self.va),
-        )
+        at = tfc.calculate_apparent_temperature(self.t2m, self.va)
+        self.assert_equal(self.apparenttemperature, at)
+        # np.savetxt("apparenttemperature.csv", at)
 
-    def test_wbgts(self):
-        self.assert_equal_less_precise(self.wbgts, tfc.calculate_wbgts(self.t2m))
-
-    def test_net(self):
-        self.assert_equal_less_precise(
-            self.net,
-            tfc.calculate_net_effective_temperature(self.t2m, self.va, self.td),
-        )
+    def test_net_effective_temperature(self):
+        net = tfc.calculate_net_effective_temperature(self.t2m, self.va, self.td)
+        self.assert_equal(self.net, net)
+        # np.savetxt("net.csv", net)
 
     def test_humidex(self):
-        self.assert_equal(self.humidex, tfc.calculate_humidex(self.t2m, self.td))
+        humidex = tfc.calculate_humidex(self.t2m, self.td)
+        self.assert_equal(self.humidex, humidex)
+        # np.savetxt("humidex.csv", humidex)
 
     def test_wind_chill(self):
-        self.assert_equal(self.windchill, tfc.calculate_wind_chill(self.t2m, self.va))
+        windchill = tfc.calculate_wind_chill(self.t2m, self.va)
+        self.assert_equal(self.windchill, windchill)
+        # np.savetxt("windchill.csv", windchill)
 
     def test_heat_index_adjusted(self):
-        self.assert_equal(
-            self.heatindexadjusted, tfc.calculate_heat_index_adjusted(self.t2m, self.td)
-        )
+        hia = tfc.calculate_heat_index_adjusted(self.t2m, self.td)
+        self.assert_equal(self.heatindexadjusted, hia)
+        # np.savetxt("hia.csv", hia)
 
     def test_wbgt(self):
-        self.assert_equal_less_precise(
-            self.wbgt, tfc.calculate_wbgt(self.t2m, self.va, self.mrt)
-        )
+        wbgt = tfc.calculate_wbgt(self.t2m, self.va, self.mrt)
+        self.assert_equal(self.wbgt, wbgt)
+        # np.savetxt("wbgt.csv", wbgt)
+
+    def test_wbgts(self):
+        wbgts = tfc.calculate_wbgts(self.t2m)
+        self.assert_equal(self.wbgts, wbgts)
+        # np.savetxt("wbgts.csv", wbgts)
 
     def test_mrt_from_wbgt(self):
         wbgt_k = tfc.celcius_to_kelvin(self.wbgt)
-        mrt = tfc.calculate_mrt_from_wbgt(self.t2m, wbgt_k, self.va)
-        self.assert_equal_less_precise(self.mrtw, mrt)
+        mrtw = tfc.calculate_mrt_from_wbgt(self.t2m, wbgt_k, self.va)
+        self.assert_equal(self.mrtw, mrtw)
+        # np.savetxt("mrtw.csv", mrtw)
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main()  # pragma: no cover
