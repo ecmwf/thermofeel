@@ -29,7 +29,7 @@ In support of the above indexes, it also calculates:
 Status
 ======
 
-|pypi_release| |tag_release| |codecov| |python-publish| |test-coverage|
+|last_commit| |license| |pypi_release| |tag_release| |codecov| |python-publish| |test-coverage|
 
 Installation
 ============
@@ -106,6 +106,12 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 .. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
 
+
+.. |last_commit| image:: https://img.shields.io/github/last-commit/ecmwf-projects/thermofeel
+    :target: https://github.com/ecmwf-projects/thermofeel
+
+.. |license| image:: https://img.shields.io/github/license/ecmwf-projects/thermofeel
+    :target: https://www.apache.org/licenses/LICENSE-2.0.html
 
 .. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
     :target: https://badge.fury.io/py/thermofeel
