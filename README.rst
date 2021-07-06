@@ -2,6 +2,8 @@
   :width: 600
   :alt: thermofeel logo
 
+|license| |tag_release| |last_commit| 
+
 **thermofeel** (pronounced *thermo-feel*)
 
 A library to calculate human thermal comfort indexes.
@@ -29,7 +31,7 @@ In support of the above indexes, it also calculates:
 Status
 ======
 
-|last_commit| |license| |pypi_release| |tag_release| |codecov| |python-publish| |test-coverage|
+|pypi_release| |python-publish| |test-coverage| |codecov| 
 
 Installation
 ============
