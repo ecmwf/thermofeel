@@ -11,7 +11,7 @@ import unittest
 
 import numpy as np
 
-import thermofeel.thermofeel as tfc
+import thermofeel as tmf
 
 
 def data_file(name):
@@ -60,22 +60,22 @@ class TestThermalCalculator(unittest.TestCase):
         )
 
     def test_saturation_vapour_pressure(self):
-        es = tfc.calculate_saturation_vapour_pressure(self.t2m)
+        es = tmf.calculate_saturation_vapour_pressure(self.t2m)
         # np.savetxt("es.csv", es)
         self.assert_equal(self.es, es)
 
     def test_relative_humidity_percent(self):
-        rh = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
+        rh = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
         # np.savetxt("rh.csv", rh)
         self.assert_equal(self.rh, rh)
 
     def test_heat_index(self):
-        heatindex = tfc.calculate_heat_index_simplified(self.t2m)
+        heatindex = tmf.calculate_heat_index_simplified(self.t2m)
         # np.savetxt("heatindex.csv", heatindex)
         self.assert_equal(self.heatindex, heatindex)
 
     def test_mean_radiant_temperature(self):
-        mrtr = tfc.calculate_mean_radiant_temperature(
+        mrtr = tmf.calculate_mean_radiant_temperature(
             self.ssrd / 3600,
             self.ssr / 3600,
             self.fdir / 3600,
@@ -87,52 +87,52 @@ class TestThermalCalculator(unittest.TestCase):
         self.assert_equal(self.mrtr, mrtr)
 
     def test_utci(self):
-        rh_pc = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
-        ehPa = tfc.calculate_saturation_vapour_pressure(self.t2m) * rh_pc / 100.0
-        utci = tfc.calculate_utci(
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        ehPa = tmf.calculate_saturation_vapour_pressure(self.t2m) * rh_pc / 100.0
+        utci = tmf.calculate_utci(
             t2_k=self.t2m, va_ms=self.va, mrt_k=self.mrt, e_hPa=ehPa
         )
         # np.savetxt("utci.csv", utci)
         self.assert_equal(self.utci, utci)
 
     def test_apparent_temperature(self):
-        at = tfc.calculate_apparent_temperature(self.t2m, self.va)
+        at = tmf.calculate_apparent_temperature(self.t2m, self.va)
         # np.savetxt("at.csv", at)
         self.assert_equal(self.at, at)
 
     def test_net_effective_temperature(self):
-        net = tfc.calculate_net_effective_temperature(self.t2m, self.va, self.td)
+        net = tmf.calculate_net_effective_temperature(self.t2m, self.va, self.td)
         # np.savetxt("net.csv", net)
         self.assert_equal(self.net, net)
 
     def test_humidex(self):
-        humidex = tfc.calculate_humidex(self.t2m, self.td)
+        humidex = tmf.calculate_humidex(self.t2m, self.td)
         # np.savetxt("humidex.csv", humidex)
         self.assert_equal(self.humidex, humidex)
 
     def test_wind_chill(self):
-        windchill = tfc.calculate_wind_chill(self.t2m, self.va)
+        windchill = tmf.calculate_wind_chill(self.t2m, self.va)
         # np.savetxt("windchill.csv", windchill)
         self.assert_equal(self.windchill, windchill)
 
     def test_heat_index_adjusted(self):
-        hia = tfc.calculate_heat_index_adjusted(self.t2m, self.td)
+        hia = tmf.calculate_heat_index_adjusted(self.t2m, self.td)
         # np.savetxt("hia.csv", hia)
         self.assert_equal(self.heatindexadjusted, hia)
 
     def test_wbgt(self):
-        wbgt = tfc.calculate_wbgt(self.t2m, self.va, self.mrt)
+        wbgt = tmf.calculate_wbgt(self.t2m, self.va, self.mrt)
         # np.savetxt("wbgt.csv", wbgt)
         self.assert_equal(self.wbgt, wbgt)
 
     def test_wbgts(self):
-        wbgts = tfc.calculate_wbgts(self.t2m)
+        wbgts = tmf.calculate_wbgts(self.t2m)
         # np.savetxt("wbgts.csv", wbgts)
         self.assert_equal(self.wbgts, wbgts)
 
     def test_mrt_from_wbgt(self):
-        wbgt_k = tfc.celcius_to_kelvin(self.wbgt)
-        mrtw = tfc.calculate_mrt_from_wbgt(self.t2m, wbgt_k, self.va)
+        wbgt_k = tmf.celcius_to_kelvin(self.wbgt)
+        mrtw = tmf.calculate_mrt_from_wbgt(self.t2m, wbgt_k, self.va)
         # np.savetxt("mrtw.csv", mrtw)
         self.assert_equal(self.mrtw, mrtw)
 
