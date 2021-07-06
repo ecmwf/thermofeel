@@ -130,7 +130,7 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"cossza {cossza}")
         assert cossza == pytest.approx(0.8799471697555967, abs=1e-6)
         # from alternative formula
-        assert abs(cossza - cos(radians(90.0 - 61.5))) < 1e-2
+        assert cossza == pytest.approx(cos(radians(90.0 - 61.5)), abs=1e-2)
 
     def test_calculate_cos_solar_zenith_angle_integrated(self):
         lat = 48.81667
@@ -157,17 +157,17 @@ class TestThermalCalculator(unittest.TestCase):
         assert cossza == pytest.approx(0.0, abs=1e-6)
 
     def test_solar_declination_angle(self):
-        sda1, tc1 = tmf.solar_declination_angle(jd=166, h=0)
-        assert abs(sda1 - 23.32607701732299) < 1e-6
-        assert abs(tc1 - -0.054061457069008334) < 1e-6
+        sda, tc = tmf.solar_declination_angle(jd=166, h=0)
+        assert sda == pytest.approx(23.32607701732299, abs=1e-6)
+        assert tc == pytest.approx(-0.054061457069008334, abs=1e-6)
 
-        sda2, tc2 = tmf.solar_declination_angle(jd=4, h=12)
-        assert abs(sda2 - -22.64240042915207) < 1e-6
-        assert abs(tc2 - -1.219397058249299) < 1e-6
+        sda, tc = tmf.solar_declination_angle(jd=4, h=12)
+        assert sda == pytest.approx(-22.64240042915207, abs=1e-6)
+        assert tc == pytest.approx(-1.219397058249299, abs=1e-6)
 
-        sda3, tc3 = tmf.solar_declination_angle(jd=600, h=3)
-        assert abs(sda3 - 11.471993171760428) < 1e-6
-        assert abs(tc3 - -0.7161824119549858) < 1e-6
+        sda, tc = tmf.solar_declination_angle(jd=600, h=3)
+        assert sda == pytest.approx(11.471993171760428, abs=1e-6)
+        assert tc == pytest.approx(-0.7161824119549858, abs=1e-6)
 
 
 if __name__ == "__main__":
