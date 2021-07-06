@@ -107,6 +107,14 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"wbgt {wbgt}")
         assert wbgt == pytest.approx(26.769875412856436, abs=1e-6)
 
+        # test negative values are treated as 0
+        t2mk = 301
+        va = -10
+        mrt = 310
+        wbgt = thermofeel.calculate_wbgt(t2mk, va, mrt)
+        # print(f"wbgt {wbgt}")
+        assert wbgt == pytest.approx(26.76987669512414, abs=1e-6)
+
     def test_calculate_cos_solar_zenith_angle(self):
         # should return ~ 0.360303587797559
         cossza = thermofeel.calculate_cos_solar_zenith_angle(

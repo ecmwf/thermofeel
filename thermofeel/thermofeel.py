@@ -71,13 +71,6 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
-def calculate_es(t2m):
-    t2m = __wrap(t2m)
-    t2m = kelvin_to_celcius(t2m)
-    es = 6.11 * 10.0 ** (7.5 * t2m / (237.3 + t2m))
-    return es
-
-
 def calculate_relative_humidity_percent(t2m, td):
     """
     Calculate relative humidity in percent
@@ -699,9 +692,7 @@ def calculate_wbgt(t2m, mrt, va):
     rt1 = 3 ** (1 / 3)
     rt2 = np.sqrt(3) * np.sqrt(27 * a ** 4 - 16 * b ** 3) + 9 * a ** 2
     rt3 = 2 * 2 ** (2 / 3) * b
-    va = va
-    if va.any() <= 0:
-        va = 0
+    a = a.clip(min=0)
     wbgt_quartic = -1 / 2 * np.sqrt(
         rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
     ) + 1 / 2 * np.sqrt(
@@ -796,7 +787,6 @@ def calculate_wind_chill(t2m, va):
     """
     Wind Chill
     :param t2m: 2m Temperature [K]
-    :param rh: Relative Humidity [pa]
     :param va: wind speed at 10 meters [m/s]
 
     returns wind chill [°C]
