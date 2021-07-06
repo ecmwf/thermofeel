@@ -156,6 +156,15 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"cossza {cossza}")
         assert cossza == pytest.approx(0.0, abs=1e-6)
 
+        # lons can be > 360
+        lat = -lat
+        lon = 180 + lon
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, base, step
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.34495713937581207, abs=1e-6)
+
     def test_solar_declination_angle(self):
         sda, tc = tmf.solar_declination_angle(jd=166, h=0)
         assert sda == pytest.approx(23.32607701732299, abs=1e-6)
