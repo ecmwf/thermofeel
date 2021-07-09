@@ -673,18 +673,19 @@ def calculate_wbgts(t2m):
     return wbgts
 
 
-def calculate_wbgt(t2m, mrt, va):
+def calculate_wbgt(t2m, mrt, va,td):
     """
     calculate wet bulb globe temperature
     :param t2m: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-
+    :param td: dew point temperature [°C]
     returns wet bulb globe temperature [°C]
     """
     t2m = __wrap(t2m)
     mrt = __wrap(mrt)
     va = __wrap(va)
+    td = __wrap(td)
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
     a = f / 2
@@ -693,7 +694,7 @@ def calculate_wbgt(t2m, mrt, va):
     rt2 = np.sqrt(3) * np.sqrt(27 * a ** 4 - 16 * b ** 3) + 9 * a ** 2
     rt3 = 2 * 2 ** (2 / 3) * b
     a = a.clip(min=0)
-    wbgt_quartic = -1 / 2 * np.sqrt(
+    bgt_quartic = -1 / 2 * np.sqrt(
         rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
     ) + 1 / 2 * np.sqrt(
         (4 * a)
@@ -704,8 +705,12 @@ def calculate_wbgt(t2m, mrt, va):
         - (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
         - rt3 / (rt1 * rt2 ** (1 / 3))
     )
-    wbgt_quartic = kelvin_to_celcius(wbgt_quartic)
-    return wbgt_quartic
+    rh = calculate_relative_humidity_percent(t2m, td)
+    tw = t2m * np.arctan(0.151977 * (rh + 8.313659)^(1/2)) + np.arctan(t2m + rh) \
+    - np.arctan(rh - 1.676331) + 0.00391838 *(rh)**(3/2) * np.arctan(0.023101 * rh) - 4.686035
+    bgt_quartic = kelvin_to_celcius(bgt_quartic)
+    wbgt = 0.7 * tw + 0.2 * bgt + 0.1 * t2m
+    return wbgt
 
 
 def calculate_mrt_from_wbgt(t2m, wbgt, va):
