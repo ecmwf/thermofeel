@@ -1,4 +1,4 @@
-.. image:: thermofeel.png
+.. image:: https://raw.githubusercontent.com/ecmwf-projects/thermofeel/master/thermofeel.png
   :width: 600
   :alt: thermofeel logo
 
@@ -31,7 +31,8 @@ In support of the above indexes, it also calculates:
 Status
 ======
 
-|pypi_status| |pypi_release| |pypi_downloads| |code_size| |python-publish| |test-coverage| |codecov| 
+|pypi_status| 
+|pypi_release| |pypi_downloads| |code_size| |python-publish| |test-coverage| |codecov| 
 
 Installation
 ============
