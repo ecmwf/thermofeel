@@ -673,7 +673,7 @@ def calculate_wbgts(t2m):
     return wbgts
 
 
-def calculate_wbgt(t2m, mrt, va,td):
+def calculate_wbgt(t2m, mrt, va, td):
     """
     calculate wet bulb globe temperature
     :param t2m: 2m temperature [K]
@@ -706,10 +706,15 @@ def calculate_wbgt(t2m, mrt, va,td):
         - rt3 / (rt1 * rt2 ** (1 / 3))
     )
     rh = calculate_relative_humidity_percent(t2m, td)
-    tw = t2m * np.arctan(0.151977 * (rh + 8.313659)^(1/2)) + np.arctan(t2m + rh) \
-    - np.arctan(rh - 1.676331) + 0.00391838 *(rh)**(3/2) * np.arctan(0.023101 * rh) - 4.686035
-    bgt_quartic = kelvin_to_celcius(bgt_quartic)
-    wbgt = 0.7 * tw + 0.2 * bgt + 0.1 * t2m
+    tw = (
+        t2m * np.arctan(0.151977 * (rh + 8.313659) ^ (1 / 2))
+        + np.arctan(t2m + rh)
+        - np.arctan(rh - 1.676331)
+        + 0.00391838 * (rh) ** (3 / 2) * np.arctan(0.023101 * rh)
+        - 4.686035
+    )
+    bgt_c = kelvin_to_celcius(bgt_quartic)
+    wbgt = 0.7 * tw + 0.2 * bgt_c + 0.1 * t2m
     return wbgt
 
 
