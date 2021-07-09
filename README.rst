@@ -118,8 +118,8 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 .. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
     :target: https://badge.fury.io/py/thermofeel
 
-.. |tag_release| image:: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel.svg
-    :target: https://badge.fury.io/gh/ecmwf-projects%2Fthermofeel
+.. |tag_release| image:: https://img.shields.io/github/v/release/ecmwf-projects/thermofeel?sort=semver
+    :target: https://github.com/ecmwf-projects/thermofeel
 
 .. |codecov| image:: https://codecov.io/gh/ecmwf-projects/thermofeel/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/ecmwf-projects/thermofeel
