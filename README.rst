@@ -115,8 +115,8 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 .. |license| image:: https://img.shields.io/github/license/ecmwf-projects/thermofeel
     :target: https://www.apache.org/licenses/LICENSE-2.0.html
 
-.. |pypi_release| image:: https://badge.fury.io/py/thermofeel.svg
-    :target: https://badge.fury.io/py/thermofeel
+.. |pypi_release| image:: https://img.shields.io/pypi/v/thermofeel?color=green
+    :target: https://pypi.org/project/thermofeel
 
 .. |tag_release| image:: https://img.shields.io/github/v/release/ecmwf-projects/thermofeel?sort=semver
     :target: https://github.com/ecmwf-projects/thermofeel
