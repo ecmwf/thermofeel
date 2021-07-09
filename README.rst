@@ -28,22 +28,23 @@ In support of the above indexes, it also calculates:
  * Saturation vapour pressure
 
 
-Status
-======
+PyPi
+====
 
 |pypi_status| 
 |pypi_release| |pypi_downloads| |code_size| |python-publish| |test-coverage| |codecov| 
 
-Installation
-============
-
-The package is installed from PyPI with::
+Install with::
 
     $ pip install thermofeel
 
+Testing
+=======
+
+|python-publish| |test-coverage| |codecov| 
 
 System dependencies
--------------------
+===================
 
 thermofeel core functions depend on:
  * numpy
