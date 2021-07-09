@@ -10,7 +10,7 @@ calculation of relative humidity.
 Here we have two methods Heat Index Simplified and Heat Index Adjusted.
 As is set out by https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml \
 
-We carry out the calculation in fahrenheit and then convert to celcius in keeping \
+We carry out the calculation in Fahrenheit and then convert to Celsius in keeping \
 with the other thermal indices in this library.
 
 How To Use

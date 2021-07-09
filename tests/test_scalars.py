@@ -17,20 +17,20 @@ import thermofeel as tmf
 
 class TestThermalCalculator(unittest.TestCase):
     def test_relative_humidity_percent(self):
-        t2mk = tmf.celcius_to_kelvin(30.0)
-        t2dk = tmf.celcius_to_kelvin(28.0)
+        t2mk = tmf.celsius_to_kelvin(30.0)
+        t2dk = tmf.celsius_to_kelvin(28.0)
 
         rhpc = tmf.calculate_relative_humidity_percent(t2mk, t2dk)
 
         assert rhpc == pytest.approx(89.08526710467393, abs=1e-6)
 
     def test_saturation_vapour_pressure(self):
-        t2mk = tmf.celcius_to_kelvin(25.0)
+        t2mk = tmf.celsius_to_kelvin(25.0)
         svp = tmf.calculate_saturation_vapour_pressure(t2mk)
         assert svp == pytest.approx(31.699201897293, abs=1e-6)
 
     def test_heat_index(self):
-        t2mk = tmf.celcius_to_kelvin(25.0)
+        t2mk = tmf.celsius_to_kelvin(25.0)
         hi = tmf.calculate_heat_index_simplified(t2mk)
         # print(f"hi {hi}")
         assert hi == pytest.approx(49.321122555, abs=1e-6)
@@ -59,25 +59,25 @@ class TestThermalCalculator(unittest.TestCase):
     #      print(utci)
 
     def test_mrt_from_bgt(self):
-        t_k = np.array([tmf.celcius_to_kelvin(25.0)])
-        bgt_k = np.array([tmf.celcius_to_kelvin(23.0)])
+        t_k = np.array([tmf.celsius_to_kelvin(25.0)])
+        bgt_k = np.array([tmf.celsius_to_kelvin(23.0)])
         # print(f"bgt_k {bgt_k}")
         va = np.array([10])
         mrt_c = tmf.calculate_mrt_from_bgt(t_k, bgt_k, va)
         # print(f"mrt_c {mrt_c}")
-        bgt2_c = tmf.calculate_bgt(t_k, tmf.celcius_to_kelvin(mrt_c), va)
+        bgt2_c = tmf.calculate_bgt(t_k, tmf.celsius_to_kelvin(mrt_c), va)
 
-        assert tmf.kelvin_to_celcius(bgt_k) == pytest.approx(bgt2_c, abs=1e-6)
+        assert tmf.kelvin_to_celsius(bgt_k) == pytest.approx(bgt2_c, abs=1e-6)
 
     def test_apparent_temperature(self):
-        t2mk = tmf.celcius_to_kelvin(25.0)
+        t2mk = tmf.celsius_to_kelvin(25.0)
         va = 3
         at = tmf.calculate_apparent_temperature(t2mk, va)
         # print(f"at {at}")
         assert at == pytest.approx(27.844072534, abs=1e-6)
 
     def test_wbgts(self):
-        t2mk = tmf.celcius_to_kelvin(30.0)
+        t2mk = tmf.celsius_to_kelvin(30.0)
         wbgts = tmf.calculate_wbgts(t2mk)
         # print(f"wbgts {wbgts}")
         assert wbgts == pytest.approx(22.05908916, abs=1e-6)

@@ -34,20 +34,20 @@ def __wrap(variable):
         return variable
 
 
-# convert farenheit to kelvin
-# def __farenheit_to_kelvin(tf):
+# convert Fahrenheit to Kelvin
+# def __fahrenheit_to_kelvin(tf):
 #     tk = 5 * (tf - 273) / 9 + 32
 #     return tk
 
 
-# convert kelvin to farenheit
-def kelvin_to_farenheit(tk):
+# convert Kelvin to Fahrenheit
+def kelvin_to_fahrenheit(tk):
     tf = (tk - 273.15) * 9 / 5 + 32
     return tf
 
 
-# convert farenheit to celcius
-def farenheit_to_celcius(tf):
+# convert Fahrenheit to Celsius
+def fahrenheit_to_celsius(tf):
     tc = (tf - 32) * 5 / 9
     return tc
 

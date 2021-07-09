@@ -18,7 +18,7 @@ from thermofeel.thermofeel import (
     calculate_saturation_vapour_pressure,
     calculate_utci,
     calculate_wbgt,
-    celcius_to_kelvin,
+    celsius_to_kelvin,
 )
 
 
@@ -108,7 +108,7 @@ def calc_wbgt(messages):
     va = messages["10si"]["values"]  # m/s
 
     wbgt = calculate_wbgt(t2m, mrt, va)
-    wbgt = celcius_to_kelvin(wbgt)
+    wbgt = celsius_to_kelvin(wbgt)
 
     print(f"wbgt --> {wbgt}")
 
