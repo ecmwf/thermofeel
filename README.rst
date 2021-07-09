@@ -31,7 +31,7 @@ In support of the above indexes, it also calculates:
 Status
 ======
 
-|pypi_release| |python-publish| |test-coverage| |codecov| 
+|pypi_release| |pypi_downloads| |python-publish| |test-coverage| |codecov| 
 
 Installation
 ============
@@ -130,3 +130,5 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 .. |test-coverage| image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/test-coverage.yml/badge.svg
   :target: https://github.com/ecmwf-projects/thermofeel/actions
 
+.. |pypi_downloads| image:: https://img.shields.io/pypi/dm/thermofeel
+  :target: https://pypi.org/project/thermofeel
