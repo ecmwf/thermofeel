@@ -31,8 +31,7 @@ In support of the above indexes, it also calculates:
 PyPi
 ====
 
-|pypi_status| 
-|pypi_release| |pypi_downloads| |code_size| |python-publish| |test-coverage| |codecov| 
+|pypi_status|  |pypi_release| |pypi_downloads| |code_size| 
 
 Install with::
 
