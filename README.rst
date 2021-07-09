@@ -2,7 +2,7 @@
   :width: 600
   :alt: thermofeel logo
 
-|license| |tag_release| |last_commit| 
+|license| |tag_release| |last_commit| |commits_since_release| |code_size|
 
 **thermofeel** (pronounced *thermo-feel*)
 
@@ -112,6 +112,9 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 .. |last_commit| image:: https://img.shields.io/github/last-commit/ecmwf-projects/thermofeel
     :target: https://github.com/ecmwf-projects/thermofeel
 
+.. |commits_since_release| image:: https://img.shields.io/github/commits-since/ecmwf-projects/thermofeel/latest?sort=semver
+    :target: https://github.com/ecmwf-projects/thermofeel
+
 .. |license| image:: https://img.shields.io/github/license/ecmwf-projects/thermofeel
     :target: https://www.apache.org/licenses/LICENSE-2.0.html
 
@@ -132,3 +135,11 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 .. |pypi_downloads| image:: https://img.shields.io/pypi/dm/thermofeel
   :target: https://pypi.org/project/thermofeel
+
+.. |code_size| image:: https://img.shields.io/github/languages/code-size/ecmwf-projects/thermofeel?color=yellow
+  :target: https://github.com/ecmwf-projects/thermofeel
+
+
+
+
+  
