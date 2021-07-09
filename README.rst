@@ -2,7 +2,7 @@
   :width: 600
   :alt: thermofeel logo
 
-|license| |tag_release| |last_commit| |commits_since_release| |code_size|
+|license| |tag_release| |commits_since_release| |last_commit|
 
 **thermofeel** (pronounced *thermo-feel*)
 
@@ -31,7 +31,7 @@ In support of the above indexes, it also calculates:
 Status
 ======
 
-|pypi_release| |pypi_downloads| |python-publish| |test-coverage| |codecov| 
+|code_size| |pypi_release| |pypi_downloads| |python-publish| |test-coverage| |codecov| 
 
 Installation
 ============
@@ -136,7 +136,7 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 .. |pypi_downloads| image:: https://img.shields.io/pypi/dm/thermofeel
   :target: https://pypi.org/project/thermofeel
 
-.. |code_size| image:: https://img.shields.io/github/languages/code-size/ecmwf-projects/thermofeel?color=yellow
+.. |code_size| image:: https://img.shields.io/github/languages/code-size/ecmwf-projects/thermofeel?color=green
   :target: https://github.com/ecmwf-projects/thermofeel
 
 
