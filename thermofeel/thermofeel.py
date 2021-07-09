@@ -687,7 +687,7 @@ def calculate_wbt(t_c, rh):
         t_c * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
         + np.arctan(t_c + rh)
         - np.arctan(rh - 1.676331)
-        + 0.00391838 * (rh)**(3/2) * np.arctan(0.023101 * rh)
+        + 0.00391838 * (rh) ** (3 / 2) * np.arctan(0.023101 * rh)
         - 4.686035
     )
     return tw
@@ -732,7 +732,7 @@ def calculate_wbgt(t2m, mrt, va, td):
     bgt_c = kelvin_to_celcius(bgt_quartic)
 
     rh = calculate_relative_humidity_percent(t2m, td)
-    
+
     t_c = kelvin_to_celcius(t2m)
     tw_c = calculate_wbt(t_c, rh)
 
