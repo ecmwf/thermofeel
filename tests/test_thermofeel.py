@@ -131,7 +131,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.assert_equal(self.wbgts, wbgts)
 
     def test_mrt_from_bgt(self):
-        wbgt_k = tmf.celcius_to_kelvin(self.wbgt)
+        wbgt_k = tmf.celsius_to_kelvin(self.wbgt)
         mrtw = tmf.calculate_mrt_from_bgt(self.t2m, wbgt_k, self.va)
         # np.savetxt("mrtw.csv", mrtw)
         self.assert_equal(self.mrtw, mrtw)

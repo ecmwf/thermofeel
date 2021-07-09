@@ -36,8 +36,8 @@ import numpy as np
 
 from .helpers import (
     __wrap,
-    farenheit_to_celcius,
-    kelvin_to_farenheit,
+    fahrenheit_to_celsius,
+    kelvin_to_fahrenheit,
     kPa_to_hPa,
     to_julian_date,
     to_radians,
@@ -82,8 +82,8 @@ def calculate_relative_humidity_percent(t2m, td):
     t2m = __wrap(t2m)
     td = __wrap(td)
 
-    t2m = kelvin_to_celcius(t2m)
-    td = kelvin_to_celcius(td)
+    t2m = kelvin_to_celsius(t2m)
+    td = kelvin_to_celsius(td)
 
     # saturated vapour pressure
     es = 6.11 * 10.0 ** (7.5 * t2m / (237.3 + t2m))
@@ -380,8 +380,8 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
 
     rh = ehPa / 10.0  # rh in kPa
 
-    t2m = kelvin_to_celcius(t2)  # polynomial approx. is in Celsius
-    mrt = kelvin_to_celcius(mrt_kw)  # polynomial approx. is in Celsius
+    t2m = kelvin_to_celsius(t2)  # polynomial approx. is in Celsius
+    mrt = kelvin_to_celsius(mrt_kw)  # polynomial approx. is in Celsius
 
     e_mrt = np.subtract(mrt, t2m)
 
@@ -668,7 +668,7 @@ def calculate_wbgts(t2m):
     t2m = __wrap(t2m)
     rh = calculate_saturation_vapour_pressure(t2m)
     rh = kPa_to_hPa(rh)
-    t2m = kelvin_to_celcius(t2m)
+    t2m = kelvin_to_celsius(t2m)
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
@@ -726,7 +726,7 @@ def calculate_bgt(t_k, mrt, va):
         - rt3 / (rt1 * rt2 ** (1 / 3))
     )
 
-    bgt_c = kelvin_to_celcius(bgt_quartic)
+    bgt_c = kelvin_to_celsius(bgt_quartic)
     return bgt_c
 
 
@@ -752,7 +752,7 @@ def calculate_wbgt(t_k, mrt, va, td):
 
     rh = calculate_relative_humidity_percent(t_k, td)
 
-    t_c = kelvin_to_celcius(t_k)
+    t_c = kelvin_to_celsius(t_k)
     tw_c = calculate_wbt(t_c, rh)
 
     wbgt = 0.7 * tw_c + 0.2 * bgt_c + 0.1 * t_c
@@ -763,7 +763,7 @@ def calculate_mrt_from_bgt(t2m, bgt, va):
     """
     calculate mean radiant temperature from wet bulb globe temperature
     :param t2m: 2m temperature [K]
-    :param bgt: bulb globe temperature in kelvin [K]
+    :param bgt: bulb globe temperature in Kelvin [K]
     :param va: wind speed at 10 meters [m/s]
     returns mean radiant temperature [K]
     """
@@ -775,7 +775,7 @@ def calculate_mrt_from_bgt(t2m, bgt, va):
     bgt4 = bgt ** 4
     mrtc = bgt4 + f * (bgt - t2m)
     mrtc2 = np.sqrt(np.sqrt(mrtc))
-    return kelvin_to_celcius(mrtc2)
+    return kelvin_to_celsius(mrtc2)
 
 
 def calculate_humidex(t2m, td):
@@ -808,7 +808,7 @@ def calculate_net_effective_temperature(t2m, va, td):
     t2m = __wrap(t2m)
     va = __wrap(va)
     rh = __wrap(rh)
-    t2m = kelvin_to_celcius(t2m)
+    t2m = kelvin_to_celsius(t2m)
     rh = kPa_to_hPa(rh)
     ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
     net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
@@ -830,7 +830,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     rh = __wrap(rh)
     va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
     at = t2m + 0.33 * rh - 0.7 * va - 4
-    at = kelvin_to_celcius(at)
+    at = kelvin_to_celsius(at)
     return at
 
 
@@ -844,7 +844,7 @@ def calculate_wind_chill(t2m, va):
     """
     t2m = __wrap(t2m)
     va = __wrap(va)
-    t2m = kelvin_to_celcius(t2m)
+    t2m = kelvin_to_celsius(t2m)
     va = va * 2.23694  # convert to miles per hour
     windchill = 13.12 + 0.6215 * t2m - 11.37 * va ** 0.16 + 0.3965 + t2m + va ** 0.16
     return windchill
@@ -860,7 +860,7 @@ def calculate_heat_index_simplified(t2m, rh=None):
     t2m = __wrap(t2m)
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
-    t2m = kelvin_to_celcius(t2m)
+    t2m = kelvin_to_celsius(t2m)
     rh = kPa_to_hPa(rh)
 
     hiarray = [
@@ -899,7 +899,7 @@ def calculate_heat_index_adjusted(t2m, td):
     td = __wrap(td)
 
     rh = calculate_relative_humidity_percent(t2m, td)
-    t2m = kelvin_to_farenheit(t2m)
+    t2m = kelvin_to_fahrenheit(t2m)
 
     hiarray = [
         42.379,
@@ -956,19 +956,19 @@ def calculate_heat_index_adjusted(t2m, td):
         hi[hi_filter1 and hi_filter4 and hi_filter5] - adjustment2
     )
     hi[hi_filter6] = adjustment3
-    hi = farenheit_to_celcius(hi)
+    hi = fahrenheit_to_celsius(hi)
     return hi
 
 
 # Helpers
 
-# convert celcius to kelvin
-def celcius_to_kelvin(tc):
+# convert Celsius to Kelvin
+def celsius_to_kelvin(tc):
     tk = tc + 273.15
     return tk
 
 
-# convert kelvin to celcius
-def kelvin_to_celcius(tk):
+# convert Kelvin to Celsius
+def kelvin_to_celsius(tk):
     tc = tk - 273.15
     return tc
