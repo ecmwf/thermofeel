@@ -106,22 +106,34 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"wbt {wbt}")
         assert wbt == pytest.approx(13.6993419, abs=1e-6)
 
-    # def test_wbgt(self):
-    #     t2mk = 301
-    #     tdk = 300
-    #     va = 4
-    #     mrt = 310
-    #     wbgt = tmf.calculate_wbgt(t2mk, va, mrt, td)
-    #     # print(f"wbgt {wbgt}")
-    #     assert wbgt == pytest.approx(26.769875412856436, abs=1e-6)
+    def test_bgt(self):
+        t_k = 300
+        va = 20
+        mrt = 310
+        bgt = tmf.calculate_bgt(t_k, va, mrt)
+        print(f"bgt {bgt}")
+        assert bgt == pytest.approx(25.78402849, abs=1e-6)
 
-    #     # test negative values are treated as 0
-    #     t2mk = 301
-    #     va = -10
-    #     mrt = 310
-    #     wbgt = tmf.calculate_wbgt(t2mk, va, mrt)
-    #     # print(f"wbgt {wbgt}")
-    #     assert wbgt == pytest.approx(26.76987669512414, abs=1e-6)
+        # test negative values are treated as 0
+        va = -10
+        bgt = tmf.calculate_bgt(t_k, va, mrt)
+        print(f"bgt {bgt}")
+        assert bgt == pytest.approx(25.78400875, abs=1e-6)     
+
+    def test_wbgt(self):
+        t_k = 300
+        td_k = 290
+        va = 20
+        mrt = 310
+        wbgt = tmf.calculate_wbgt(t_k, va, mrt, td_k)
+        print(f"wbgt {wbgt}")
+        assert wbgt == pytest.approx(22.0381904925, abs=1e-6)
+
+        # test negative values are treated as 0
+        va = -10
+        wbgt = tmf.calculate_wbgt(t_k, va, mrt, td_k)
+        print(f"wbgt {wbgt}")
+        assert wbgt == pytest.approx(22.03818628, abs=1e-6)
 
     def test_calculate_cos_solar_zenith_angle(self):
         # should return ~ 0.360303587797559

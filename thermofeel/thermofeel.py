@@ -676,8 +676,9 @@ def calculate_wbgts(t2m):
 def calculate_wbt(t_c, rh):
     """
     calculate wet globe temperature
-    :param t2m: 2m temperature [C]
+    :param t2m: 2m temperature [°C]
     :param rh: relative humidity percentage[%]
+
     returns wet bulb temperature [°C]
     """
     t_c = __wrap(t_c)
@@ -693,26 +694,22 @@ def calculate_wbt(t_c, rh):
     return tw
 
 
-def calculate_wbgt(t2m, mrt, va, td):
+def calculate_bgt(t_k, mrt, va):
     """
-    calculate wet bulb globe temperature
+    calculate globe temperature
     :param t2m: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [°C]
-    returns wet bulb globe temperature [°C]
 
-    https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
-
+    returns bulb globe temperature [°C]
     """
-    t2m = __wrap(t2m)
+    t_k = __wrap(t_k)
     mrt = __wrap(mrt)
     va = __wrap(va)
-    td = __wrap(td)
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
     a = f / 2
-    b = -f * t2m - mrt ** 4
+    b = -f * t_k - mrt ** 4
     rt1 = 3 ** (1 / 3)
     rt2 = np.sqrt(3) * np.sqrt(27 * a ** 4 - 16 * b ** 3) + 9 * a ** 2
     rt3 = 2 * 2 ** (2 / 3) * b
@@ -730,10 +727,32 @@ def calculate_wbgt(t2m, mrt, va, td):
     )
 
     bgt_c = kelvin_to_celcius(bgt_quartic)
+    return bgt_c
 
-    rh = calculate_relative_humidity_percent(t2m, td)
 
-    t_c = kelvin_to_celcius(t2m)
+def calculate_wbgt(t_k, mrt, va, td):
+    """
+    calculate wet bulb globe temperature
+    :param t_k: 2m temperature [K]
+    :param mrt: mean radiant temperature [K]
+    :param va: wind speed at 10 meters [m/s]
+    :param td: dew point temperature [°C]
+
+    returns wet bulb globe temperature [°C]
+
+    https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
+
+    """
+    t_k = __wrap(t_k)
+    mrt = __wrap(mrt)
+    va = __wrap(va)
+    td = __wrap(td)
+
+    bgt_c = calculate_bgt(t_k, mrt, va)
+
+    rh = calculate_relative_humidity_percent(t_k, td)
+
+    t_c = kelvin_to_celcius(t_k)
     tw_c = calculate_wbt(t_c, rh)
 
     wbgt = 0.7 * tw_c + 0.2 * bgt_c + 0.1 * t_c
