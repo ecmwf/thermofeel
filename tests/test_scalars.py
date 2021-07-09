@@ -58,6 +58,17 @@ class TestThermalCalculator(unittest.TestCase):
     #      utci= tmf.calculate_utci(t2mk,va,mrt,e_hPa)
     #      print(utci)
 
+    def test_mrt_from_bgt(self):
+        t_k = np.array([tmf.celcius_to_kelvin(25.0)])
+        bgt_k = np.array([tmf.celcius_to_kelvin(23.0)])
+        # print(f"bgt_k {bgt_k}")
+        va = np.array([10])
+        mrt_c = tmf.calculate_mrt_from_bgt(t_k, bgt_k, va)
+        # print(f"mrt_c {mrt_c}")
+        bgt2_c = tmf.calculate_bgt(t_k, tmf.celcius_to_kelvin(mrt_c), va)
+
+        assert tmf.kelvin_to_celcius(bgt_k) == pytest.approx(bgt2_c, abs=1e-6)
+
     def test_apparent_temperature(self):
         t2mk = tmf.celcius_to_kelvin(25.0)
         va = 3
@@ -104,21 +115,28 @@ class TestThermalCalculator(unittest.TestCase):
         rh = 50
         wbt = tmf.calculate_wbt(t_c, rh)
         # print(f"wbt {wbt}")
-        assert wbt == pytest.approx(13.6993419, abs=1e-6)
+        assert wbt == pytest.approx(13.6993419, abs=1e-6)  # validated with the article
 
     def test_bgt(self):
+        t_k = 278.15  # 5C
+        va = 20
+        mrt = 278.15
+        bgt = tmf.calculate_bgt(t_k, va, mrt)
+        # print(f"bgt {bgt}")
+        assert bgt == pytest.approx(4.1575627528, abs=1e-6)
+
         t_k = 300
         va = 20
         mrt = 310
         bgt = tmf.calculate_bgt(t_k, va, mrt)
-        print(f"bgt {bgt}")
+        # print(f"bgt {bgt}")
         assert bgt == pytest.approx(25.78402849, abs=1e-6)
 
         # test negative values are treated as 0
         va = -10
         bgt = tmf.calculate_bgt(t_k, va, mrt)
-        print(f"bgt {bgt}")
-        assert bgt == pytest.approx(25.78400875, abs=1e-6)     
+        # print(f"bgt {bgt}")
+        assert bgt == pytest.approx(25.78400875, abs=1e-6)
 
     def test_wbgt(self):
         t_k = 300
@@ -126,13 +144,13 @@ class TestThermalCalculator(unittest.TestCase):
         va = 20
         mrt = 310
         wbgt = tmf.calculate_wbgt(t_k, va, mrt, td_k)
-        print(f"wbgt {wbgt}")
+        # print(f"wbgt {wbgt}")
         assert wbgt == pytest.approx(22.0381904925, abs=1e-6)
 
         # test negative values are treated as 0
         va = -10
         wbgt = tmf.calculate_wbgt(t_k, va, mrt, td_k)
-        print(f"wbgt {wbgt}")
+        # print(f"wbgt {wbgt}")
         assert wbgt == pytest.approx(22.03818628, abs=1e-6)
 
     def test_calculate_cos_solar_zenith_angle(self):

@@ -21,6 +21,6 @@ https://github.com/ecmwf-projects/thermofeel.git
 **Mean Radiant Temperature from Wet Bulb Globe Temperature**
 
 .. code-block:: python
-  calculate_mrt_from_wbgt(2m temperature,wind speed,wet bulb globe temperature)
+  calculate_mrt_from_bgt(2m temperature,wind speed,wet bulb globe temperature)
   
   

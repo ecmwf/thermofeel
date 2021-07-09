@@ -759,21 +759,21 @@ def calculate_wbgt(t_k, mrt, va, td):
     return wbgt
 
 
-def calculate_mrt_from_wbgt(t2m, wbgt, va):
+def calculate_mrt_from_bgt(t2m, bgt, va):
     """
     calculate mean radiant temperature from wet bulb globe temperature
     :param t2m: 2m temperature [K]
-    :param wbgt: wet bulb globe temperature in kelvin [K]
+    :param bgt: bulb globe temperature in kelvin [K]
     :param va: wind speed at 10 meters [m/s]
     returns mean radiant temperature [K]
     """
     t2m = __wrap(t2m)
-    wbgt = __wrap(wbgt)
+    bgt = __wrap(bgt)
     va = __wrap(va)
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
-    wbgt4 = wbgt ** 4
-    mrtc = wbgt4 + f * (wbgt - t2m)
+    bgt4 = bgt ** 4
+    mrtc = bgt4 + f * (bgt - t2m)
     mrtc2 = np.sqrt(np.sqrt(mrtc))
     return kelvin_to_celcius(mrtc2)
 
