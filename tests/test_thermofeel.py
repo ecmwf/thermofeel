@@ -120,10 +120,10 @@ class TestThermalCalculator(unittest.TestCase):
         # np.savetxt("hia.csv", hia)
         self.assert_equal(self.heatindexadjusted, hia)
 
-    def test_wbgt(self):
-        wbgt = tmf.calculate_wbgt(self.t2m, self.va, self.mrt)
-        # np.savetxt("wbgt.csv", wbgt)
-        self.assert_equal(self.wbgt, wbgt)
+    # def test_wbgt(self):
+    #     wbgt = tmf.calculate_wbgt(self.t2m, self.va, self.mrt)
+    #     # np.savetxt("wbgt.csv", wbgt)
+    #     self.assert_equal(self.wbgt, wbgt)
 
     def test_wbgts(self):
         wbgts = tmf.calculate_wbgts(self.t2m)

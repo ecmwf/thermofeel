@@ -99,21 +99,29 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"hia {hia}")
         assert hia[0] == pytest.approx(22.00355699, abs=1e-6)
 
-    def test_wbgt(self):
-        t2mk = 301
-        va = 4
-        mrt = 310
-        wbgt = tmf.calculate_wbgt(t2mk, va, mrt)
-        # print(f"wbgt {wbgt}")
-        assert wbgt == pytest.approx(26.769875412856436, abs=1e-6)
+    def test_wbt(self):
+        t_c = 20
+        rh = 50
+        wbt = tmf.calculate_wbt(t_c, rh)
+        # print(f"wbt {wbt}")
+        assert wbt == pytest.approx(13.6993419, abs=1e-6)
 
-        # test negative values are treated as 0
-        t2mk = 301
-        va = -10
-        mrt = 310
-        wbgt = tmf.calculate_wbgt(t2mk, va, mrt)
-        # print(f"wbgt {wbgt}")
-        assert wbgt == pytest.approx(26.76987669512414, abs=1e-6)
+    # def test_wbgt(self):
+    #     t2mk = 301
+    #     tdk = 300
+    #     va = 4
+    #     mrt = 310
+    #     wbgt = tmf.calculate_wbgt(t2mk, va, mrt, td)
+    #     # print(f"wbgt {wbgt}")
+    #     assert wbgt == pytest.approx(26.769875412856436, abs=1e-6)
+
+    #     # test negative values are treated as 0
+    #     t2mk = 301
+    #     va = -10
+    #     mrt = 310
+    #     wbgt = tmf.calculate_wbgt(t2mk, va, mrt)
+    #     # print(f"wbgt {wbgt}")
+    #     assert wbgt == pytest.approx(26.76987669512414, abs=1e-6)
 
     def test_calculate_cos_solar_zenith_angle(self):
         # should return ~ 0.360303587797559
