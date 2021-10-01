@@ -8,12 +8,14 @@
 
 import sys
 
+import eccodes
 import numpy as np
 from grib import decode_grib
 
-from thermofeel.thermofeel import calculate_cos_solar_zenith_angle, calculate_cos_solar_zenith_angle_integrated
-
-import eccodes
+from thermofeel.thermofeel import (
+    calculate_cos_solar_zenith_angle,
+    calculate_cos_solar_zenith_angle_integrated,
+)
 
 
 # Compute based on Numerical integration
@@ -34,8 +36,8 @@ def calc_cossza(message, begin, end):
     # in hours
     h_begin = begin
     h_end = end
-    nsplits = 2 * (end - begin) # 2 x (3-0) = 6   |---|---|---|---|---|---|
-#                                                 0                       3
+    nsplits = 2 * (end - begin)  # 2 x (3-0) = 6   |---|---|---|---|---|---|
+    #                                                 0                       3
     assert nsplits > 0
 
     time_steps = np.linspace(h_begin, h_end, num=nsplits)
@@ -57,7 +59,7 @@ def calc_cossza(message, begin, end):
             )
             integral += w[n] * cossza
 
-    integral /= (end - begin)
+    integral /= end - begin
 
     return integral
 
@@ -73,15 +75,23 @@ def calc_cossza_int(message, begin, end):
     dt = message["forecast_datetime"]
     # print(dt.year, dt.month, dt.day, dt.hour)
 
-    base = 0 # unused
+    base = 0  # unused
     step = end - begin
 
     integral = calculate_cos_solar_zenith_angle_integrated(
-                lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=base, step=step)
+        lat=lats,
+        lon=lons,
+        y=dt.year,
+        m=dt.month,
+        d=dt.day,
+        h=dt.hour,
+        base=base,
+        step=step,
+    )
 
     return integral
 
-    
+
 def main():
 
     msgs = decode_grib(sys.argv[1], True)
@@ -91,7 +101,7 @@ def main():
     print(msgs)
     step_begin = 0
     for m in msgs:
-        step_end = int(m['step'])
+        step_end = int(m["step"])
         print(f"Interval [{step_begin},{step_end}]")
 
         integrated_cossza = calc_cossza(m, step_begin, step_end)
