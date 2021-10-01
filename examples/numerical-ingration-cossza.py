@@ -11,36 +11,39 @@ import sys
 import numpy as np
 from grib import decode_grib
 
-from thermofeel.thermofeel import calculate_cos_solar_zenith_angle
+from thermofeel.thermofeel import calculate_cos_solar_zenith_angle, calculate_cos_solar_zenith_angle_integrated
+
+import eccodes
 
 
-def calc_cossza(message):
+# Compute based on Numerical integration
+def calc_cossza(message, begin, end):
 
     lats = message["lats"]
     lons = message["lons"]
-    assert lats.size == lons.size
 
-    print(lats.size)
+    # print(lats.size)
+    # print(lons.size)
+
+    assert lats.size == lons.size
 
     dt = message["forecast_datetime"]
 
-    print(dt.year, dt.month, dt.day, dt.hour)
+    # print(dt.year, dt.month, dt.day, dt.hour)
 
-    shape = (message["Nj"], message["Ni"])
+    # in hours
+    h_begin = begin
+    h_end = end
+    nsplits = 2 * (end - begin) # 2 x (3-0) = 6   |---|---|---|---|---|---|
+#                                                 0                       3
+    assert nsplits > 0
 
-    latsmat = np.reshape(lats, shape)
-    lonsmat = np.reshape(lons, shape)
+    time_steps = np.linspace(h_begin, h_end, num=nsplits)
 
-    h_begin = 0
-    h_end = 6
-    nsplits = 10
-
-    time_steps = np.linspace(h_begin, h_end, num=nsplits * h_end - 1)
-
-    integral = np.zeros(shape)
+    integral = np.zeros(lats.size)
 
     for s in range(len(time_steps) - 1):
-        print(s)
+        # print(f"interval {s+1}")
         # simpsons rule
         ti = time_steps[s]
         tf = time_steps[s + 1]
@@ -52,20 +55,54 @@ def calc_cossza(message):
             cossza = calculate_cos_solar_zenith_angle(
                 lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=t[n]
             )
-            integral += w[n] * np.reshape(cossza, shape)
+            integral += w[n] * cossza
 
-    print(np.max(integral))
+    integral /= (end - begin)
 
-    fname = sys.argv[2]
-    print("=> ", fname)
-    np.savez(fname, lats=latsmat, lons=lonsmat, values=integral)
+    return integral
 
 
+# uses the calculate_cos_solar_zenith_angle_integrated
+# this is NOT the numerical integration
+def calc_cossza_int(message, begin, end):
+
+    lats = message["lats"]
+    lons = message["lons"]
+    assert lats.size == lons.size
+
+    dt = message["forecast_datetime"]
+    # print(dt.year, dt.month, dt.day, dt.hour)
+
+    base = 0 # unused
+    step = end - begin
+
+    integral = calculate_cos_solar_zenith_angle_integrated(
+                lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=dt.hour, base=base, step=step)
+
+    return integral
+
+    
 def main():
-    msgs = decode_grib(sys.argv[1])
+
+    msgs = decode_grib(sys.argv[1], True)
+
+    output = open(sys.argv[2], "wb")
+
     print(msgs)
+    step_begin = 0
     for m in msgs:
-        calc_cossza(m)
+        step_end = int(m['step'])
+        print(f"Interval [{step_begin},{step_end}]")
+
+        integrated_cossza = calc_cossza(m, step_begin, step_end)
+        # integrated_cossza = calc_cossza_int(m, step_begin, step_end)
+
+        handle = eccodes.codes_clone(m["grib"])
+        eccodes.codes_set_values(handle, integrated_cossza)
+        eccodes.codes_write(handle, output)
+        eccodes.codes_release(handle)
+
+        step_begin = step_end
 
 
 if __name__ == "__main__":
