@@ -156,7 +156,7 @@ def main():
         legend="on",
     )
 
-    contour2 = magics.mcont(
+    contour = magics.mcont(
         contour_level_selection_type="count",
         legend="on",
         contour_level_tolerance=0,
@@ -167,7 +167,7 @@ def main():
         contour_shade_palette_name="colorbrewer_ext_YlGn_11_r",
     )
 
-    contour3 = magics.mcont(
+    contour = magics.mcont(
         contour_level_selection_type="count",
         legend="on",
         contour_level_tolerance=0,
@@ -192,7 +192,7 @@ def main():
     # legend = 'on'
     # )
 
-    magics.plot(output, projection, data, contour3, coast, legend)
+    magics.plot(output, projection, data, contour, coast, legend)
 
 
 if __name__ == "__main__":
