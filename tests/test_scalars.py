@@ -177,19 +177,19 @@ class TestThermalCalculator(unittest.TestCase):
         m = 11
         y = 2006
         h = 10.58333
-        base = 0
-        step = 3
+        tbegin = 0
+        tend = 3
         cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, base, step
+            lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.34495713937581207, abs=1e-6)
+        assert cossza == pytest.approx(0.3612631084052624, abs=1e-6)
 
         # opposite point in the world should be dark
         lat = -lat
         lon = 180 + lon
         cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, base, step
+            lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
         assert cossza == pytest.approx(0.0, abs=1e-6)
@@ -198,10 +198,10 @@ class TestThermalCalculator(unittest.TestCase):
         lat = -lat
         lon = 180 + lon
         cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, base, step
+            lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.34495713937581207, abs=1e-6)
+        assert cossza == pytest.approx(0.3612631084052624, abs=1e-6)
 
     def test_solar_declination_angle(self):
         sda, tc = tmf.solar_declination_angle(jd=166, h=0)

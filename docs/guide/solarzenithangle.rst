@@ -23,7 +23,7 @@ How To Use
 
 .. highlight:: python
 
-    calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step)
+    calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, tend)
 
 
 Interpret the Output

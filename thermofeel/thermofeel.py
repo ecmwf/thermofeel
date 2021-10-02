@@ -161,159 +161,48 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     return np.clip(csza, 0, None)
 
 
-def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step):
+def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, tend):
     """
-    calculate solar zenith angle
+    calculate average of solar zenith angle based on numerical integration
     :param lat: (int array) latitude [degrees]
     :param lon: (int array) longitude [degrees]
     :param y: year [int]
     :param m: month [int]
     :param d: day [int]
     :param h: hour [int]
-    :param base: base time of forecast enum [0,6,12,18]
-    :param step: step interval of forecast enum [0,1,3,6,..]
+    :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
+    :param tend:  offset in hours from forecast time to end of time interval for integration [int]
 
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
 
-    returns cosine of the solar zenith angle [degrees]
+    returns average of cosine of the solar zenith angle during interval [degrees]
     """
 
-    # OLD CODE
-    # maxx = 0
-    # base_offset = 0
-    # h_offset = 0
-    # # step_offset = 0
-    # if base == 0:
-    #     base_offset = 0
-    # if base == 6:
-    #     base_offset = 594
-    # if base == 18:
-    #     base_offset = 1806
-    # if base == 12:
-    #     base_offset = 1212  # 1200+12
+    nsplits = 2 * (tend - tbegin)  # 2 splits per hour = integrate every half-hour
 
-    # if step == 1:
-    #     h_offset = 0.5
-    #     maxx = 32.0
-    # if step == 3:
-    #     h_offset = 1.5
-    #     maxx = 14.0
-    # if step == 6:
-    #     h_offset = 3
-    #     maxx = 100.0
+    assert nsplits > 0
 
-    # hh = h - base_offset - h_offset
+    time_steps = np.linspace(tbegin, tend, num=nsplits + 1)
 
-    # POTENTIAL BUG in OLD CODE ABOVE -- POSSIBLE FIX BELOW -- Needs checking
-    # This ensures we can integrate but doesn't use hours offsets
-    hh = h
-    maxx = 100.0
+    integral = np.zeros_like(lat)
 
-    # convert to julian days counting from the beginning of the year
-    jd_ = to_julian_date(d, m, y)  # julian date of data
-    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
-    jd = jd_ - jd11_ + 1  # days since start of year
+    for s in range(len(time_steps) - 1):
+        # simpsons rule
+        ti = time_steps[s]
+        tf = time_steps[s + 1]
+        # print(f"interval {ti,tf}")
+        t = [ti, (tf + ti) / 2, tf]
+        w = ((tf - ti) / 6) * np.array([1, 4, 1])
 
-    # declination angle + time correction for solar angle
-    d, tc = solar_declination_angle(jd, hh)
-    drad = d * to_radians
-
-    # solar hour angle
-    sha = (hh - 12) * 15 + (lon + 180) / 2 + tc  # solar hour angle
-    sharad = sha * to_radians
-
-    latrad = lat * to_radians
-    lonrad = (lon + 180) / 2 * to_radians
-    accumulationperiod = step  # hours
-
-    # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2;
-    # = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
-    zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
-    zsolartimestart = sharad - zhalftimestep
-    zsolartimeend = sharad + zhalftimestep
-    ztandec = math.sin(drad) / max((math.cos(drad), 1.0e-12))
-    zcoshouranglesunset = (
-        -ztandec * np.sin(latrad) / np.clip(np.cos(latrad), 1.0e-12, None)
-    )
-    zsindecsinlat = math.sin(drad) * np.sin(latrad)
-    zcosdeccoslat = math.cos(drad) * np.cos(latrad)
-
-    def solar_zenith_angle_average(
-        lonrad,
-        zcoshouranglesunset,
-        zsindecsinlat,
-        zcosdeccoslat,
-        zsolartimestart,
-        zsolartimeend,
-        sha,
-    ):
-        # start and end hour
-        def horizon(val, rrange, lonrad, zsolartimestart, zsolartimeend, maxx):
-            if val < rrange * math.pi:
-                zhouranglestart = zsolartimestart + lonrad - ((rrange - 1.0) * math.pi)
-                zhourangleend = zsolartimeend + lonrad - ((rrange - 1.0) * math.pi)
-            else:
-                if rrange < maxx:
-                    zhouranglestart, zhourangleend = horizon(
-                        val, rrange + 2.0, lonrad, zsolartimestart, zsolartimeend, maxx
-                    )
-                else:
-                    zhouranglestart = zsolartimestart + lonrad - (maxx + 1.0) * math.pi
-                    zhourangleend = zsolartimeend + lonrad - (maxx + 1.0) * math.pi
-
-            return (zhouranglestart, zhourangleend)
-
-        # calculating the solar zenith angle
-
-        PMU0 = 0
-        if zcoshouranglesunset <= 1:
-            zhouranglestart, zhourangleend = horizon(
-                sha * math.pi / 180 + lonrad,
-                2,
-                lonrad,
-                zsolartimestart,
-                zsolartimeend,
-                maxx,
+        for n in range(len(w)):
+            cossza = calculate_cos_solar_zenith_angle(
+                lat=lat, lon=lon, y=y, m=m, d=d, h=(h + t[n])
             )
+            integral += w[n] * cossza
 
-            if zcoshouranglesunset >= -1:
-                zhouranglesunset = math.acos(zcoshouranglesunset)
-                if (
-                    zhourangleend <= -zhouranglesunset
-                    or zhouranglestart >= zhouranglesunset
-                ):
-                    PMU0 = 0
-                zhouranglestart = max(
-                    -zhouranglesunset, min(zhouranglestart, zhouranglesunset)
-                )
-                zhourangleend = max(
-                    -zhouranglesunset, min(zhourangleend, zhouranglesunset)
-                )
+    integral /= tend - tbegin
 
-            if (zhourangleend - zhouranglestart) > 1.0e-8:
-                PMU0 = max(
-                    0.0,
-                    zsindecsinlat
-                    + (
-                        zcosdeccoslat
-                        * (math.sin(zhourangleend) - math.sin(zhouranglestart))
-                    )
-                    / (zhourangleend - zhouranglestart),
-                )
-            else:
-                PMU0 = 0.0
-
-        return PMU0
-
-    return np.vectorize(solar_zenith_angle_average)(
-        lonrad,
-        zcoshouranglesunset,
-        zsindecsinlat,
-        zcosdeccoslat,
-        zsolartimestart,
-        zsolartimeend,
-        sha,
-    )
+    return integral
 
 
 def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):

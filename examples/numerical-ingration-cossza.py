@@ -75,9 +75,6 @@ def calc_cossza_int(message, begin, end):
     dt = message["forecast_datetime"]
     # print(dt.year, dt.month, dt.day, dt.hour)
 
-    base = 0  # unused
-    step = end - begin
-
     integral = calculate_cos_solar_zenith_angle_integrated(
         lat=lats,
         lon=lons,
@@ -85,8 +82,8 @@ def calc_cossza_int(message, begin, end):
         m=dt.month,
         d=dt.day,
         h=dt.hour,
-        base=base,
-        step=step,
+        tbegin=begin,
+        tend=end,
     )
 
     return integral
