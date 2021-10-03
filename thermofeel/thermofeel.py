@@ -185,6 +185,8 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, te
     time_steps = np.linspace(tbegin, tend, num=nsplits + 1)
 
     integral = np.zeros_like(lat)
+    cossza = np.zeros_like(lat)
+    last_t = -1
 
     for s in range(len(time_steps) - 1):
         # simpsons rule
@@ -195,10 +197,13 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, te
         w = ((tf - ti) / 6) * np.array([1, 4, 1])
 
         for n in range(len(w)):
-            cossza = calculate_cos_solar_zenith_angle(
-                lat=lat, lon=lon, y=y, m=m, d=d, h=(h + t[n])
-            )
+            time_h = h + t[n]
+            if time_h != last_t:  # don't recompute if last evaluation is same point
+                cossza = calculate_cos_solar_zenith_angle(
+                    lat=lat, lon=lon, y=y, m=m, d=d, h=time_h
+                )
             integral += w[n] * cossza
+            last_t = time_h
 
     integral /= tend - tbegin
 

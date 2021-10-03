@@ -43,7 +43,8 @@ def calc_cossza(message, begin, end):
     time_steps = np.linspace(h_begin, h_end, num=nsplits)
 
     integral = np.zeros(lats.size)
-
+    cossza = np.zeros(lats.size)
+    last_t = -1
     for s in range(len(time_steps) - 1):
         # print(f"interval {s+1}")
         # simpsons rule
@@ -54,9 +55,12 @@ def calc_cossza(message, begin, end):
         w = ((tf - ti) / 6) * np.array([1, 4, 1])
 
         for n in range(len(w)):
-            cossza = calculate_cos_solar_zenith_angle(
-                lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=t[n]
-            )
+            time_h = t[n]
+            if time_h != last_t:  # don't recompute if last evaluation is same point
+                cossza = calculate_cos_solar_zenith_angle(
+                    lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=time_h
+                )
+            last_t = time_h
             integral += w[n] * cossza
 
     integral /= end - begin
@@ -101,8 +105,8 @@ def main():
         step_end = int(m["step"])
         print(f"Interval [{step_begin},{step_end}]")
 
-        integrated_cossza = calc_cossza(m, step_begin, step_end)
-        # integrated_cossza = calc_cossza_int(m, step_begin, step_end)
+        # integrated_cossza = calc_cossza(m, step_begin, step_end)
+        integrated_cossza = calc_cossza_int(m, step_begin, step_end)
 
         handle = eccodes.codes_clone(m["grib"])
         eccodes.codes_set_values(handle, integrated_cossza)
