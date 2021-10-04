@@ -203,6 +203,33 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"cossza {cossza}")
         assert cossza == pytest.approx(0.3612630470539099, abs=1e-6)
 
+        # integration with splits every 20min (3 per hour)
+        lat = 48.81667
+        lon = 2.28972
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, tbegin, tend, splits_per_hour=3
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.3612630469576353, abs=1e-7)
+
+        # gauss integration order 2
+        lat = 48.81667
+        lon = 2.28972
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, tbegin, tend, integration_order=2
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.3612623904213413, abs=1e-7)
+
+        # gauss integration order 4
+        lat = 48.81667
+        lon = 2.28972
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, tbegin, tend, integration_order=4
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.36126304695749595, abs=1e-7)
+
     def test_solar_declination_angle(self):
         sda, tc = tmf.solar_declination_angle(jd=166, h=0)
         assert sda == pytest.approx(23.32607701732299, abs=1e-6)

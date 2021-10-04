@@ -161,7 +161,9 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     return np.clip(csza, 0, None)
 
 
-def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, tend):
+def calculate_cos_solar_zenith_angle_integrated(
+    lat, lon, y, m, d, h, tbegin, tend, splits_per_hour=1, integration_order=3
+):
     """
     calculate average of solar zenith angle based on numerical integration using 3 point gauss integration rule
     :param lat: (int array) latitude [degrees]
@@ -172,16 +174,52 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, te
     :param h: hour [int]
     :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
     :param tend:  offset in hours from forecast time to end of time interval for integration [int]
+    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
+    :param splits_per_hour:  number of time intregrations per hour [int]
 
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
 
     returns average of cosine of the solar zenith angle during interval [degrees]
     """
 
-    E3 = np.array([-math.sqrt(3.0 / 5.0), 0.0, math.sqrt(3.0 / 5.0)])
-    W3 = np.array([5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0])
+    # Gauss-Integration coefficients
+    if integration_order == 3:  # default, good speed and accuracy (3 points)
+        E = np.array([-math.sqrt(3.0 / 5.0), 0.0, math.sqrt(3.0 / 5.0)])
+        W = np.array([5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0])
+    else:
+        if integration_order == 1:  # fastest, worse accuracy (1 point)
+            E = np.array([0.0])
+            W = np.array([2.0])
+        else:
+            if integration_order == 2:  # faster, less accurate (2 points)
+                E = np.array([-1.0 / math.sqrt(3.0), 1.0 / math.sqrt(3.0)])
+                W = np.array([1.0, 1.0])
+            else:
+                if integration_order == 4:  # slower, more accurate (4 points)
+                    E = np.array(
+                        [
+                            -math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                            -math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                            math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                            math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                        ]
+                    )
+                    W = np.array(
+                        [
+                            (18 - math.sqrt(30)) / 36,
+                            (18 + math.sqrt(30)) / 36,
+                            (18 + math.sqrt(30)) / 36,
+                            (18 - math.sqrt(30)) / 36,
+                        ]
+                    )
+                else:
+                    print(f"Invalid integration_order {integration_order}")
+                    raise ValueError
 
-    nsplits = tend - tbegin  # 1 integration per hour
+    assert splits_per_hour > 0
+
+    nsplits = (tend - tbegin) * splits_per_hour
+
     assert nsplits > 0
     nsplits += 1
 
@@ -198,9 +236,9 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, te
         deltat = tf - ti
         jacob = deltat / 2.0
 
-        w = jacob * W3
+        w = jacob * W
         w /= tend - tbegin  # average of integral
-        t = jacob * E3
+        t = jacob * E
         t += (tf + ti) / 2.0
 
         # print(f"w {w}")
