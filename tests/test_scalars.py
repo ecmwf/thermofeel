@@ -208,7 +208,7 @@ class TestThermalCalculator(unittest.TestCase):
 
         # integration with splits every 20min (3 per hour)
         cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend, splits_per_hour=3
+            lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=3
         )
         # print(f"cossza {cossza}")
         assert cossza == pytest.approx(0.3612630469576353, abs=1e-7)

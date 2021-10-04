@@ -162,7 +162,7 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
 
 
 def calculate_cos_solar_zenith_angle_integrated(
-    lat, lon, y, m, d, h, tbegin, tend, splits_per_hour=1, integration_order=3
+    lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=1, integration_order=3
 ):
     """
     calculate average of solar zenith angle based on numerical integration using 3 point gauss integration rule
@@ -175,9 +175,11 @@ def calculate_cos_solar_zenith_angle_integrated(
     :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
     :param tend:  offset in hours from forecast time to end of time interval for integration [int]
     :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
-    :param splits_per_hour:  number of time intregrations per hour [int]
+    :param intervals_per_hour:  number of time intregrations per hour [int]
 
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
+
+    This uses Gaussian numerical integration. See https://en.wikipedia.org/wiki/Gaussian_quadrature
 
     returns average of cosine of the solar zenith angle during interval [degrees]
     """
@@ -216,14 +218,13 @@ def calculate_cos_solar_zenith_angle_integrated(
                     print(f"Invalid integration_order {integration_order}")
                     raise ValueError
 
-    assert splits_per_hour > 0
+    assert intervals_per_hour > 0
 
-    nsplits = (tend - tbegin) * splits_per_hour
+    nsplits = (tend - tbegin) * intervals_per_hour
 
     assert nsplits > 0
-    nsplits += 1
 
-    time_steps = np.linspace(tbegin, tend, num=nsplits)
+    time_steps = np.linspace(tbegin, tend, num=nsplits + 1)
 
     integral = np.zeros_like(lat)
 
