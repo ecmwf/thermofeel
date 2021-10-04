@@ -35,28 +35,32 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"hi {hi}")
         assert hi == pytest.approx(49.321122555, abs=1e-6)
 
-    # def test_meant_radiant_temperature(self):
-    #     ssrd= 15000
-    #     ssr = 14992
-    #     fdir = 15002
-    #     strd = 14993
-    #     strr = 15001
-    #     cossza = 0.4
-    #     mrt = tmf.calculate_mean_radiant_temperature(ssrd/3600,
-    #                                                         ssr/3600,
-    #                                                         fdir/3600,
-    #                                                         strd/3600,
-    #                                                         strr/3600,
-    #                                                         cossza/3600)
-    #     print(mrt)
+    def test_meant_radiant_temperature(self):
+        ssrd = np.array([15000])
+        ssr = np.array([14992])
+        fdir = np.array([15002])
+        strd = np.array([14993])
+        strr = np.array([15001])
+        cossza = np.array([0.4])
+        mrt = tmf.calculate_mean_radiant_temperature(
+            ssrd / 3600,
+            ssr / 3600,
+            fdir / 3600,
+            strd / 3600,
+            strr / 3600,
+            cossza / 3600,
+        )
+        # TODO: these are not good values for testing MRT -- please update them
+        print(f"mrt {mrt}")
+        assert mrt == pytest.approx(85.34478777, abs=1e-5)
 
-    # def test_utci(self):
-    #      t2mk = 309.0
-    #      va = 3
-    #      mrt = 310.0
-    #      e_hPa = 12
-    #      utci= tmf.calculate_utci(t2mk,va,mrt,e_hPa)
-    #      print(utci)
+    def test_utci(self):
+        t2mk = np.array([309.0])
+        va = np.array([3])
+        mrt = np.array([310.0])
+        e_hPa = np.array([12])
+        utci = tmf.calculate_utci(t2mk, va, mrt, e_hPa)
+        assert utci == pytest.approx(34.61530078, abs=1e-5)
 
     def test_mrt_from_bgt(self):
         t_k = np.array([tmf.celsius_to_kelvin(25.0)])
