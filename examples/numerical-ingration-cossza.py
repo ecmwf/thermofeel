@@ -6,6 +6,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+import math
 import sys
 
 import eccodes
@@ -18,7 +19,7 @@ from thermofeel.thermofeel import (
 )
 
 
-# Compute based on Numerical integration
+# Compute based on Numerical integration - Simpson's rule
 def calc_cossza(message, begin, end):
 
     lats = message["lats"]
@@ -40,7 +41,7 @@ def calc_cossza(message, begin, end):
     #                                                 0                       3
     assert nsplits > 0
 
-    time_steps = np.linspace(h_begin, h_end, num=nsplits)
+    time_steps = np.linspace(h_begin, h_end, num=nsplits + 1)
 
     integral = np.zeros(lats.size)
     cossza = np.zeros(lats.size)
@@ -68,8 +69,83 @@ def calc_cossza(message, begin, end):
     return integral
 
 
+E2 = np.array([-1.0 / math.sqrt(3.0), 1.0 / math.sqrt(3.0)])
+E3 = np.array([-math.sqrt(3.0 / 5.0), 0.0, math.sqrt(3.0 / 5.0)])
+E4 = np.array(
+    [
+        -math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+        -math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+        math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+        math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+    ]
+)
+
+W2 = np.array([1.0, 1.0])
+W3 = np.array([5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0])
+W4 = np.array(
+    [
+        (18 - math.sqrt(30)) / 36,
+        (18 + math.sqrt(30)) / 36,
+        (18 + math.sqrt(30)) / 36,
+        (18 - math.sqrt(30)) / 36,
+    ]
+)
+
+
+def calc_cossza_numerical_gauss_integration(message, begin, end):
+
+    lats = message["lats"]
+    lons = message["lons"]
+
+    # print(lats.size)
+    # print(lons.size)
+
+    assert lats.size == lons.size
+
+    dt = message["forecast_datetime"]
+
+    # print(dt.year, dt.month, dt.day, dt.hour)
+
+    # in hours
+    h_begin = begin
+    h_end = end
+    nsplits = end - begin
+    assert nsplits > 0
+    nsplits += 1
+
+    time_steps = np.linspace(h_begin, h_end, num=nsplits)
+
+    integral = np.zeros(lats.size)
+
+    for s in range(len(time_steps) - 1):
+
+        ti = time_steps[s]
+        tf = time_steps[s + 1]
+
+        print(f"Interval {s+1} [{ti}, {tf}]")
+
+        deltat = tf - ti
+        jacob = deltat / 2.0
+
+        w = jacob * W3
+        t = jacob * E3
+        t += (tf + ti) / 2.0
+
+        print(f"w {w}")
+        print(f"t {t}")
+
+        for n in range(len(w)):
+            cossza = calculate_cos_solar_zenith_angle(
+                lat=lats, lon=lons, y=dt.year, m=dt.month, d=dt.day, h=t[n]
+            )
+            integral += w[n] * cossza
+
+    integral /= end - begin
+
+    return integral
+
+
 # uses the calculate_cos_solar_zenith_angle_integrated
-# this is NOT the numerical integration
 def calc_cossza_int(message, begin, end):
 
     lats = message["lats"]
@@ -103,10 +179,14 @@ def main():
     step_begin = 0
     for m in msgs:
         step_end = int(m["step"])
+
         print(f"Interval [{step_begin},{step_end}]")
 
         # integrated_cossza = calc_cossza(m, step_begin, step_end)
         integrated_cossza = calc_cossza_int(m, step_begin, step_end)
+        # integrated_cossza = calc_cossza_numerical_gauss_integration(m, step_begin, step_end)
+
+        # print(f"max {np.amax(integrated_cossza)}")
 
         handle = eccodes.codes_clone(m["grib"])
         eccodes.codes_set_values(handle, integrated_cossza)

@@ -163,7 +163,7 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
 
 def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, tend):
     """
-    calculate average of solar zenith angle based on numerical integration
+    calculate average of solar zenith angle based on numerical integration using 3 point gauss integration rule
     :param lat: (int array) latitude [degrees]
     :param lon: (int array) longitude [degrees]
     :param y: year [int]
@@ -178,34 +178,41 @@ def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, tbegin, te
     returns average of cosine of the solar zenith angle during interval [degrees]
     """
 
-    nsplits = 2 * (tend - tbegin)  # 2 splits per hour = integrate every half-hour
+    E3 = np.array([-math.sqrt(3.0 / 5.0), 0.0, math.sqrt(3.0 / 5.0)])
+    W3 = np.array([5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0])
 
+    nsplits = tend - tbegin  # 1 integration per hour
     assert nsplits > 0
+    nsplits += 1
 
-    time_steps = np.linspace(tbegin, tend, num=nsplits + 1)
+    time_steps = np.linspace(tbegin, tend, num=nsplits)
 
     integral = np.zeros_like(lat)
-    cossza = np.zeros_like(lat)
-    last_t = -1
 
     for s in range(len(time_steps) - 1):
-        # simpsons rule
         ti = time_steps[s]
         tf = time_steps[s + 1]
-        # print(f"interval {ti,tf}")
-        t = [ti, (tf + ti) / 2, tf]
-        w = ((tf - ti) / 6) * np.array([1, 4, 1])
+
+        # print(f"Interval {s+1} [{ti}, {tf}]")
+
+        deltat = tf - ti
+        jacob = deltat / 2.0
+
+        w = jacob * W3
+        w /= tend - tbegin  # average of integral
+        t = jacob * E3
+        t += (tf + ti) / 2.0
+
+        # print(f"w {w}")
+        # print(f"t {t}")
 
         for n in range(len(w)):
-            time_h = h + t[n]
-            if time_h != last_t:  # don't recompute if last evaluation is same point
-                cossza = calculate_cos_solar_zenith_angle(
-                    lat=lat, lon=lon, y=y, m=m, d=d, h=time_h
-                )
+            cossza = calculate_cos_solar_zenith_angle(
+                lat=lat, lon=lon, y=y, m=m, d=d, h=(h + t[n])
+            )
             integral += w[n] * cossza
-            last_t = time_h
 
-    integral /= tend - tbegin
+    # integral /= (tend - tbegin) # average is above for efficiency
 
     return integral
 

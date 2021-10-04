@@ -183,7 +183,7 @@ class TestThermalCalculator(unittest.TestCase):
             lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.3612631084052624, abs=1e-6)
+        assert cossza == pytest.approx(0.3612630470539099, abs=1e-6)
 
         # opposite point in the world should be dark
         lat = -lat
@@ -201,7 +201,7 @@ class TestThermalCalculator(unittest.TestCase):
             lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.3612631084052624, abs=1e-6)
+        assert cossza == pytest.approx(0.3612630470539099, abs=1e-6)
 
     def test_solar_declination_angle(self):
         sda, tc = tmf.solar_declination_angle(jd=166, h=0)
