@@ -36,11 +36,11 @@ class TestThermalCalculator(unittest.TestCase):
         assert hi == pytest.approx(49.321122555, abs=1e-6)
 
     def test_meant_radiant_temperature(self):
-        ssrd = np.array([15000])
-        ssr = np.array([14992])
-        fdir = np.array([15002])
-        strd = np.array([14993])
-        strr = np.array([15001])
+        ssrd = np.array([60000])
+        ssr = np.array([471818])
+        fdir = np.array([374150])
+        strd = np.array([1061213])
+        strr = np.array([-182697])
         cossza = np.array([0.4])
         mrt = tmf.calculate_mean_radiant_temperature(
             ssrd / 3600,
@@ -50,9 +50,9 @@ class TestThermalCalculator(unittest.TestCase):
             strr / 3600,
             cossza / 3600,
         )
-        # TODO: these are not good values for testing MRT -- please update them
-        print(f"mrt {mrt}")
-        assert mrt == pytest.approx(85.34478777, abs=1e-5)
+       
+        #print(f"mrt {mrt}")
+        assert mrt == pytest.approx(262.81089323, abs=1e-5)
 
     def test_utci(self):
         t2mk = np.array([309.0])
