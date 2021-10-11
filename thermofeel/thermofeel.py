@@ -1,4 +1,4 @@
-# (C) Copyright 1996- ECMWF.
+﻿# (C) Copyright 1996- ECMWF.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -18,7 +18,7 @@
     * Humidex
     * Apparent Temperature
     * Wind Chill
-    * Net Effective Temperature
+    * Normal Effective Temperature (NET)
 
     In support of the above indexes, it also calculates:
     * Solar Declination Angle
@@ -298,13 +298,14 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     return mrt
 
 
-def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
+def calculate_utci(t2_k, va_ms, mrt_k, e_hPa = None,td_k = None):
     """
     UTCI
-    :param t2m: (float array) is 2m temperature [K]
-    :param va: (float array) is wind speed at 10 meters [m/s]
-    :param mrt:(float array) is mean radiant temperature [K]
-    :param ehPa: (float array) is water vapour pressure [hPa]
+    :param t2_k: (float array) is 2m temperature [K]
+    :param va_ms: (float array) is wind speed at 10 meters [m/s]
+    :param mrt_k:(float array) is mean radiant temperature [K]
+    :param e_hPa: (float array) is water vapour pressure [hPa]
+    :param td_k: (float array) is 2m dew point temperature [K]
 
     Calculate UTCI with a 6th order polynomial approximation according to:
     Brode, P. et al. Deriving the operational procedure for the
@@ -316,7 +317,16 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
     t2 = __wrap(t2_k)
     va = __wrap(va_ms)
     mrt_kw = __wrap(mrt_k)
-    ehPa = __wrap(e_hPa)
+    if e_hPa is not None:
+        ehPa = __wrap(e_hPa)
+        rh = ehPa / 10.0  # rh in kPa
+    if td_k is not None:
+        t2d = __wrap(td_k)
+        rh_pc = calculate_relative_humidity_percent(t2, t2d)
+        ehPa = calculate_saturation_vapour_pressure(t2) * rh_pc / 100.0
+        rh = ehPa / 10.0 # rh in kPa
+    else:
+        print("Input e_hPa or td_k")
 
     rh = ehPa / 10.0  # rh in kPa
 
@@ -736,7 +746,7 @@ def calculate_humidex(t2m, td):
 
 def calculate_net_effective_temperature(t2m, va, td):
     """
-    Net Effective Temperature used in Hong Kong, Poland and Germany
+    Net - Normal Effective Temperature used in Hong Kong, Poland and Germany
     :param t2m: 2m temperature [K]
     :param td: 2m dew point temperature [K]
     :param rh: Relative Humidity [pa]
