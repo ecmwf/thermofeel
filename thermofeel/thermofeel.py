@@ -298,7 +298,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     return mrt
 
 
-def calculate_utci(t2_k, va_ms, mrt_k, e_hPa = None,td_k = None):
+def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     """
     UTCI
     :param t2_k: (float array) is 2m temperature [K]
@@ -324,7 +324,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa = None,td_k = None):
         t2d = __wrap(td_k)
         rh_pc = calculate_relative_humidity_percent(t2, t2d)
         ehPa = calculate_saturation_vapour_pressure(t2) * rh_pc / 100.0
-        rh = ehPa / 10.0 # rh in kPa
+        rh = ehPa / 10.0  # rh in kPa
     else:
         print("Input e_hPa or td_k")
 

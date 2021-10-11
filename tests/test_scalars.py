@@ -49,10 +49,9 @@ class TestThermalCalculator(unittest.TestCase):
             strd / 3600,
             strr / 3600,
             cossza / 3600,
-        )  
-        #print(f"mrt {mrt}")
+        )
+        # print(f"mrt {mrt}")
         assert mrt == pytest.approx(262.81089323, abs=1e-5)
-        
 
     def test_utci(self):
         t2mk = np.array([309.0])
