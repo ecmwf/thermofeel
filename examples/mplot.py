@@ -156,6 +156,28 @@ def main():
         legend="on",
     )
 
+    contour = magics.mcont(
+        contour_level_selection_type="count",
+        legend="on",
+        contour_level_tolerance=0,
+        contour_level_count=11,
+        contour_shade="on",
+        contour_shade_method="area_fill",
+        contour_shade_colour_method="palette",
+        contour_shade_palette_name="colorbrewer_ext_YlGn_11_r",
+    )
+
+    contour = magics.mcont(
+        contour_level_selection_type="count",
+        legend="on",
+        contour_level_tolerance=0,
+        contour_level_count=11,
+        contour_shade="on",
+        contour_shade_method="area_fill",
+        contour_shade_colour_method="palette",
+        contour_shade_palette_name="m_green_purple_11",
+    )
+
     # contour = magics.mcont(
     # contour = 'off',
     # contour_hilo = 'off',

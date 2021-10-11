@@ -1,4 +1,4 @@
-# (C) Copyright 1996- ECMWF.
+﻿# (C) Copyright 1996- ECMWF.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -18,7 +18,7 @@
     * Humidex
     * Apparent Temperature
     * Wind Chill
-    * Net Effective Temperature
+    * Normal Effective Temperature (NET)
 
     In support of the above indexes, it also calculates:
     * Solar Declination Angle
@@ -161,159 +161,99 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     return np.clip(csza, 0, None)
 
 
-def calculate_cos_solar_zenith_angle_integrated(lat, lon, y, m, d, h, base, step):
+def calculate_cos_solar_zenith_angle_integrated(
+    lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=1, integration_order=3
+):
     """
-    calculate solar zenith angle
+    calculate average of solar zenith angle based on numerical integration using 3 point gauss integration rule
     :param lat: (int array) latitude [degrees]
     :param lon: (int array) longitude [degrees]
     :param y: year [int]
     :param m: month [int]
     :param d: day [int]
     :param h: hour [int]
-    :param base: base time of forecast enum [0,6,12,18]
-    :param step: step interval of forecast enum [0,1,3,6,..]
+    :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
+    :param tend:  offset in hours from forecast time to end of time interval for integration [int]
+    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
+    :param intervals_per_hour:  number of time intregrations per hour [int]
 
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
 
-    returns cosine of the solar zenith angle [degrees]
+    This uses Gaussian numerical integration. See https://en.wikipedia.org/wiki/Gaussian_quadrature
+
+    returns average of cosine of the solar zenith angle during interval [degrees]
     """
 
-    # OLD CODE
-    # maxx = 0
-    # base_offset = 0
-    # h_offset = 0
-    # # step_offset = 0
-    # if base == 0:
-    #     base_offset = 0
-    # if base == 6:
-    #     base_offset = 594
-    # if base == 18:
-    #     base_offset = 1806
-    # if base == 12:
-    #     base_offset = 1212  # 1200+12
-
-    # if step == 1:
-    #     h_offset = 0.5
-    #     maxx = 32.0
-    # if step == 3:
-    #     h_offset = 1.5
-    #     maxx = 14.0
-    # if step == 6:
-    #     h_offset = 3
-    #     maxx = 100.0
-
-    # hh = h - base_offset - h_offset
-
-    # POTENTIAL BUG in OLD CODE ABOVE -- POSSIBLE FIX BELOW -- Needs checking
-    # This ensures we can integrate but doesn't use hours offsets
-    hh = h
-    maxx = 100.0
-
-    # convert to julian days counting from the beginning of the year
-    jd_ = to_julian_date(d, m, y)  # julian date of data
-    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
-    jd = jd_ - jd11_ + 1  # days since start of year
-
-    # declination angle + time correction for solar angle
-    d, tc = solar_declination_angle(jd, hh)
-    drad = d * to_radians
-
-    # solar hour angle
-    sha = (hh - 12) * 15 + (lon + 180) / 2 + tc  # solar hour angle
-    sharad = sha * to_radians
-
-    latrad = lat * to_radians
-    lonrad = (lon + 180) / 2 * to_radians
-    accumulationperiod = step  # hours
-
-    # 2*3.1415=day in rad; /24=day hour in rad; *accumulationperiod/2;
-    # = half of the (radiation) accumulation period - SUN IN THE MIDDLE!
-    zhalftimestep = (2 * np.pi) / 24 * accumulationperiod / 2
-    zsolartimestart = sharad - zhalftimestep
-    zsolartimeend = sharad + zhalftimestep
-    ztandec = math.sin(drad) / max((math.cos(drad), 1.0e-12))
-    zcoshouranglesunset = (
-        -ztandec * np.sin(latrad) / np.clip(np.cos(latrad), 1.0e-12, None)
-    )
-    zsindecsinlat = math.sin(drad) * np.sin(latrad)
-    zcosdeccoslat = math.cos(drad) * np.cos(latrad)
-
-    def solar_zenith_angle_average(
-        lonrad,
-        zcoshouranglesunset,
-        zsindecsinlat,
-        zcosdeccoslat,
-        zsolartimestart,
-        zsolartimeend,
-        sha,
-    ):
-        # start and end hour
-        def horizon(val, rrange, lonrad, zsolartimestart, zsolartimeend, maxx):
-            if val < rrange * math.pi:
-                zhouranglestart = zsolartimestart + lonrad - ((rrange - 1.0) * math.pi)
-                zhourangleend = zsolartimeend + lonrad - ((rrange - 1.0) * math.pi)
+    # Gauss-Integration coefficients
+    if integration_order == 3:  # default, good speed and accuracy (3 points)
+        E = np.array([-math.sqrt(3.0 / 5.0), 0.0, math.sqrt(3.0 / 5.0)])
+        W = np.array([5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0])
+    else:
+        if integration_order == 1:  # fastest, worse accuracy (1 point)
+            E = np.array([0.0])
+            W = np.array([2.0])
+        else:
+            if integration_order == 2:  # faster, less accurate (2 points)
+                E = np.array([-1.0 / math.sqrt(3.0), 1.0 / math.sqrt(3.0)])
+                W = np.array([1.0, 1.0])
             else:
-                if rrange < maxx:
-                    zhouranglestart, zhourangleend = horizon(
-                        val, rrange + 2.0, lonrad, zsolartimestart, zsolartimeend, maxx
+                if integration_order == 4:  # slower, more accurate (4 points)
+                    E = np.array(
+                        [
+                            -math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                            -math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                            math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                            math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
+                        ]
+                    )
+                    W = np.array(
+                        [
+                            (18 - math.sqrt(30)) / 36,
+                            (18 + math.sqrt(30)) / 36,
+                            (18 + math.sqrt(30)) / 36,
+                            (18 - math.sqrt(30)) / 36,
+                        ]
                     )
                 else:
-                    zhouranglestart = zsolartimestart + lonrad - (maxx + 1.0) * math.pi
-                    zhourangleend = zsolartimeend + lonrad - (maxx + 1.0) * math.pi
+                    print(f"Invalid integration_order {integration_order}")
+                    raise ValueError
 
-            return (zhouranglestart, zhourangleend)
+    assert intervals_per_hour > 0
 
-        # calculating the solar zenith angle
+    nsplits = (tend - tbegin) * intervals_per_hour
 
-        PMU0 = 0
-        if zcoshouranglesunset <= 1:
-            zhouranglestart, zhourangleend = horizon(
-                sha * math.pi / 180 + lonrad,
-                2,
-                lonrad,
-                zsolartimestart,
-                zsolartimeend,
-                maxx,
+    assert nsplits > 0
+
+    time_steps = np.linspace(tbegin, tend, num=nsplits + 1)
+
+    integral = np.zeros_like(lat)
+
+    for s in range(len(time_steps) - 1):
+        ti = time_steps[s]
+        tf = time_steps[s + 1]
+
+        # print(f"Interval {s+1} [{ti}, {tf}]")
+
+        deltat = tf - ti
+        jacob = deltat / 2.0
+
+        w = jacob * W
+        w /= tend - tbegin  # average of integral
+        t = jacob * E
+        t += (tf + ti) / 2.0
+
+        # print(f"w {w}")
+        # print(f"t {t}")
+
+        for n in range(len(w)):
+            cossza = calculate_cos_solar_zenith_angle(
+                lat=lat, lon=lon, y=y, m=m, d=d, h=(h + t[n])
             )
+            integral += w[n] * cossza
 
-            if zcoshouranglesunset >= -1:
-                zhouranglesunset = math.acos(zcoshouranglesunset)
-                if (
-                    zhourangleend <= -zhouranglesunset
-                    or zhouranglestart >= zhouranglesunset
-                ):
-                    PMU0 = 0
-                zhouranglestart = max(
-                    -zhouranglesunset, min(zhouranglestart, zhouranglesunset)
-                )
-                zhourangleend = max(
-                    -zhouranglesunset, min(zhourangleend, zhouranglesunset)
-                )
+    # integral /= (tend - tbegin) # average is above for efficiency
 
-            if (zhourangleend - zhouranglestart) > 1.0e-8:
-                PMU0 = max(
-                    0.0,
-                    zsindecsinlat
-                    + (
-                        zcosdeccoslat
-                        * (math.sin(zhourangleend) - math.sin(zhouranglestart))
-                    )
-                    / (zhourangleend - zhouranglestart),
-                )
-            else:
-                PMU0 = 0.0
-
-        return PMU0
-
-    return np.vectorize(solar_zenith_angle_average)(
-        lonrad,
-        zcoshouranglesunset,
-        zsindecsinlat,
-        zcosdeccoslat,
-        zsolartimestart,
-        zsolartimeend,
-        sha,
-    )
+    return integral
 
 
 def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
@@ -358,13 +298,14 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     return mrt
 
 
-def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
+def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     """
     UTCI
-    :param t2m: (float array) is 2m temperature [K]
-    :param va: (float array) is wind speed at 10 meters [m/s]
-    :param mrt:(float array) is mean radiant temperature [K]
-    :param ehPa: (float array) is water vapour pressure [hPa]
+    :param t2_k: (float array) is 2m temperature [K]
+    :param va_ms: (float array) is wind speed at 10 meters [m/s]
+    :param mrt_k:(float array) is mean radiant temperature [K]
+    :param e_hPa: (float array) is water vapour pressure [hPa]
+    :param td_k: (float array) is 2m dew point temperature [K]
 
     Calculate UTCI with a 6th order polynomial approximation according to:
     Brode, P. et al. Deriving the operational procedure for the
@@ -376,7 +317,16 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa):
     t2 = __wrap(t2_k)
     va = __wrap(va_ms)
     mrt_kw = __wrap(mrt_k)
-    ehPa = __wrap(e_hPa)
+    if e_hPa is not None:
+        ehPa = __wrap(e_hPa)
+        rh = ehPa / 10.0  # rh in kPa
+    if td_k is not None:
+        t2d = __wrap(td_k)
+        rh_pc = calculate_relative_humidity_percent(t2, t2d)
+        ehPa = calculate_saturation_vapour_pressure(t2) * rh_pc / 100.0
+        rh = ehPa / 10.0  # rh in kPa
+    else:
+        print("Input e_hPa or td_k")
 
     rh = ehPa / 10.0  # rh in kPa
 
@@ -796,7 +746,7 @@ def calculate_humidex(t2m, td):
 
 def calculate_net_effective_temperature(t2m, va, td):
     """
-    Net Effective Temperature used in Hong Kong, Poland and Germany
+    Net - Normal Effective Temperature used in Hong Kong, Poland and Germany
     :param t2m: 2m temperature [K]
     :param td: 2m dew point temperature [K]
     :param rh: Relative Humidity [pa]

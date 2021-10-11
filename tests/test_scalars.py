@@ -35,28 +35,31 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"hi {hi}")
         assert hi == pytest.approx(49.321122555, abs=1e-6)
 
-    # def test_meant_radiant_temperature(self):
-    #     ssrd= 15000
-    #     ssr = 14992
-    #     fdir = 15002
-    #     strd = 14993
-    #     strr = 15001
-    #     cossza = 0.4
-    #     mrt = tmf.calculate_mean_radiant_temperature(ssrd/3600,
-    #                                                         ssr/3600,
-    #                                                         fdir/3600,
-    #                                                         strd/3600,
-    #                                                         strr/3600,
-    #                                                         cossza/3600)
-    #     print(mrt)
+    def test_meant_radiant_temperature(self):
+        ssrd = np.array([60000])
+        ssr = np.array([471818])
+        fdir = np.array([374150])
+        strd = np.array([1061213])
+        strr = np.array([-182697])
+        cossza = np.array([0.4])
+        mrt = tmf.calculate_mean_radiant_temperature(
+            ssrd / 3600,
+            ssr / 3600,
+            fdir / 3600,
+            strd / 3600,
+            strr / 3600,
+            cossza / 3600,
+        )
+        # print(f"mrt {mrt}")
+        assert mrt == pytest.approx(262.81089323, abs=1e-5)
 
-    # def test_utci(self):
-    #      t2mk = 309.0
-    #      va = 3
-    #      mrt = 310.0
-    #      e_hPa = 12
-    #      utci= tmf.calculate_utci(t2mk,va,mrt,e_hPa)
-    #      print(utci)
+    def test_utci(self):
+        t2mk = np.array([309.0])
+        va = np.array([3])
+        mrt = np.array([310.0])
+        e_hPa = np.array([12])
+        utci = tmf.calculate_utci(t2mk, va, mrt, e_hPa)
+        assert utci == pytest.approx(34.61530078, abs=1e-5)
 
     def test_mrt_from_bgt(self):
         t_k = np.array([tmf.celsius_to_kelvin(25.0)])
@@ -177,19 +180,19 @@ class TestThermalCalculator(unittest.TestCase):
         m = 11
         y = 2006
         h = 10.58333
-        base = 0
-        step = 3
+        tbegin = 0
+        tend = 3
         cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, base, step
+            lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.34495713937581207, abs=1e-6)
+        assert cossza == pytest.approx(0.3612630470539099, abs=1e-6)
 
         # opposite point in the world should be dark
         lat = -lat
         lon = 180 + lon
         cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, base, step
+            lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
         assert cossza == pytest.approx(0.0, abs=1e-6)
@@ -198,10 +201,41 @@ class TestThermalCalculator(unittest.TestCase):
         lat = -lat
         lon = 180 + lon
         cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, base, step
+            lat, lon, y, m, d, h, tbegin, tend
         )
         # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.34495713937581207, abs=1e-6)
+        assert cossza == pytest.approx(0.3612630470539099, abs=1e-6)
+
+        lat = 48.81667
+        lon = 2.28972
+
+        # integration with splits every 20min (3 per hour)
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=3
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.3612630469576353, abs=1e-7)
+
+        # gauss integration order 2
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, tbegin, tend, integration_order=2
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.3612623904213413, abs=1e-7)
+
+        # gauss integration order 1
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, tbegin, tend, integration_order=1
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.36298755581259323, abs=1e-6)
+
+        # gauss integration order 4
+        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
+            lat, lon, y, m, d, h, tbegin, tend, integration_order=4
+        )
+        # print(f"cossza {cossza}")
+        assert cossza == pytest.approx(0.36126304695749595, abs=1e-7)
 
     def test_solar_declination_angle(self):
         sda, tc = tmf.solar_declination_angle(jd=166, h=0)
