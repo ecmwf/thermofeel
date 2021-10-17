@@ -168,15 +168,16 @@ def calc_cossza_int(message, begin, end):
 
     return integral
 
+
 # this is specific to ECMWF's forecast
 def forecast_step_interval(step):
-    assert(step % 3 == 0) # steps are multiples of 3
-    if(step == 0):
-        return (0,0)
-    if(step <= 144):
-        return (step-3,step)
-    if(step > 144):
-        return (step-6,step)
+    assert step % 3 == 0  # steps are multiples of 3
+    if step == 0:
+        return (0, 0)
+    if step <= 144:
+        return (step - 3, step)
+    if step > 144:
+        return (step - 6, step)
 
 
 def main():
