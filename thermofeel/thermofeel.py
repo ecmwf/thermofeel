@@ -71,6 +71,16 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
+# solar declination angle [degrees] + time correction for solar angle
+def solar_declination_angle_v1(jd):
+    a1 = math.sin(-to_radians*23.44)
+    a2 = 360.0/365.24
+    a3 = 0.0167*360/math.pi
+
+    v = a1 * math.cos(to_radians*(a2 *(jd+10) + a3*math.sin(to_radians*(a2*(jd-2)))))
+    return math.asin(v)
+
+
 def calculate_relative_humidity_percent(t2m, td):
     """
     Calculate relative humidity in percent
@@ -156,6 +166,44 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
 
     # solar hour angle [h.deg]
     sharad = ((h - 12) * 15 + lon + tc) * to_radians
+    csza = sindec_sinlat + cosdec_coslat * np.cos(sharad)
+
+    return np.clip(csza, 0, None)
+
+
+def calculate_cos_solar_zenith_angle_v1(h, lat, lon, y, m, d):
+    """
+    calculate solar zenith angle
+    :param lat: (float array) latitude [degrees]
+    :param lon: (float array) longitude [degrees]
+    :param y: year [int]
+    :param m: month [int]
+    :param d: day [int]
+    :param h: hour [int]
+
+    https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
+
+    see also:
+    http://answers.google.com/answers/threadview/id/782886.html
+
+    returns cosine of the solar zenith angle
+    """
+
+    # convert to julian days counting from the beginning of the year
+    jd_ = to_julian_date(d, m, y)  # julian date of data
+    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
+    jd = jd_ - jd11_ - 1 + h/24  # days since start of year
+    
+    # declination angle + time correction for solar angle
+    drad = solar_declination_angle_v1(jd)
+
+    latrad = lat * to_radians
+
+    sindec_sinlat = np.sin(drad) * np.sin(latrad)
+    cosdec_coslat = np.cos(drad) * np.cos(latrad)
+
+    # solar hour angle [h.deg]
+    sharad = ((h - 12) * 15 + lon) * to_radians
     csza = sindec_sinlat + cosdec_coslat * np.cos(sharad)
 
     return np.clip(csza, 0, None)
