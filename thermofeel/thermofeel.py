@@ -73,11 +73,13 @@ def solar_declination_angle(jd, h):
 
 # solar declination angle [degrees] + time correction for solar angle
 def solar_declination_angle_v1(jd):
-    a1 = math.sin(-to_radians*23.44)
-    a2 = 360.0/365.24
-    a3 = 0.0167*360/math.pi
+    a1 = math.sin(-to_radians * 23.44)
+    a2 = 360.0 / 365.24
+    a3 = 0.0167 * 360 / math.pi
 
-    v = a1 * math.cos(to_radians*(a2 *(jd+10) + a3*math.sin(to_radians*(a2*(jd-2)))))
+    v = a1 * math.cos(
+        to_radians * (a2 * (jd + 10) + a3 * math.sin(to_radians * (a2 * (jd - 2))))
+    )
     return math.asin(v)
 
 
@@ -192,8 +194,8 @@ def calculate_cos_solar_zenith_angle_v1(h, lat, lon, y, m, d):
     # convert to julian days counting from the beginning of the year
     jd_ = to_julian_date(d, m, y)  # julian date of data
     jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
-    jd = jd_ - jd11_ - 1 + h/24  # days since start of year
-    
+    jd = jd_ - jd11_ - 1 + h / 24  # days since start of year
+
     # declination angle + time correction for solar angle
     drad = solar_declination_angle_v1(jd)
 
