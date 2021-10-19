@@ -9,6 +9,7 @@ docs/build/*
 *.grib
 *.npz
 *.png
+*.sh
 *.old
 *.pyc
 *.egg-info/
