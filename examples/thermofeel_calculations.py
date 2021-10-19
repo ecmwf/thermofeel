@@ -1,3 +1,10 @@
+# (C) Copyright 1996- ECMWF.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation
+# nor does it submit to any jurisdiction.
 import metview as mv
 import thermofeel
 import numpy as np
@@ -157,9 +164,9 @@ def calculate_utci(message,begin,end):
 
 def main():
 
-    msgs = decode_grib("/scratch/rd/necr/nwpac_heat_wave/extended_range_oper_data/20210513/realtime_20210513_6h_sfc_0-1104_pf_1-50_0.25x0.25.grb", True)
+    msgs = decode_grib("agrib", True)
 
-    output = open("/perm/mo/moc2/utci20210513.grib", "wb")
+    output = open("anothergrib", "wb")
 
     for m in msgs:
 
