@@ -36,7 +36,7 @@ def decode_grib(fpath):
                 # print(f"yielding {len(messages)} messages")
                 yield messages
                 for k, m in messages.items():
-                    grib = m['grib']
+                    grib = m["grib"]
                     eccodes.codes_release(grib)
                 messages = {}
                 break
@@ -55,7 +55,7 @@ def decode_grib(fpath):
                 # print(f"yielding {len(messages)} messages")
                 yield messages
                 for k, m in messages.items():
-                    grib = m['grib']
+                    grib = m["grib"]
                     eccodes.codes_release(grib)
                 messages = {}
 
@@ -127,9 +127,9 @@ def decode_grib(fpath):
 
 def calc_cossza_int(messages, begin, end):
 
-    dt = messages['2t']["base_datetime"]
-    lats = messages['2t']["lats"]
-    lons = messages['2t']["lons"]
+    dt = messages["2t"]["base_datetime"]
+    lats = messages["2t"]["lats"]
+    lons = messages["2t"]["lons"]
     assert lats.size == lons.size
 
     # print(dt.year, dt.month, dt.day, dt.hour)
@@ -162,7 +162,7 @@ def calc_apparent_temp(messages):
 
 def calc_mrt(messages, cossza):
 
-    step = messages['2t']["step"]
+    step = messages["2t"]["step"]
 
     factor = 1.0 / (step * 3600.0)
 
@@ -201,31 +201,31 @@ def calc_utci(messages, mrt):
 
 
 def check_messages(msgs):
-        assert len(msgs) == 10        
+    assert len(msgs) == 10
 
-        assert '2t' in msgs
-        assert '2d' in msgs
+    assert "2t" in msgs
+    assert "2d" in msgs
 
-        # check grids all compatible
-        lats = msgs['2t']["lats"]
-        lons = msgs['2t']["lons"]
+    # check grids all compatible
+    lats = msgs["2t"]["lats"]
+    lons = msgs["2t"]["lons"]
 
-        assert lats.size == lons.size
+    assert lats.size == lons.size
 
-        ftime = msgs['2t']["forecast_datetime"]
+    ftime = msgs["2t"]["forecast_datetime"]
 
-        for k, m in msgs.items():
-            nlats = m["lats"].size
-            nlons = m["lons"].size
-            assert nlats == lats.size
-            assert nlons == lons.size
-            assert ftime == m['forecast_datetime']
+    for k, m in msgs.items():
+        nlats = m["lats"].size
+        nlons = m["lons"].size
+        assert nlats == lats.size
+        assert nlons == lons.size
+        assert ftime == m["forecast_datetime"]
 
 
 def output_grib(output, msg, paramid, values):
     # encode results in GRIB
-    grib = msg['grib']
-    handle = eccodes.codes_clone(grib)  
+    grib = msg["grib"]
+    handle = eccodes.codes_clone(grib)
     eccodes.codes_set_long(handle, "edition", 2)
     eccodes.codes_set_string(handle, "paramId", paramid)
     eccodes.codes_set_values(handle, values)
@@ -241,7 +241,7 @@ def main():
 
         check_messages(msgs)
 
-        msg = msgs['2t']
+        msg = msgs["2t"]
 
         dt = msg["base_datetime"]
 
@@ -254,7 +254,7 @@ def main():
 
         cossza = calc_cossza_int(messages=msgs, begin=step_begin, end=step_end)
         mrt = calc_mrt(messages=msgs, cossza=cossza)
-        utci = calc_utci(messages=msgs, mrt=mrt)
+        # utci = calc_utci(messages=msgs, mrt=mrt)
 
         # output_grib(output, msg, "261001", utci)
         output_grib(output, msg, "261002", mrt)
