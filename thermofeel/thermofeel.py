@@ -317,18 +317,20 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     t2 = __wrap(t2_k)
     va = __wrap(va_ms)
     mrt_kw = __wrap(mrt_k)
+
+
     if e_hPa is not None:
         ehPa = __wrap(e_hPa)
         rh = ehPa / 10.0  # rh in kPa
-    if td_k is not None:
-        t2d = __wrap(td_k)
-        rh_pc = calculate_relative_humidity_percent(t2, t2d)
-        ehPa = calculate_saturation_vapour_pressure(t2) * rh_pc / 100.0
-        rh = ehPa / 10.0  # rh in kPa
-    else:
-        print("Input e_hPa or td_k")
+    else: 
+        if td_k is not None:
+            t2d = __wrap(td_k)
+            rh_pc = calculate_relative_humidity_percent(t2, t2d)
+            ehPa = calculate_saturation_vapour_pressure(t2) * rh_pc / 100.0
+            rh = ehPa / 10.0  # rh in kPa
+        else:
+            raise ValueError("Missing input e_hPa or td_k")
 
-    rh = ehPa / 10.0  # rh in kPa
 
     t2m = kelvin_to_celsius(t2)  # polynomial approx. is in Celsius
     mrt = kelvin_to_celsius(mrt_kw)  # polynomial approx. is in Celsius

@@ -5,31 +5,67 @@
 # In applying this licence, ECMWF does not waive the privileges and immunities
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
-import metview as mv
-import thermofeel
-import numpy as np
-from datetime import datetime, timedelta, timezone
-from math import floor
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import eccodes
-import sys
+
 import math
+import sys
+from datetime import datetime, timedelta, timezone
+
+import eccodes
+import numpy as np
+
+import thermofeel
 
 
-def decode_grib(fpath, keep=False):
-    messages = []
-    i = 0
+def decode_grib(fpath):
+
+    print(f"decoding file {fpath}")
+
+    prev_step = None
+    prev_number = None
+
+    msgcount = 0
+    messages = {}
+
     with open(fpath, "rb") as f:
+
         while True:
+
             msg = eccodes.codes_any_new_from_file(f)
-            if msg is None:
+
+            if msg is None:  # end of file, stop iterating
+                # print(f"yielding {len(messages)} messages")
+                yield messages
+                for k, m in messages.items():
+                    grib = m['grib']
+                    eccodes.codes_release(grib)
+                messages = {}
                 break
 
-            i += 1
-            # print("message ", i)
+            step = int(eccodes.codes_get_double(msg, "step"))
+            number = int(eccodes.codes_get_double(msg, "number"))
+
+            # on new step or number, return/yield group of messages accumulated so far
+            # and ensure proper cleanup of memory
+
+            stop = (prev_step is not None and step != prev_step) or (
+                prev_number is not None and number != prev_number
+            )
+
+            if stop:
+                # print(f"yielding {len(messages)} messages")
+                yield messages
+                for k, m in messages.items():
+                    grib = m['grib']
+                    eccodes.codes_release(grib)
+                messages = {}
+
+            prev_number = number
+            prev_step = step
+
+            # aggregate messages on step, number, assuming they are contiguous
 
             md = dict()
+            msgcount += 1
 
             # decode metadata
 
@@ -49,24 +85,24 @@ def decode_grib(fpath, keep=False):
 
             md["time"] = eccodes.codes_get_long(msg, "time")
             md["date"] = eccodes.codes_get_string(msg, "date")
-            md["step"] = eccodes.codes_get_double(msg, "step")
+            md["step"] = step
+            md["number"] = number
 
             sname = md["shortName"]
-            step = md["step"]
 
-            print(f"reading grib {sname} step {step}")
+            print(f"message {msgcount} step {step} number {number} param {sname}")
 
             ldate = eccodes.codes_get_long(msg, "date")
-            yyyy = floor(ldate / 10000)
-            mm = floor((ldate - (yyyy * 10000)) / 100)
+            yyyy = math.floor(ldate / 10000)
+            mm = math.floor((ldate - (yyyy * 10000)) / 100)
             dd = ldate - (yyyy * 10000) - mm * 100
 
             md["base_datetime"] = datetime(yyyy, mm, dd, tzinfo=timezone.utc)
 
             forecast_datetime = (
-                    datetime(yyyy, mm, dd, tzinfo=timezone.utc)
-                    + timedelta(minutes=60 * md["time"] / 100)
-                    + timedelta(minutes=60 * md["step"])
+                datetime(yyyy, mm, dd, tzinfo=timezone.utc)
+                + timedelta(minutes=60 * md["time"] / 100)
+                + timedelta(minutes=60 * md["step"])
             )
 
             md["forecast_datetime"] = forecast_datetime
@@ -80,23 +116,22 @@ def decode_grib(fpath, keep=False):
             md["values"] = eccodes.codes_get_double_array(msg, "values")
             # print(values)
 
-            if keep:
-                md["grib"] = msg  # dont close message and keep it for writing
-            else:
-                eccodes.codes_release(msg)
+            md["grib"] = msg  # keep grib open
 
-            messages.append(md)
+            assert sname not in messages
+
+            messages[sname] = md
 
     f.close()
-    return messages
 
-def calc_cossza_int(message, begin, end):
 
-    lats = message["lats"]
-    lons = message["lons"]
+def calc_cossza_int(messages, begin, end):
+
+    dt = messages['2t']["base_datetime"]
+    lats = messages['2t']["lats"]
+    lons = messages['2t']["lons"]
     assert lats.size == lons.size
 
-    dt = message["base_datetime"]
     # print(dt.year, dt.month, dt.day, dt.hour)
 
     integral = thermofeel.calculate_cos_solar_zenith_angle_integrated(
@@ -107,90 +142,124 @@ def calc_cossza_int(message, begin, end):
         d=dt.day,
         h=dt.hour,
         tbegin=begin,
-        tend=end
+        tend=end,
     )
 
     return integral
 
-def calc_apparent_temp(message):
 
-    variables = message["shortName"]
-    t2m = variables["2t"]["values"]
-    u10 = variables["10u"]["values"]
-    v10 = variables["10v"]["values"]
-    va = np.sqrt(u10 ** 2 + v10 ** 2 )
+def calc_apparent_temp(messages):
 
-    at = thermofeel.calculate_apparent_temperature(t2m=t2m,va=va)
+    t2m = messages["2t"]["values"]
+    u10 = messages["10u"]["values"]
+    v10 = messages["10v"]["values"]
+    va = np.sqrt(u10 ** 2 + v10 ** 2)
+
+    at = thermofeel.calculate_apparent_temperature(t2m=t2m, va=va)
 
     return at
 
-def calc_mean_radiant_temp(message,begin,end):
 
-    variables = message["shortName"]
-    step = message["step"]
+def calc_mrt(messages, cossza):
+
+    step = messages['2t']["step"]
 
     factor = 1.0 / (step * 3600.0)
-    ssrd = variables["ssrd"]["values"]
-    ssr = variables["ssr"]["values"]
-    fdir = variables["fdir"]["values"]
-    strd = variables["strd"]["values"]
-    strr = variables["str"]["values"]
-    cossza = calc_cossza_int(message=message,begin=begin,end=end)
 
-    mrt = thermofeel.calculate_mean_radiant_temperature(ssrd = ssrd * factor,
-                                                        ssr = ssr * factor,
-                                                        fdir = fdir * factor,
-                                                        strd = strd * factor,
-                                                        strr = strr * factor,
-                                                        cossza = cossza)
+    ssrd = messages["ssrd"]["values"]
+    ssr = messages["ssr"]["values"]
+    fdir = messages["fdir"]["values"]
+    strd = messages["strd"]["values"]
+    strr = messages["str"]["values"]
+
+    mrt = thermofeel.calculate_mean_radiant_temperature(
+        ssrd=ssrd * factor,
+        ssr=ssr * factor,
+        fdir=fdir * factor,
+        strd=strd * factor,
+        strr=strr * factor,
+        cossza=cossza * factor,
+    )
+
     return mrt
 
-def calculate_utci(message,begin,end):
 
-    variables= message["shortName"]
-    t2m = variables["2t"]["values"]
-    u10 = variables["10u"]["values"]
-    v10 = variables["10v"]["values"]
+def calc_utci(messages, mrt):
+
+    t2m = messages["2t"]["values"]
+    u10 = messages["10u"]["values"]
+    v10 = messages["10v"]["values"]
+    t2d = messages["2d"]["values"]
+
     va = np.sqrt(u10 ** 2 + v10 ** 2)
-    mrt = calc_mean_radiant_temp(message=message,begin=begin,end=end)
-    t2d = variables["2d"]["values"]
+
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
     ehPa = thermofeel.calculate_saturation_vapour_pressure(t2m) * rh_pc / 100.0
-    utci = calculate_utci(t2_k = t2m,
-                          va_ms = va,
-                          mrt_k = mrt,
-                          e_hPa= ehPa)
+    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
+
     return utci
+
+
+def check_messages(msgs):
+        assert len(msgs) == 10        
+
+        assert '2t' in msgs
+        assert '2d' in msgs
+
+        # check grids all compatible
+        lats = msgs['2t']["lats"]
+        lons = msgs['2t']["lons"]
+
+        assert lats.size == lons.size
+
+        ftime = msgs['2t']["forecast_datetime"]
+
+        for k, m in msgs.items():
+            nlats = m["lats"].size
+            nlons = m["lons"].size
+            assert nlats == lats.size
+            assert nlons == lons.size
+            assert ftime == m['forecast_datetime']
+
+
+def output_grib(output, msg, paramid, values):
+    # encode results in GRIB
+    grib = msg['grib']
+    handle = eccodes.codes_clone(grib)  
+    eccodes.codes_set_long(handle, "edition", 2)
+    eccodes.codes_set_string(handle, "paramId", paramid)
+    eccodes.codes_set_values(handle, values)
+    eccodes.codes_write(handle, output)
+    eccodes.codes_release(handle)
+
 
 def main():
 
-    msgs = decode_grib("agrib", True)
+    output = open(sys.argv[2], "wb")
 
-    output = open("anothergrib", "wb")
+    for msgs in decode_grib(sys.argv[1]):
 
-    for m in msgs:
+        check_messages(msgs)
 
-        lats = m["lats"]
-        lons = m["lons"]
-        assert lats.size == lons.size
+        msg = msgs['2t']
 
-        dt = m["base_datetime"]
+        dt = msg["base_datetime"]
 
-        ftime = int(m["time"] / 100)
+        ftime = int(msg["time"] / 100)
 
         step_begin = ftime
-        step_end = ftime + int(m["step"])
-        utci = calculate_utci(message=m,begin=step_begin,end=step_end)
+        step_end = ftime + msg["step"]
+
         print(f"Date {dt} -- Time {ftime} -- Interval [{step_begin},{step_end}]")
 
+        cossza = calc_cossza_int(messages=msgs, begin=step_begin, end=step_end)
+        mrt = calc_mrt(messages=msgs, cossza=cossza)
+        utci = calc_utci(messages=msgs, mrt=mrt)
 
+        # output_grib(output, msg, "261001", utci)
+        output_grib(output, msg, "261002", mrt)
+        # output_grib(output, msg, "214001", cossza)
 
-        # encode results in GRIB
-        handle = eccodes.codes_clone(m["grib"])
-        eccodes.codes_set_values(handle, utci)
-        eccodes.codes_write(handle, output)
-        eccodes.codes_release(handle)
 
 if __name__ == "__main__":
     sys.exit(main())
-
