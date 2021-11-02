@@ -16,6 +16,10 @@ import numpy as np
 import thermofeel
 
 
+def mydebug(name, values):
+    print(f"{name} avg {np.average(values)} max {np.max(values)} min {np.min(values)} stddev {np.std(values, dtype=np.float64)}")
+
+
 def decode_grib(fpath):
 
     print(f"decoding file {fpath}")
@@ -41,8 +45,22 @@ def decode_grib(fpath):
                 messages = {}
                 break
 
-            step = int(eccodes.codes_get_double(msg, "step"))
-            number = int(eccodes.codes_get_double(msg, "number"))
+            md = dict()
+            msgcount += 1
+
+            # loop metadata key-values
+            it = eccodes.codes_keys_iterator_new(msg, 'mars')
+            while eccodes.codes_keys_iterator_next(it):
+                k = eccodes.codes_keys_iterator_get_name(it)
+                v = eccodes.codes_get_string(msg, k)
+                md[k] = v
+            eccodes.codes_keys_iterator_delete(it)
+
+            print(f"message {msgcount} mars metadata: {md}")
+
+            # change types
+            step = int(md["step"])
+            number = md.get('number', None)
 
             # on new step or number, return/yield group of messages accumulated so far
             # and ensure proper cleanup of memory
@@ -64,19 +82,6 @@ def decode_grib(fpath):
 
             # aggregate messages on step, number, assuming they are contiguous
 
-            md = dict()
-            msgcount += 1
-
-            # decode metadata
-
-            # loop metadata key-values
-            # it = eccodes.codes_keys_iterator_new(msg, 'mars')
-            # while eccodes.codes_keys_iterator_next(it):
-            #     k = eccodes.codes_keys_iterator_get_name(it)
-            #     v = eccodes.codes_get_string(msg, k)
-            #     print("%s = %s" % (k, v))
-            # eccodes.codes_keys_iterator_delete(it)
-
             md["paramId"] = eccodes.codes_get_string(msg, "paramId")
             md["shortName"] = eccodes.codes_get_string(msg, "shortName")
 
@@ -86,11 +91,10 @@ def decode_grib(fpath):
             md["time"] = eccodes.codes_get_long(msg, "time")
             md["date"] = eccodes.codes_get_string(msg, "date")
             md["step"] = step
-            md["number"] = number
 
             sname = md["shortName"]
 
-            print(f"message {msgcount} step {step} number {number} param {sname}")
+            # print(f"message {msgcount} step {step} number {number} param {sname}")  
 
             ldate = eccodes.codes_get_long(msg, "date")
             yyyy = math.floor(ldate / 10000)
@@ -192,19 +196,29 @@ def calc_utci(messages, mrt):
     t2d = messages["2d"]["values"]
 
     va = np.sqrt(u10 ** 2 + v10 ** 2)
+    mydebug("va", va)
 
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
+    mydebug("rh_pc", rh_pc)
+
     ehPa = thermofeel.calculate_saturation_vapour_pressure(t2m) * rh_pc / 100.0
+    mydebug("ehPa", ehPa)
+
     utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
 
     return utci
 
 
 def check_messages(msgs):
-    assert len(msgs) == 10
-
     assert "2t" in msgs
     assert "2d" in msgs
+    assert "10u" in msgs
+    assert "10v" in msgs
+    assert "ssrd" in msgs
+    assert "ssr" in msgs
+    assert "fdir" in msgs
+    assert "str" in msgs
+    assert "strd" in msgs
 
     # check grids all compatible
     lats = msgs["2t"]["lats"]
@@ -222,16 +236,17 @@ def check_messages(msgs):
         assert ftime == m["forecast_datetime"]
 
 
-def output_grib(output, msg, paramid, values):
+def output_grib(output, msg, paramid, values, missing=None):
     # encode results in GRIB
     grib = msg["grib"]
     handle = eccodes.codes_clone(grib)
     eccodes.codes_set_long(handle, "edition", 2)
     eccodes.codes_set_string(handle, "paramId", paramid)
     eccodes.codes_set_values(handle, values)
+    if missing is not None:
+        eccodes.codes_set_double(handle, "missingValue", missing)
     eccodes.codes_write(handle, output)
     eccodes.codes_release(handle)
-
 
 def main():
 
@@ -240,6 +255,8 @@ def main():
     for msgs in decode_grib(sys.argv[1]):
 
         check_messages(msgs)
+
+        print(f"loaded {len(msgs)} parameters: {list(msgs.keys())}")
 
         msg = msgs["2t"]
 
@@ -252,13 +269,23 @@ def main():
 
         print(f"Date {dt} -- Time {ftime} -- Interval [{step_begin},{step_end}]")
 
-        cossza = calc_cossza_int(messages=msgs, begin=step_begin, end=step_end)
-        mrt = calc_mrt(messages=msgs, cossza=cossza)
-        # utci = calc_utci(messages=msgs, mrt=mrt)
+        t2 = msgs['2t']['values'] # Kelvin
+        mydebug('2t', t2)
 
-        # output_grib(output, msg, "261001", utci)
+        cossza = calc_cossza_int(messages=msgs, begin=step_begin, end=step_end)
+        mydebug('cossza', cossza)
+        
+        mrt = calc_mrt(messages=msgs, cossza=cossza)
+        mydebug('mrt', mrt)
+
+        utci = calc_utci(messages=msgs, mrt=mrt)
+        utci = thermofeel.celsius_to_kelvin(utci)
+        mydebug('utci', utci)
+
+        # output_grib(output, msg, "167", t2)
+        output_grib(output, msg, "214001", cossza)
+        output_grib(output, msg, "261001", utci, float(-9999))
         output_grib(output, msg, "261002", mrt)
-        # output_grib(output, msg, "214001", cossza)
 
 
 if __name__ == "__main__":

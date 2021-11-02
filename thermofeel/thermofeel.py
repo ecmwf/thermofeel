@@ -575,27 +575,32 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
 
     # print(f"utci {utci}")
 
-    utci_filtert2m = np.where(t2m >= 70)
-    utci_filtert2m2 = np.where(t2m <= -70)
-    utci_filterva = np.where(17 <= va)
-    utci_filterva2 = np.where(0 >= va)
-    utci_filterrh = np.where(5 < rh)
-    utci_filtere_mrt = np.where(e_mrt >= 100.0)
-    utci_filtere_mrt2 = np.where(e_mrt <= -30)
-
-    utci[utci_filtert2m] = -9999
+    # utci_filtert2m = np.where(t2m >= 70)
+    # utci[utci_filtert2m] = -9999
     # print(f"utci f1 {utci}")
-    utci[utci_filtert2m2] = -9999
+
+    # utci_filtert2m2 = np.where(t2m <= -70)
+    # utci[utci_filtert2m2] = -9999
     # print(f"utci f2 {utci}")
-    utci[utci_filterva] = -9999
+
+    # utci_filterva = np.where(17 <= va)
+    # utci[utci_filterva] = -9999
     # print(f"utci f3 {utci}")
-    utci[utci_filterva2] = -9999
+
+    # utci_filterva2 = np.where(0 >= va)
+    # utci[utci_filterva2] = -9999
     # print(f"utci f4 {utci}")
-    utci[utci_filterrh] = -9999
+
+    # utci_filterrh = np.where(5 < rh)
+    # utci[utci_filterrh] = -9999
     # print(f"utci f5 {utci}")
-    utci[utci_filtere_mrt] = -9999
+
+    # utci_filtere_mrt = np.where(e_mrt >= 100.0)
+    # utci[utci_filtere_mrt] = -9999
     # print(f"utci f6 {utci}")
-    utci[utci_filtere_mrt2] = -9999
+
+    # utci_filtere_mrt2 = np.where(e_mrt <= -30)
+    # utci[utci_filtere_mrt2] = -9999
     # print(f"utci f7 {utci}")
 
     # print(f"utci {utci}")
