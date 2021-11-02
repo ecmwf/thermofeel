@@ -17,7 +17,10 @@ import thermofeel
 
 
 def mydebug(name, values):
-    print(f"{name} avg {np.average(values)} max {np.max(values)} min {np.min(values)} stddev {np.std(values, dtype=np.float64)}")
+    print(
+        f"{name} avg {np.average(values)} max {np.max(values)} "
+        f"min {np.min(values)} stddev {np.std(values, dtype=np.float64)}"
+    )
 
 
 def decode_grib(fpath):
@@ -49,7 +52,7 @@ def decode_grib(fpath):
             msgcount += 1
 
             # loop metadata key-values
-            it = eccodes.codes_keys_iterator_new(msg, 'mars')
+            it = eccodes.codes_keys_iterator_new(msg, "mars")
             while eccodes.codes_keys_iterator_next(it):
                 k = eccodes.codes_keys_iterator_get_name(it)
                 v = eccodes.codes_get_string(msg, k)
@@ -60,7 +63,7 @@ def decode_grib(fpath):
 
             # change types
             step = int(md["step"])
-            number = md.get('number', None)
+            number = md.get("number", None)
 
             # on new step or number, return/yield group of messages accumulated so far
             # and ensure proper cleanup of memory
@@ -94,7 +97,7 @@ def decode_grib(fpath):
 
             sname = md["shortName"]
 
-            # print(f"message {msgcount} step {step} number {number} param {sname}")  
+            # print(f"message {msgcount} step {step} number {number} param {sname}")
 
             ldate = eccodes.codes_get_long(msg, "date")
             yyyy = math.floor(ldate / 10000)
@@ -248,6 +251,7 @@ def output_grib(output, msg, paramid, values, missing=None):
     eccodes.codes_write(handle, output)
     eccodes.codes_release(handle)
 
+
 def main():
 
     output = open(sys.argv[2], "wb")
@@ -269,18 +273,18 @@ def main():
 
         print(f"Date {dt} -- Time {ftime} -- Interval [{step_begin},{step_end}]")
 
-        t2 = msgs['2t']['values'] # Kelvin
-        mydebug('2t', t2)
+        t2 = msgs["2t"]["values"]  # Kelvin
+        mydebug("2t", t2)
 
         cossza = calc_cossza_int(messages=msgs, begin=step_begin, end=step_end)
-        mydebug('cossza', cossza)
-        
+        mydebug("cossza", cossza)
+
         mrt = calc_mrt(messages=msgs, cossza=cossza)
-        mydebug('mrt', mrt)
+        mydebug("mrt", mrt)
 
         utci = calc_utci(messages=msgs, mrt=mrt)
         utci = thermofeel.celsius_to_kelvin(utci)
-        mydebug('utci', utci)
+        mydebug("utci", utci)
 
         # output_grib(output, msg, "167", t2)
         output_grib(output, msg, "214001", cossza)
