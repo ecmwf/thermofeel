@@ -59,8 +59,6 @@ def decode_grib(fpath):
                 md[k] = v
             eccodes.codes_keys_iterator_delete(it)
 
-            print(f"message {msgcount} mars metadata: {md}")
-
             # change types
             step = int(md["step"])
             number = md.get("number", None)
@@ -82,6 +80,8 @@ def decode_grib(fpath):
 
             prev_number = number
             prev_step = step
+
+            print(f"message {msgcount} mars metadata: {md}")
 
             # aggregate messages on step, number, assuming they are contiguous
 
