@@ -282,7 +282,7 @@ def main():
 
         msg = msgs["2t"]
 
-        dt = msg["base_datetime"]
+        # dt = msg["base_datetime"]
 
         ftime = int(msg["time"] / 100)
 
