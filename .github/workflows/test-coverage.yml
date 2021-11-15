@@ -10,6 +10,9 @@ on:
   push:
     branches: [ develop ]
 
+env:
+  PYTHON_VERSION: 3.9
+
 jobs:
 
   quality:
@@ -36,7 +39,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: ${{ env.PYTHON_VERSION }}
     - run: python setup.py develop
     - run: pip install -r tests/requirements.txt
     - name: Print environment
@@ -53,5 +56,3 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         fail_ci_if_error: true
-
-

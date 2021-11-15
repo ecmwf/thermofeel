@@ -13,6 +13,9 @@ on:
   release:
     types: [created]
 
+env:
+  PYTHON_VERSION: 3.9
+
 jobs:
 
   quality:
@@ -39,7 +42,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: ${{ env.PYTHON_VERSION }}
     - run: python setup.py develop
     - run: pip install -r tests/requirements.txt
     - name: Print environment
@@ -57,11 +60,11 @@ jobs:
     needs: tests
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Install dependencies
       run: |
@@ -81,6 +84,3 @@ jobs:
       run: |
         python setup.py sdist
         twine upload dist/*
-
-  
-
