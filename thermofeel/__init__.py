@@ -8,4 +8,4 @@
 
 from .thermofeel import *  # noqa
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
