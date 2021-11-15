@@ -25,7 +25,7 @@ def mydebug(name, values):
 
 def decode_grib(fpath):
 
-    #print(f"decoding file {fpath}")
+    # print(f"decoding file {fpath}")
 
     prev_step = None
     prev_number = None
@@ -81,7 +81,7 @@ def decode_grib(fpath):
             prev_number = number
             prev_step = step
 
-            #print(f"message {msgcount} mars metadata: {md}")
+            # print(f"message {msgcount} mars metadata: {md}")
 
             # aggregate messages on step, number, assuming they are contiguous
 
@@ -166,21 +166,24 @@ def calc_apparent_temp(messages):
 
     return at
 
+
 def calc_humidex(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
-    humidex = thermofeel.calculate_humidex(t2m=t2m,td=td)
+    humidex = thermofeel.calculate_humidex(t2m=t2m, td=td)
 
     return humidex
+
 
 def calc_rela_humid_perc(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
-    rhp = thermofeel.calculate_relative_humidity_percent(t2m=t2m,td=td)
+    rhp = thermofeel.calculate_relative_humidity_percent(t2m=t2m, td=td)
 
     return rhp
+
 
 def calc_mrt(messages, cossza):
 
@@ -275,7 +278,7 @@ def main():
 
         check_messages(msgs)
 
-        #print(f"loaded {len(msgs)} parameters: {list(msgs.keys())}")
+        # print(f"loaded {len(msgs)} parameters: {list(msgs.keys())}")
 
         msg = msgs["2t"]
 
@@ -286,29 +289,29 @@ def main():
         step_begin = ftime
         step_end = ftime + msg["step"]
 
-        #print(f"Date {dt} -- Time {ftime} -- Interval [{step_begin},{step_end}]")
+        # print(f"Date {dt} -- Time {ftime} -- Interval [{step_begin},{step_end}]")
 
         t2 = msgs["2t"]["values"]  # Kelvin
         mydebug("2t", t2)
 
-        #humidex = calc_humidex(messages=msgs)
-        #apparenttemp = calc_apparent_temp(messages=msgs)
-        #rhp = calc_rela_humid_perc(messages=msgs)
+        # humidex = calc_humidex(messages=msgs)
+        # apparenttemp = calc_apparent_temp(messages=msgs)
+        # rhp = calc_rela_humid_perc(messages=msgs)
 
         cossza = calc_cossza_int(messages=msgs, begin=step_begin, end=step_end)
-        #mydebug("cossza", cossza)
+        # mydebug("cossza", cossza)
 
         mrt = calc_mrt(messages=msgs, cossza=cossza)
-        #mydebug("mrt", mrt)
+        # mydebug("mrt", mrt)
 
         utci = calc_utci(messages=msgs, mrt=mrt)
         utci = thermofeel.celsius_to_kelvin(utci)
-        #mydebug("utci", utci)
+        # mydebug("utci", utci)
 
         # output_grib(output, msg, "167", t2)
-        #output_grib(output,msg,"157",rhp)
-        #output_grib(output,msg,"260255",apparenttemp)
-        #output_grib(output,msg,"260004",humidex) #heat index parameter ID
+        # output_grib(output,msg,"157",rhp)
+        # output_grib(output,msg,"260255",apparenttemp)
+        # output_grib(output,msg,"260004",humidex) #heat index parameter ID
         output_grib(output, msg, "214001", cossza)
         output_grib(output, msg, "261001", utci, float(-9999))
         output_grib(output, msg, "261002", mrt)
