@@ -7,11 +7,10 @@
 # nor does it submit to any jurisdiction.
 
 
-import time
+import functools
 import math
 import sys
-import functools
-
+import time
 from datetime import datetime, timedelta, timezone
 
 import eccodes
@@ -20,6 +19,7 @@ import numpy as np
 import thermofeel as thermofeel
 
 ############################################################################################################
+
 
 def timer(func):
     @functools.wraps(func)
@@ -30,9 +30,12 @@ def timer(func):
         elapsed_time = toc - tic
         print(f"{func} elapsed time: {elapsed_time:0.6f} s")
         return value
+
     return wrapper_timer
 
+
 ############################################################################################################
+
 
 def mydebug(name, values):
     print(
@@ -40,10 +43,12 @@ def mydebug(name, values):
         f"min {np.min(values)} stddev {np.std(values, dtype=np.float64)}"
     )
 
+
 ############################################################################################################
 
 lats = None
 lons = None
+
 
 def decode_grib(fpath):
 
@@ -302,10 +307,10 @@ def output_grib(output, msg, paramid, values, missing=None):
 def main():
 
     cossza = None
-
+    last_step_end = 0
     output = open(sys.argv[2], "wb")
 
-    print(f"----------------------------------------")
+    print("----------------------------------------")
     for msgs in decode_grib(sys.argv[1]):
 
         check_messages(msgs)
@@ -323,11 +328,13 @@ def main():
         step_begin = ftime
         step_end = ftime + step
 
-        print(f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]")
+        print(
+            f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]"
+        )
 
         if cossza is None:
             print(f"[{step_begin},{step_end}]")
-            cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)        
+            cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
         else:
             print(f"[{last_step_end},{step_end}]")
             cossza += cossza + calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
@@ -349,7 +356,8 @@ def main():
         output_grib(output, msg, "214001", cossza)
         output_grib(output, msg, "261001", utci)
         output_grib(output, msg, "261002", mrt)
-        print(f"----------------------------------------")
+
+        print("----------------------------------------")
 
 
 if __name__ == "__main__":
