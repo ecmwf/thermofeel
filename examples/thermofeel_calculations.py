@@ -37,7 +37,7 @@ def timer(func):
 ############################################################################################################
 
 
-def mydebug(name, values):
+def field_stats(name, values):
     print(
         f"{name} avg {np.average(values)} max {np.max(values)} "
         f"min {np.min(values)} stddev {np.std(values, dtype=np.float64)}"
@@ -253,13 +253,13 @@ def calc_utci(messages, mrt):
     t2d = messages["2d"]["values"]
 
     va = np.sqrt(u10 ** 2 + v10 ** 2)
-    # mydebug("va", va)
+    # field_stats("va", va)
 
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
-    # mydebug("rh_pc", rh_pc)
+    # field_stats("rh_pc", rh_pc)
 
     ehPa = thermofeel.calculate_saturation_vapour_pressure(t2m) * rh_pc / 100.0
-    # mydebug("ehPa", ehPa)
+    # field_stats("ehPa", ehPa)
 
     utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
 
@@ -335,19 +335,19 @@ def main():
         if cossza is None:
             print(f"[{step_begin},{step_end}]")
             cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
-        else:
+        else:   
             print(f"[{last_step_end},{step_end}]")
-            cossza += cossza + calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
+            cossza += calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
 
         last_step_end = step_end
-        # mydebug("cossza", cossza)
 
         mrt = calc_mrt(messages=msgs, cossza=cossza)
-        # mydebug("mrt", mrt)
-
         utci = calc_utci(messages=msgs, mrt=mrt)
         utci = thermofeel.celsius_to_kelvin(utci)
-        # mydebug("utci", utci)
+
+        field_stats("cossza", cossza)
+        field_stats("mrt", mrt)
+        field_stats("utci", utci)
 
         # output_grib(output, msg, "167", t2)
         # output_grib(output,msg,"157",rhp)
