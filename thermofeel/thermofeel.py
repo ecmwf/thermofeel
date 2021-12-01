@@ -691,7 +691,7 @@ def calculate_wbgt(t_k, mrt, va, td):
     :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [°C]
+    :param td: dew point temperature [K]
 
     returns wet bulb globe temperature [°C]
 
