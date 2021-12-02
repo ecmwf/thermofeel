@@ -318,16 +318,16 @@ def calculate_utci_impl(t2m, mrt, va, rh):
     rh5 = rh4 * rh
     rh6 = rh5 * rh
 
-    varh2 = va*rh2
-    va2_rh = va2*rh
-    va2_e_mrt = va2*e_mrt
-    e_mrt_rh = e_mrt*rh
-    e_mrt_rh2 = e_mrt*rh2
-    e_mrt2_rh = e_mrt2*rh
-    e_mrt2_rh2 = e_mrt2*rh2
-    e_mrt_rh3 = e_mrt*rh3
-    va_e_mrt = va*e_mrt
-    va_e_mrt2 = va*e_mrt2
+    varh2 = va * rh2
+    va2_rh = va2 * rh
+    va2_e_mrt = va2 * e_mrt
+    e_mrt_rh = e_mrt * rh
+    e_mrt_rh2 = e_mrt * rh2
+    e_mrt2_rh = e_mrt2 * rh
+    e_mrt2_rh2 = e_mrt2 * rh2
+    e_mrt_rh3 = e_mrt * rh3
+    va_e_mrt = va * e_mrt
+    va_e_mrt2 = va * e_mrt2
     va_rh = va * rh
     t2m_va = t2m * va
     e_mrt3_rh = e_mrt3 * rh

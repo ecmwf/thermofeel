@@ -335,7 +335,7 @@ def main():
         if cossza is None:
             print(f"[{step_begin},{step_end}]")
             cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
-        else:   
+        else:
             print(f"[{last_step_end},{step_end}]")
             cossza += calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
 
