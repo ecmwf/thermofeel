@@ -24,9 +24,9 @@ on:
 jobs:
 
   # Calls a reusable CI workflow to qa, test & deploy the current repository.
-  #   We skip jobs that will result in duplicate artifacts, since the code does not depend on the compiler.
+  #   We skip jobs that will result in duplicate jobs, since the code does not depend on the compiler.
   #   It will produce a code coverage report on success and upload it to the codecov service.
-  #   If all checks were successful and a new release tag pushed, the package will be published on PyPI.
+  #   If all checks were successful and a new release tag created, the package will be published on PyPI.
   ci:
     name: ci
     uses: ecmwf-actions/reusable-workflows/.github/workflows/ci-python.yml@v1
