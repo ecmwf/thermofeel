@@ -264,7 +264,18 @@ def calc_utci(messages, mrt):
     utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
 
     return utci
-
+    
+@timer
+def calc_windchill(messages):
+    t2m = messages["2t"]["values"]
+    u10 = messages["10u"]["values"]
+    v10 = messages["10v"]["values"]
+    
+    va = np.sqrt(u10 ** 2 + v10 ** 2)
+    
+    wc = thermofeel.calculate_wind_chill(t2m=t2m,va=va)
+    
+    return(wc)
 
 def check_messages(msgs):
     assert "2t" in msgs
@@ -344,15 +355,17 @@ def main():
         mrt = calc_mrt(messages=msgs, cossza=cossza)
         utci = calc_utci(messages=msgs, mrt=mrt)
         utci = thermofeel.celsius_to_kelvin(utci)
-
+        windchill = calc_windchill(messages=msgs)
+        apparenttemp = calc_apparent_temp(messages=msgs)
         field_stats("cossza", cossza)
         field_stats("mrt", mrt)
         field_stats("utci", utci)
 
-        # output_grib(output, msg, "167", t2)
-        # output_grib(output,msg,"157",rhp)
-        # output_grib(output,msg,"260255",apparenttemp)
+        #output_grib(output, msg, "167", t2)
+        #output_grib(output,msg,"157",rhp)
+        output_grib(output,msg,"260255",apparenttemp)
         # output_grib(output,msg,"260004",humidex) #heat index parameter ID
+        #output_grib(output,msg,"260005",windchill)
         output_grib(output, msg, "214001", cossza)
         output_grib(output, msg, "261001", utci)
         output_grib(output, msg, "261002", mrt)
