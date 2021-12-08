@@ -3,7 +3,7 @@ Wet Bulb Globe Temperature
 This is one of the most used heat indexes and was developed in the US by the Army and Marines.
 Traditionally it is calculated using natural wet-bulb temperature, globe temperature and dry bulb temperature.
 
-Here we present a contemporary WBGT method from *De Dear* calculated using Mean Radiant Temperature and one of WBGT
+Here we present a contemporary WBGT method that uses globe temperature from *De Dear* calculated using Mean Radiant Temperature and WBGT from Stull et al. 2011 and one of WBGT
 approximations from the Australian Bureau of Meteorology.
 
 More Information: https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub

@@ -2,7 +2,7 @@
   :width: 600
   :alt: thermofeel logo
 
-|license| |tag_release| |commits_since_release| |last_commit|
+|license| |tag_release| |commits_since_release| |last_commit| |docs|
 
 **thermofeel** (pronounced *thermo-feel*)
 
@@ -20,7 +20,7 @@ Currently calculates the thermal indexes:
  * Net Effective Temperature
  * Wet Bulb Globe Temperature Simple
  * Wet Bulb Globe Temperature
- 
+
 In support of the above indexes, it also calculates:
  * Solar Declination Angle
  * Solar Zenith Angle
@@ -31,7 +31,7 @@ In support of the above indexes, it also calculates:
 PyPi
 ====
 
-|pypi_status|  |pypi_release| |pypi_downloads| |code_size| 
+|pypi_status|  |pypi_release| |pypi_downloads| |code_size|
 
 Install with::
 
@@ -40,7 +40,7 @@ Install with::
 Testing
 =======
 
-|python-publish| |test-coverage| |codecov| 
+|ci| |codecov|
 
 System dependencies
 ===================
@@ -92,10 +92,10 @@ Citing
 ======
 
 ..
-  In publications, please use our paper in SoftwareX as the main citation for **thermofeel**. 
-  
-To cite **thermofeel** the code currently please use: 
-Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2021 
+  In publications, please use our paper in SoftwareX as the main citation for **thermofeel**.
+
+To cite **thermofeel** the code currently please use:
+Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2021
 *thermofeel: a python thermal comfort indices library* https://doi.org/10.21957/mp6v-fd16
 
 For referring to the latest release of **thermofeel** please use this DOI: https://doi.org/10.21957/mp6v-fd16
@@ -131,10 +131,7 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 .. |codecov| image:: https://codecov.io/gh/ecmwf-projects/thermofeel/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/ecmwf-projects/thermofeel
 
-.. |python-publish| image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/python-publish.yml/badge.svg
-  :target: https://github.com/ecmwf-projects/thermofeel/actions
-
-.. |test-coverage| image:: https://github.com/ecmwf-projects/thermofeel/actions/workflows/test-coverage.yml/badge.svg
+.. |ci| image:: https://img.shields.io/github/workflow/status/ecmwf-projects/thermofeel/ci
   :target: https://github.com/ecmwf-projects/thermofeel/actions
 
 .. |pypi_downloads| image:: https://img.shields.io/pypi/dm/thermofeel
@@ -142,8 +139,7 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 .. |code_size| image:: https://img.shields.io/github/languages/code-size/ecmwf-projects/thermofeel?color=green
   :target: https://github.com/ecmwf-projects/thermofeel
-
-
-
-
   
+.. |docs| image:: https://readthedocs.org/projects/thermofeel/badge/?version=latest
+  :target: https://thermofeel.readthedocs.io/en/latest/?badge=latest
+
