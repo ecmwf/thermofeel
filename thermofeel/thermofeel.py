@@ -609,8 +609,6 @@ def calculate_wbgts(t2m):
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
-def calculate_wbt_l(t_c,rh):
-    
 
 def calculate_wbt(t_c, rh):
     """
