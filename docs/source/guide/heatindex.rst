@@ -19,6 +19,7 @@ You need 2m temperature in kelvin and optional relative humidity
 as water vapour pressure, because this can be calculated from 2m temperature.
 
 .. code-block:: python
+
     calculate_heat_index_simplified(2m temperature,relative humidity)
 
 use numpy array
