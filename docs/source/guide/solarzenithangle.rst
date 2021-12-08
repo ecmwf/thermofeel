@@ -10,16 +10,19 @@ They do have a difference in values but once this is used to calculate mean radi
 the difference in the heat index output is in the mean about 0.004 degrees Celsius different.
 
 more information: https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015GL066868
+
 How To Use
 ======================================
-** Cosine Solar Zenith Angle Instantaneous**
+
+
+**Cosine Solar Zenith Angle Instantaneous**
 
 .. highlight:: python
 
     calculate_solar_zenith_angle(h, lat, lon, y, m, d)
 
 
-** Cosine Solar Zenith Angle Integrated**
+**Cosine Solar Zenith Angle Integrated**
 
 .. highlight:: python
 
@@ -28,4 +31,5 @@ How To Use
 
 Interpret the Output
 ======================================
+
 The maximum value is 0.9 the values should range between 0 and 0.9.

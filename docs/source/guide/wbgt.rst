@@ -19,6 +19,21 @@ You need 2m Temperature in Kelvin
 
    calculate_wbgts(2m temperature)
 
+**Wet Bulb Temperature**
+You need 2m Temperature in Celsius and Relative Humidity Percent
+
+.. code-block:: python
+
+    calculate_wbt(2m temperature, relative humidity percent)
+
+**Globe Temperature***
+
+You need 2m Temperature in Kelvin, Mean Radiant Temperature and Wind Speed
+
+.. code-block:: python
+
+    calculate_gbt(2m temperature, Mean Radiant Temperature, Wind Speed)
+
 **Wet Bulb Globe Temperature**
 
 **This method is not tested for Windows**
@@ -28,6 +43,7 @@ You need 2m Temperature in Kelvin, Mean Radiant Temperature in Kelvin and 10 met
 .. code-block:: python
 
    calculate_wbgt(2m temperature, mean radiant temperature, wind speed)
+
 
 Interpret the Output
 ======================================

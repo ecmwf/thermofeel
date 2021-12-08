@@ -12,6 +12,7 @@ How To Use
 You need 2m temperature in kelvin and dew point temperature in kelvin.
 
 .. code-block:: python
+
    calculate_humidex(2m temperature,dew point temperature)
 
 

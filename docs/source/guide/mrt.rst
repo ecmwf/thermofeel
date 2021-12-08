@@ -11,16 +11,19 @@ These methods will return slightly different values. This is to be anticipated.
 
 
 **Mean Radiant Temperature**
+
 Please use numpy arrays
+
 .. code-block:: python
-https://github.com/ecmwf-projects/thermofeel.git
+
     calculate_mean_radiant_temperature(surface-solar-radiation-downwards,surface-net-solar-radiation,
     Total-sky-direct-solar-radiation-at-surface, Surface-thermal-radiation-downwards,Surface-net-thermal-radiation,
     cosine-of-solar-zenith-angle)
 
-**Mean Radiant Temperature from Wet Bulb Globe Temperature**
+**Mean Radiant Temperature from Globe Temperature**
 
 .. code-block:: python
+
   calculate_mrt_from_bgt(2m temperature,wind speed,wet bulb globe temperature)
   
   

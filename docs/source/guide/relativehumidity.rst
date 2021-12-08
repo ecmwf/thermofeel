@@ -1,10 +1,10 @@
 Relative Humidity and Water Vapour Pressure
-======================================
+============================================
 
 There are two types of Relative Humidity used in *thermofeel* and sometimes such as in the UTCI these are \
-be used together.
+used together.
 
-Relative Humidity Percent:https://www.theweatherprediction.com/habyhints/186/
+Relative Humidity Percent: https://www.theweatherprediction.com/habyhints/186/
 Saturation/Water Vapour Pressure: http://www.thunderscientific.com/tech_info/reflibrary/its90formulas.pdf
 
 How To Use

@@ -15,10 +15,11 @@ You will need 2m temperature in kelvin, mean radiant temperature in kelvin,
 relative humidity (calculated as shown below,using dew point temperature) and 10 meter height wind speed.
 
 .. code-block:: python
+
     rh_pc = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
     ehPa = tfc.calculate_saturation_vapour_pressure(self.t2m) * rh_pc / 100.0
-    calculate_utci(2m temperature,mean radiant temperature,
-    ehPa, wind speed)
+    calculate_utci(2m temperature,mean radiant temperature,wind speed,
+    dew point temperature= None, ehPa=None)
 
 
 Interpret the Output

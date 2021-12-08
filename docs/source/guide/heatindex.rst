@@ -25,6 +25,7 @@ as water vapour pressure, because this can be calculated from 2m temperature.
 use numpy array
 
 .. code-block:: python
+
     calculate_heat_index_adjusted(2m temperature,2m dew point temperature)
 
 
@@ -35,7 +36,7 @@ Here is a suggested way for you to interpret heat index outputs, it is by no mea
 Heat Index and Apparent Temperature have the same thresholds.
 
 .. csv-table:: Heat Index Thresholds
-    :file: "atthresholds.csv"
+    :file: atthresholds.csv
     :header-rows: 1
     :class: longtable
     :widths: 1 1

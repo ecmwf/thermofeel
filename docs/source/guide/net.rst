@@ -1,11 +1,11 @@
-Net Effective Temperature (NET)
+Normal Effective Temperature (NET)
 ======================================
 
-Net effective temperature (NET) is also known as normal effective temperature. It links effective temperature which indicates \
+Normal effective temperature (NET) is also known as normal effective temperature. It links effective temperature which indicates \
 the effects on comfort through air temperature and relative humidity \
 and an organism’s thermoregulatory capacity.
 
-More Information:https://www.sciencedirect.com/topics/engineering/effective-temperature
+More Information: https://www.sciencedirect.com/topics/engineering/effective-temperature
 
 How To Use
 ======================================
@@ -15,6 +15,7 @@ The wind speed in this method is converted to 2 meters as
 an approximation of 1.2 meter wind speed.
 
 .. code-block:: python
+
     calculate_net_effective_temperature(2m temperature,wind speed, 2m dew point temperature)
 
 Interpret the Output
