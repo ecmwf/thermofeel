@@ -269,7 +269,7 @@ def calc_utci(messages, mrt):
     utci_filter = np.union1d(t, utci_filter)
     # print("-70 >= t2m >= 70", len(utci_filter))
 
-    t = np.where(va >= 25.)  # 90kph
+    t = np.where(va >= 25.0)  # 90kph
     utci_filter = np.union1d(t, utci_filter)
     # print("va >= 25.", len(utci_filter))
 
@@ -292,7 +292,7 @@ def calc_utci(messages, mrt):
     # print(utci_filter)
 
     field_stats("utci", utci)
-    utci[utci_filter] = -9999.
+    utci[utci_filter] = -9999.0
 
     # negatives = np.argwhere(utci < 0)
     # print("utci negatives: ", negatives)
@@ -300,18 +300,20 @@ def calc_utci(messages, mrt):
     # assert(negatives.size == 0)
 
     return utci
-    
+
+
 @timer
 def calc_windchill(messages):
     t2m = messages["2t"]["values"]
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
-    
+
     va = np.sqrt(u10 ** 2 + v10 ** 2)
-    
-    wc = thermofeel.calculate_wind_chill(t2m=t2m,va=va)
-    
-    return(wc)
+
+    wc = thermofeel.calculate_wind_chill(t2m=t2m, va=va)
+
+    return wc
+
 
 def check_messages(msgs):
     assert "2t" in msgs
@@ -382,7 +384,7 @@ def main():
         if cossza is None:
             print(f"[{step_begin},{step_end}]")
             cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
-        else:   
+        else:
             print(f"[{last_step_end},{step_end}]")
             cossza += calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
 
@@ -393,18 +395,18 @@ def main():
 
         # windchill = calc_windchill(messages=msgs)
         apparenttemp = calc_apparent_temp(messages=msgs)
-        
+
         # field_stats("cossza", cossza)
         # field_stats("mrt", mrt)
         # field_stats("utci", utci)
 
-        #output_grib(output, msg, "167", t2)
-        #output_grib(output,msg,"157",rhp)
-        output_grib(output,msg,"260255",apparenttemp)
+        # output_grib(output, msg, "167", t2)
+        # output_grib(output,msg,"157",rhp)
+        output_grib(output, msg, "260255", apparenttemp)
         # output_grib(output,msg,"260004",humidex) #heat index parameter ID
-        #output_grib(output,msg,"260005",windchill)
+        # output_grib(output,msg,"260005",windchill)
         output_grib(output, msg, "214001", cossza)
-        output_grib(output, msg, "261001", utci, missing=-9999.)
+        output_grib(output, msg, "261001", utci, missing=-9999.0)
         output_grib(output, msg, "261002", mrt)
 
         print("----------------------------------------")
