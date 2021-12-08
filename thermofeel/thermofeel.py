@@ -632,6 +632,113 @@ def calculate_wbt(t_c, rh):
     )
     return tw
 
+def calculate_vapour_pressure(t_d):
+    """
+        calculate vapour pressure using teten's formula
+        :param t_d: 2m dew point temperature [K]
+
+        returns vapour pressure [pa]
+
+            """
+    e0 = 6.113
+    b = 17.2694
+    T1 = 273.15
+    T2 = 35.86
+    e = e0 * np.exp(b * (t_d - T1) / (t_d - T2))
+
+    return e
+
+
+def sea_level_pa_to_atmosphere(t_k, slpa, h):
+    """
+           calculate atmospheric pressure from sea level pressure
+           using the Barometric Formula
+           https://sciencing.com/manometer-2718.html
+
+           :param slpa: mean sea level pressure [pa]
+           :param t_k: 2m temperature [K]
+           :param h: pressure height [m]
+
+           returns atmospheric pressure [pa]
+
+               """
+
+    # atmospheric pressure
+    # mass of one air molecule
+    m = 28.9647
+    # acceleration due to gravity
+    g = 9.81
+    # Boltzmann's constant ideal gas constant divided by Avogadro's number
+    k = 1.38 * 10 ** -23
+    apa = h * (slpa * np.exp(-m * g * h / k * t_k))
+
+    return apa
+
+
+def calculate_equivalent_potential_temperature(slpa,t_k,t_d):
+    """
+            calculate equivalent potential temperature
+            :param slpa: Mean Sea Level Pressure [pa]
+            :param t_k: 2m Temperature [K]
+            :param t_d: 2m Dew Point Temperature [K]
+
+            returns equivalent potential temperature pt [K]
+
+            https://journals.ametsoc.org/view/journals/mwre/108/7/1520-0493_1980_108_1046_tcoept_2_0_co_2.xml
+
+                """
+    e= calculate_saturation_vapour_pressure(t2m= t_k)
+    apa =sea_level_pa_to_atmosphere(t_k=t_k,slpa=slpa,h=2)
+    rs = np.exp(e / apa - e)
+
+    tl = 1 / (1 / t_d - 56) + np.log(t_k/t_d)/800 + 56
+
+    apam = apa / 100
+    exp1 = 0.2854 * ( 1 - 0.28 * 10 ** -3 * rs)
+    pt = t_k * ( 1000 / apa / apam) ** exp1 * \
+         np.exp((3.376 / tl - 0.00254) * rs * (1 + 0.81 * 10 ** -3 * rs))
+
+    return pt
+
+def calculate_wbt_dj(t_k,slpa,t_d,rh=None):
+    """
+        calculate wet bulb temperature
+        :param t2m: 2m temperature [K]
+        :param slpa: Mean Sea Level Pressure [pa]
+        :param rh: Relative Humidity [%]
+        :param t_d: 2m dew point temperature [K]
+
+        returns wet bulb temperature [°C]
+        """
+    if rh != None:
+        rh = rh
+    elif t_d != None:
+        rh = calculate_relative_humidity_percent(t2m=t_k,td=t_d)
+    else:
+        print("input a relative humidity")
+
+    #constant for cold
+    ca = 2675
+
+    #atmospheric pressure
+    apa = sea_level_pa_to_atmosphere(t_k=t_k,slpa=slpa,h=2)
+
+
+    #vapour pressure
+    vp = calculate_vapour_pressure(t_d=t_d)
+
+    #saturation vapour pressure
+    svp =calculate_saturation_vapour_pressure(t2m=t_k)
+
+    # rs saturation mixing ratio (rs)
+    rs = np.exp(svp / apa - svp)
+
+   # log derivative of saturation vapour pressure
+    ldsvp = 1 / (svp / 100)
+
+    sph = vp * rh * 0.01
+
+    return("Implementation in Progress")
 
 def calculate_bgt(t_k, mrt, va):
     """
