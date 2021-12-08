@@ -2,7 +2,7 @@
   :width: 600
   :alt: thermofeel logo
 
-|license| |tag_release| |commits_since_release| |last_commit|
+|license| |tag_release| |commits_since_release| |last_commit| |docs|
 
 **thermofeel** (pronounced *thermo-feel*)
 
@@ -142,7 +142,9 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 
 .. |code_size| image:: https://img.shields.io/github/languages/code-size/ecmwf-projects/thermofeel?color=green
   :target: https://github.com/ecmwf-projects/thermofeel
-
+  
+.. |docs| image:: https://readthedocs.org/projects/thermofeel/badge/?version=latest
+  :target: https://thermofeel.readthedocs.io/en/latest/?badge=latest
 
 
 
