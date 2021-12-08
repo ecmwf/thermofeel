@@ -26,7 +26,7 @@ Indices and tables
    :maxdepth: 1
    :caption: Contents:
 
-   overview
+   guide/overview
    relativehumidity
    heatindex
    solarzenithangle

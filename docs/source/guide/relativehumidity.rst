@@ -14,12 +14,14 @@ How To Use
 You will only need 2m temperature
 
 .. code-block:: python
-    calculate_saturation_vapour_pressure(2m temperature)
+
+   calculate_saturation_vapour_pressure(2m temperature)
 
 ***Relative Humidity Percent**
 
 .. code-block:: python
-    calculate_relative_humidity_percent(2m temperature,dew point temperature)
+
+   calculate_relative_humidity_percent(2m temperature,dew point temperature)
 
 
 
