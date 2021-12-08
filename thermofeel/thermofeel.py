@@ -168,7 +168,7 @@ def calculate_cos_solar_zenith_angle_integrated(
     calculate average of solar zenith angle based on numerical integration using 3 point gauss integration rule
     :param lat: (int array) latitude [degrees]
     :param lon: (int array) longitude [degrees]
-    :param y: year [int] of forecast start time 
+    :param y: year [int] of forecast start time
     :param m: month [int] of forecast start time
     :param d: day [int] of forecast start time
     :param h: hour [int] of forecast start time, such that y/m/d/h + tbegin is the absolute time corresponding to tbegin
