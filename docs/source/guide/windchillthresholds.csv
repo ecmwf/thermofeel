@@ -1,0 +1,7 @@
+﻿Wind Chill Thresholds,Thermal Stress Level
+0 to -9,Low Risk
+ - 10 to -27,Moderate Risk
+ -28 to -39,High Risk
+ -40 to -47,Very High Risk
+ -48 to -54,Severe Risk
+< -55,Extreme Risk
