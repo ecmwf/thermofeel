@@ -318,16 +318,16 @@ def calculate_utci_impl(t2m, mrt, va, rh):
     rh5 = rh4 * rh
     rh6 = rh5 * rh
 
-    varh2 = va*rh2
-    va2_rh = va2*rh
-    va2_e_mrt = va2*e_mrt
-    e_mrt_rh = e_mrt*rh
-    e_mrt_rh2 = e_mrt*rh2
-    e_mrt2_rh = e_mrt2*rh
-    e_mrt2_rh2 = e_mrt2*rh2
-    e_mrt_rh3 = e_mrt*rh3
-    va_e_mrt = va*e_mrt
-    va_e_mrt2 = va*e_mrt2
+    varh2 = va * rh2
+    va2_rh = va2 * rh
+    va2_e_mrt = va2 * e_mrt
+    e_mrt_rh = e_mrt * rh
+    e_mrt_rh2 = e_mrt * rh2
+    e_mrt2_rh = e_mrt2 * rh
+    e_mrt2_rh2 = e_mrt2 * rh2
+    e_mrt_rh3 = e_mrt * rh3
+    va_e_mrt = va * e_mrt
+    va_e_mrt2 = va * e_mrt2
     va_rh = va * rh
     t2m_va = t2m * va
     e_mrt3_rh = e_mrt3 * rh
@@ -609,8 +609,6 @@ def calculate_wbgts(t2m):
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
-def calculate_wbt_l(t_c,rh):
-    
 
 def calculate_wbt(t_c, rh):
     """
@@ -632,14 +630,15 @@ def calculate_wbt(t_c, rh):
     )
     return tw
 
+
 def calculate_vapour_pressure(t_d):
     """
-        calculate vapour pressure using teten's formula
-        :param t_d: 2m dew point temperature [K]
+    calculate vapour pressure using teten's formula
+    :param t_d: 2m dew point temperature [K]
 
-        returns vapour pressure [pa]
+    returns vapour pressure [pa]
 
-            """
+    """
     e0 = 6.113
     b = 17.2694
     T1 = 273.15
@@ -651,17 +650,17 @@ def calculate_vapour_pressure(t_d):
 
 def sea_level_pa_to_atmosphere(t_k, slpa, h):
     """
-           calculate atmospheric pressure from sea level pressure
-           using the Barometric Formula
-           https://sciencing.com/manometer-2718.html
+    calculate atmospheric pressure from sea level pressure
+    using the Barometric Formula
+    https://sciencing.com/manometer-2718.html
 
-           :param slpa: mean sea level pressure [pa]
-           :param t_k: 2m temperature [K]
-           :param h: pressure height [m]
+    :param slpa: mean sea level pressure [pa]
+    :param t_k: 2m temperature [K]
+    :param h: pressure height [m]
 
-           returns atmospheric pressure [pa]
+    returns atmospheric pressure [pa]
 
-               """
+    """
 
     # atmospheric pressure
     # mass of one air molecule
@@ -675,80 +674,84 @@ def sea_level_pa_to_atmosphere(t_k, slpa, h):
     return apa
 
 
-def calculate_equivalent_potential_temperature(slpa,t_k,t_d):
+def calculate_equivalent_potential_temperature(slpa, t_k, t_d):
     """
-            calculate equivalent potential temperature
-            :param slpa: Mean Sea Level Pressure [pa]
-            :param t_k: 2m Temperature [K]
-            :param t_d: 2m Dew Point Temperature [K]
+    calculate equivalent potential temperature
+    :param slpa: Mean Sea Level Pressure [pa]
+    :param t_k: 2m Temperature [K]
+    :param t_d: 2m Dew Point Temperature [K]
 
-            returns equivalent potential temperature pt [K]
+    returns equivalent potential temperature pt [K]
 
-            https://journals.ametsoc.org/view/journals/mwre/108/7/1520-0493_1980_108_1046_tcoept_2_0_co_2.xml
+    https://journals.ametsoc.org/view/journals/mwre/108/7/1520-0493_1980_108_1046_tcoept_2_0_co_2.xml
 
-                """
-    e= calculate_saturation_vapour_pressure(t2m= t_k)
-    apa =sea_level_pa_to_atmosphere(t_k=t_k,slpa=slpa,h=2)
+    """
+    e = calculate_saturation_vapour_pressure(t2m=t_k)
+    apa = sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
     rs = np.exp(e / apa - e)
 
-    tl = 1 / (1 / t_d - 56) + np.log(t_k/t_d)/800 + 56
+    tl = 1 / (1 / t_d - 56) + np.log(t_k / t_d) / 800 + 56
 
     apam = apa / 100
-    exp1 = 0.2854 * ( 1 - 0.28 * 10 ** -3 * rs)
-    pt = t_k * ( 1000 / apa / apam) ** exp1 * \
-         np.exp((3.376 / tl - 0.00254) * rs * (1 + 0.81 * 10 ** -3 * rs))
+    exp1 = 0.2854 * (1 - 0.28 * 10 ** -3 * rs)
+    pt = (
+        t_k
+        * (1000 / apa / apam) ** exp1
+        * np.exp((3.376 / tl - 0.00254) * rs * (1 + 0.81 * 10 ** -3 * rs))
+    )
 
     return pt
 
-def calculate_wbt_dj(t_k,slpa,t_d,rh=None):
-    """
-        calculate wet bulb temperature
-        :param t2m: 2m temperature [K]
-        :param slpa: Mean Sea Level Pressure [pa]
-        :param rh: Relative Humidity [%]
-        :param t_d: 2m dew point temperature [K]
 
-        returns wet bulb temperature [°C]
-        """
+def calculate_wbt_dj(t_k, slpa, t_d, rh=None):
+    """
+    calculate wet bulb temperature
+    :param t2m: 2m temperature [K]
+    :param slpa: Mean Sea Level Pressure [pa]
+    :param rh: Relative Humidity [%]
+    :param t_d: 2m dew point temperature [K]
+
+    returns wet bulb temperature [°C]
+    """
     if rh != None:
         rh = rh
     elif t_d != None:
-        rh = calculate_relative_humidity_percent(t2m=t_k,td=t_d)
+        rh = calculate_relative_humidity_percent(t2m=t_k, td=t_d)
     else:
         print("input a relative humidity")
 
-    #constant for cold
+    # constant for cold
     ca = 2675
 
-    #atmospheric pressure
-    apa = sea_level_pa_to_atmosphere(t_k=t_k,slpa=slpa,h=2)
+    # atmospheric pressure
+    apa = sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
 
-
-    #vapour pressure
+    # vapour pressure
     vp = calculate_vapour_pressure(t_d=t_d)
 
-    #saturation vapour pressure
-    svp =calculate_saturation_vapour_pressure(t2m=t_k)
+    # saturation vapour pressure
+    svp = calculate_saturation_vapour_pressure(t2m=t_k)
 
     # rs saturation mixing ratio (rs)
     rs = np.exp(svp / apa - svp)
 
-   # log derivative of saturation vapour pressure
+    # log derivative of saturation vapour pressure
     ldsvp = 1 / (svp / 100)
 
-    #Non Dimensional Pressure
-    pnd = (apa /1000) ** 0.2845 #Heat Capacity
+    # Non Dimensional Pressure
+    pnd = (apa / 1000) ** 0.2845  # Heat Capacity
 
-    #equivilant potential temperature
-    ept = calculate_equivalent_potential_temperature(slp=slpa,t_k=t_k,t_d=t_d)
+    # equivilant potential temperature
+    ept = calculate_equivalent_potential_temperature(slp=slpa, t_k=t_k, t_d=t_d)
 
     eptnd = ept * pnd
 
-    wbt = eptnd - 273.15 - ((ca * rs)/ (1 + ca * rs * ldsvp))
+    wbt = eptnd - 273.15 - ((ca * rs) / (1 + ca * rs * ldsvp))
 
-    #sph = vp * rh * 0.01
+    # sph = vp * rh * 0.01
 
-    return(wbt)
+    return wbt
+
 
 def calculate_bgt(t_k, mrt, va):
     """
