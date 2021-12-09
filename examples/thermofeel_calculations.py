@@ -291,7 +291,7 @@ def calc_utci(messages, mrt):
     #     v = utci[i]
     #     if not np.isnan(v) and (v < UTCI_MIN_VALUE or v > UTCI_MAX_VALUE):
     #         bads += 1
-    #         print("UTCI [", i, "] = ", utci[i], " : lat/lon ", lats[i], lons[i], "t2m", t2m[i], "va", va[i], "rh_pc", rh_pc[i], "ehPa", ehPa[i], "e_mrt", e_mrt[i])
+    #         print("UTCI [", i, "] = ", utci[i], " : lat/lon ", lats[i], lons[i])
 
     # nans = len(utci_filter)
     # if nans > 0 or bads > 0:

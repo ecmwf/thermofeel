@@ -713,9 +713,9 @@ def calculate_wbt_dj(t_k, slpa, t_d, rh=None):
 
     returns wet bulb temperature [°C]
     """
-    if rh != None:
+    if rh is not None:
         rh = rh
-    elif t_d != None:
+    elif t_d is not None:
         rh = calculate_relative_humidity_percent(t2m=t_k, td=t_d)
     else:
         print("input a relative humidity")
@@ -727,7 +727,7 @@ def calculate_wbt_dj(t_k, slpa, t_d, rh=None):
     apa = sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
 
     # vapour pressure
-    vp = calculate_vapour_pressure(t_d=t_d)
+    # vp = calculate_vapour_pressure(t_d=t_d)
 
     # saturation vapour pressure
     svp = calculate_saturation_vapour_pressure(t2m=t_k)
