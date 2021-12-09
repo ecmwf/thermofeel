@@ -18,6 +18,11 @@ import numpy as np
 
 import thermofeel as thermofeel
 
+
+UTCI_MIN_VALUE = thermofeel.celsius_to_kelvin(-80)
+UTCI_MAX_VALUE = thermofeel.celsius_to_kelvin(90)
+MISSING_VALUE = -9999.0
+
 ############################################################################################################
 
 
@@ -39,8 +44,8 @@ def timer(func):
 
 def field_stats(name, values):
     print(
-        f"{name} avg {np.average(values)} max {np.max(values)} "
-        f"min {np.min(values)} stddev {np.std(values, dtype=np.float64)}"
+        f"{name} avg {np.nanmean(values)} max {np.nanmax(values)} "
+        f"min {np.nanmin(values)} stddev {np.nanstd(values, dtype=np.float64)}"
     )
 
 
@@ -253,13 +258,10 @@ def calc_utci(messages, mrt):
     t2d = messages["2d"]["values"]
 
     va = np.sqrt(u10 ** 2 + v10 ** 2)
-    # field_stats("va", va)
 
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
-    # field_stats("rh_pc", rh_pc)
 
     ehPa = thermofeel.calculate_saturation_vapour_pressure(t2m) * rh_pc / 100.0
-    # field_stats("ehPa", ehPa)
 
     utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
     utci = thermofeel.celsius_to_kelvin(utci)
@@ -267,37 +269,36 @@ def calc_utci(messages, mrt):
     utci_filter = np.where(t2m >= thermofeel.celsius_to_kelvin(70))
     t = np.where(t2m <= thermofeel.celsius_to_kelvin(-70))
     utci_filter = np.union1d(t, utci_filter)
-    # print("-70 >= t2m >= 70", len(utci_filter))
 
     t = np.where(va >= 25.0)  # 90kph
     utci_filter = np.union1d(t, utci_filter)
-    # print("va >= 25.", len(utci_filter))
 
-    # t = np.where(rh > 5)
-    # utci_filter = np.union1d(t, utci_filter)
-    # print("rh > 5", len(utci_filter))
+    t = np.where(ehPa > 50.0)
+    utci_filter = np.union1d(t, utci_filter)
 
-    # t = np.where(e_mrt >= 100.0)
-    # utci_filter = np.union1d(t, utci_filter)
-    # print("e_mrt >= 100.0", len(utci_filter))
+    e_mrt = np.subtract(mrt, t2m)
+    t = np.where(e_mrt >= 100.0)
+    utci_filter = np.union1d(t, utci_filter)
 
-    # print(len(utci_filter))
-    # print(utci_filter)
+    t = np.where(e_mrt <= -30)
+    utci_filter = np.union1d(t, utci_filter)
 
-    # t = np.where(e_mrt <= -30)
-    # utci_filter = np.union1d(t, utci_filter)
-    # print("e_mrt <= -30", len(utci_filter))
+    # utci[utci_filter] = np.nan
 
-    # print(len(utci_filter))
-    # print(utci_filter)
+    # field_stats("utci", utci)
 
-    field_stats("utci", utci)
-    utci[utci_filter] = -9999.0
+    # bads = 0
+    # for i in range(len(utci)):
+    #     v = utci[i]
+    #     if not np.isnan(v) and (v < UTCI_MIN_VALUE or v > UTCI_MAX_VALUE):
+    #         bads += 1
+    #         print("UTCI [", i, "] = ", utci[i], " : lat/lon ", lats[i], lons[i], "t2m", t2m[i], "va", va[i], "rh_pc", rh_pc[i], "ehPa", ehPa[i], "e_mrt", e_mrt[i])
 
-    # negatives = np.argwhere(utci < 0)
-    # print("utci negatives: ", negatives)
+    # nans = len(utci_filter)
+    # if nans > 0 or bads > 0:
+    #     print(f"UTCI => NaNs {nans} BADS {bads}")
 
-    # assert(negatives.size == 0)
+    utci[utci_filter] = MISSING_VALUE
 
     return utci
 
@@ -406,7 +407,7 @@ def main():
         # output_grib(output,msg,"260004",humidex) #heat index parameter ID
         # output_grib(output,msg,"260005",windchill)
         output_grib(output, msg, "214001", cossza)
-        output_grib(output, msg, "261001", utci, missing=-9999.0)
+        output_grib(output, msg, "261001", utci, missing=MISSING_VALUE)
         output_grib(output, msg, "261002", mrt)
 
         print("----------------------------------------")
