@@ -168,12 +168,12 @@ def calculate_cos_solar_zenith_angle_integrated(
     calculate average of solar zenith angle based on numerical integration using 3 point gauss integration rule
     :param lat: (int array) latitude [degrees]
     :param lon: (int array) longitude [degrees]
-    :param y: year [int] of forecast start time
-    :param m: month [int] of forecast start time
-    :param d: day [int] of forecast start time
-    :param h: hour [int] of forecast start time, such that y/m/d/h + tbegin is the absolute time corresponding to tbegin
-    :param tbegin: offset in hours from forecast start time to begin of time interval for integration [int]
-    :param tend:  offset in hours from forecast start time to end of time interval for integration [int]
+    :param y: year [int]
+    :param m: month [int]
+    :param d: day [int]
+    :param h: hour [int]
+    :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
+    :param tend:  offset in hours from forecast time to end of time interval for integration [int]
     :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
     :param intervals_per_hour:  number of time intregrations per hour [int]
 
@@ -318,16 +318,16 @@ def calculate_utci_impl(t2m, mrt, va, rh):
     rh5 = rh4 * rh
     rh6 = rh5 * rh
 
-    varh2 = va * rh2
-    va2_rh = va2 * rh
-    va2_e_mrt = va2 * e_mrt
-    e_mrt_rh = e_mrt * rh
-    e_mrt_rh2 = e_mrt * rh2
-    e_mrt2_rh = e_mrt2 * rh
-    e_mrt2_rh2 = e_mrt2 * rh2
-    e_mrt_rh3 = e_mrt * rh3
-    va_e_mrt = va * e_mrt
-    va_e_mrt2 = va * e_mrt2
+    varh2 = va*rh2
+    va2_rh = va2*rh
+    va2_e_mrt = va2*e_mrt
+    e_mrt_rh = e_mrt*rh
+    e_mrt_rh2 = e_mrt*rh2
+    e_mrt2_rh = e_mrt2*rh
+    e_mrt2_rh2 = e_mrt2*rh2
+    e_mrt_rh3 = e_mrt*rh3
+    va_e_mrt = va*e_mrt
+    va_e_mrt2 = va*e_mrt2
     va_rh = va * rh
     t2m_va = t2m * va
     e_mrt3_rh = e_mrt3 * rh
@@ -609,6 +609,8 @@ def calculate_wbgts(t2m):
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
+def calculate_wbt_l(t_c,rh):
+    
 
 def calculate_wbt(t_c, rh):
     """
@@ -734,9 +736,19 @@ def calculate_wbt_dj(t_k,slpa,t_d,rh=None):
    # log derivative of saturation vapour pressure
     ldsvp = 1 / (svp / 100)
 
-    sph = vp * rh * 0.01
+    #Non Dimensional Pressure
+    pnd = (apa /1000) ** 0.2845 #Heat Capacity
 
-    return("Implementation in Progress")
+    #equivilant potential temperature
+    ept = calculate_equivalent_potential_temperature(slp=slpa,t_k=t_k,t_d=t_d)
+
+    eptnd = ept * pnd
+
+    wbt = eptnd - 273.15 - ((ca * rs)/ (1 + ca * rs * ldsvp))
+
+    #sph = vp * rh * 0.01
+
+    return(wbt)
 
 def calculate_bgt(t_k, mrt, va):
     """
@@ -780,7 +792,7 @@ def calculate_wbgt(t_k, mrt, va, td):
     :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [K]
+    :param td: dew point temperature [°C]
 
     returns wet bulb globe temperature [°C]
 
