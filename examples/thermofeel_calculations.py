@@ -18,7 +18,6 @@ import numpy as np
 
 import thermofeel as thermofeel
 
-
 UTCI_MIN_VALUE = thermofeel.celsius_to_kelvin(-80)
 UTCI_MAX_VALUE = thermofeel.celsius_to_kelvin(90)
 MISSING_VALUE = -9999.0
