@@ -249,6 +249,39 @@ def calc_mrt(messages, cossza):
 
 
 @timer
+def calc_va(u, v):
+    return np.sqrt(u ** 2 + v ** 2)
+
+
+@timer
+def calc_ehPa(t2m, t2d):
+    rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
+    ehPa = thermofeel.calculate_saturation_vapour_pressure(t2m) * rh_pc / 100.0
+    return ehPa
+
+
+@timer
+def calc_utci_raw(t2m, va, mrt, ehPa):
+    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
+    return thermofeel.celsius_to_kelvin(utci)
+
+
+@timer
+def filter_utci(t2m, va, mrt, ehPa, utci):
+    e_mrt = np.subtract(mrt, t2m)
+    utci[
+        np.where(
+            (t2m >= thermofeel.celsius_to_kelvin(70))
+            & (t2m <= thermofeel.celsius_to_kelvin(-70))
+            & (va >= 25.0)
+            & (ehPa > 50.0)
+            & (e_mrt >= 100.0)
+            & (e_mrt <= -30)
+        )
+    ] = MISSING_VALUE
+
+
+@timer
 def calc_utci(messages, mrt):
 
     t2m = messages["2t"]["values"]
@@ -256,31 +289,26 @@ def calc_utci(messages, mrt):
     v10 = messages["10v"]["values"]
     t2d = messages["2d"]["values"]
 
-    va = np.sqrt(u10 ** 2 + v10 ** 2)
+    va = calc_va(u10, v10)
+    ehPa = calc_ehPa(t2m, t2d)
+    utci = calc_utci_raw(t2m, va, mrt, ehPa)
+    filter_utci(t2m, va, mrt, ehPa, utci)
 
-    rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
+    # utci_filter = np.where(t2m >= thermofeel.celsius_to_kelvin(70))
+    # t = np.where(t2m <= thermofeel.celsius_to_kelvin(-70))
+    # utci_filter = np.union1d(t, utci_filter)
 
-    ehPa = thermofeel.calculate_saturation_vapour_pressure(t2m) * rh_pc / 100.0
+    # t = np.where(va >= 25.0)  # 90kph
+    # utci_filter = np.union1d(t, utci_filter)
 
-    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
-    utci = thermofeel.celsius_to_kelvin(utci)
+    # t = np.where(ehPa > 50.0)
+    # utci_filter = np.union1d(t, utci_filter)
 
-    utci_filter = np.where(t2m >= thermofeel.celsius_to_kelvin(70))
-    t = np.where(t2m <= thermofeel.celsius_to_kelvin(-70))
-    utci_filter = np.union1d(t, utci_filter)
+    # t = np.where(e_mrt >= 100.0)
+    # utci_filter = np.union1d(t, utci_filter)
 
-    t = np.where(va >= 25.0)  # 90kph
-    utci_filter = np.union1d(t, utci_filter)
-
-    t = np.where(ehPa > 50.0)
-    utci_filter = np.union1d(t, utci_filter)
-
-    e_mrt = np.subtract(mrt, t2m)
-    t = np.where(e_mrt >= 100.0)
-    utci_filter = np.union1d(t, utci_filter)
-
-    t = np.where(e_mrt <= -30)
-    utci_filter = np.union1d(t, utci_filter)
+    # t = np.where(e_mrt <= -30)
+    # utci_filter = np.union1d(t, utci_filter)
 
     # utci[utci_filter] = np.nan
 
@@ -297,7 +325,7 @@ def calc_utci(messages, mrt):
     # if nans > 0 or bads > 0:
     #     print(f"UTCI => NaNs {nans} BADS {bads}")
 
-    utci[utci_filter] = MISSING_VALUE
+    # utci[utci_filter] = MISSING_VALUE
 
     return utci
 
@@ -353,6 +381,19 @@ def output_grib(output, msg, paramid, values, missing=None):
     eccodes.codes_release(handle)
 
 
+@timer
+def output_gribs(output, msg, cossza, mrt, utci):
+
+    # output_grib(output, msg, "167", t2)
+    # output_grib(output,msg,"157",rhp)
+    # output_grib(output, msg, "260255", apparenttemp)
+    # output_grib(output,msg,"260004", humidex) #heat index parameter ID
+    # output_grib(output,msg,"260005", windchill)
+    output_grib(output, msg, "214001", cossza)
+    output_grib(output, msg, "261001", utci, missing=MISSING_VALUE)
+    output_grib(output, msg, "261002", mrt)
+
+
 def main():
 
     cossza = None
@@ -394,20 +435,9 @@ def main():
         utci = calc_utci(messages=msgs, mrt=mrt)
 
         # windchill = calc_windchill(messages=msgs)
-        apparenttemp = calc_apparent_temp(messages=msgs)
+        # apparenttemp = calc_apparent_temp(messages=msgs)
 
-        # field_stats("cossza", cossza)
-        # field_stats("mrt", mrt)
-        # field_stats("utci", utci)
-
-        # output_grib(output, msg, "167", t2)
-        # output_grib(output,msg,"157",rhp)
-        output_grib(output, msg, "260255", apparenttemp)
-        # output_grib(output,msg,"260004",humidex) #heat index parameter ID
-        # output_grib(output,msg,"260005",windchill)
-        output_grib(output, msg, "214001", cossza)
-        output_grib(output, msg, "261001", utci, missing=MISSING_VALUE)
-        output_grib(output, msg, "261002", mrt)
+        output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci)
 
         print("----------------------------------------")
 

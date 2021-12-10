@@ -6,7 +6,9 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+import functools
 import math
+import time
 
 import numpy as np
 
@@ -56,3 +58,19 @@ def fahrenheit_to_celsius(tf):
 def kPa_to_hPa(rh_kpa):
     rh_hpa = rh_kpa / 10
     return rh_hpa
+
+
+############################################################################################################
+
+
+def timer(func):
+    @functools.wraps(func)
+    def wrapper_timer(*args, **kwargs):
+        tic = time.perf_counter()
+        value = func(*args, **kwargs)
+        toc = time.perf_counter()
+        elapsed_time = toc - tic
+        print(f"{func} elapsed time: {elapsed_time:0.6f} s")
+        return value
+
+    return wrapper_timer

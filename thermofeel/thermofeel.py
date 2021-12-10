@@ -39,6 +39,7 @@ from .helpers import (
     fahrenheit_to_celsius,
     kelvin_to_fahrenheit,
     kPa_to_hPa,
+    timer,
     to_julian_date,
     to_radians,
 )
@@ -290,6 +291,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     return mrt
 
 
+@timer
 def calculate_utci_impl(t2m, mrt, va, rh):
 
     e_mrt = np.subtract(mrt, t2m)
