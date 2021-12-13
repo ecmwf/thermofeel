@@ -42,6 +42,7 @@ from .helpers import (
     timer,
     to_julian_date,
     to_radians,
+    optnumba_jit
 )
 
 
@@ -72,7 +73,8 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
-def calculate_relative_humidity_percent(t2m, td):
+@optnumba_jit
+def calculate_relative_humidity_percent(t2k, tdk):
     """
     Calculate relative humidity in percent
     :param t2m: (float array) 2m temperature [K]
@@ -80,29 +82,26 @@ def calculate_relative_humidity_percent(t2m, td):
 
     returns relative humidity [%]
     """
-    t2m = __wrap(t2m)
-    td = __wrap(td)
 
-    t2m = kelvin_to_celsius(t2m)
-    td = kelvin_to_celsius(td)
+    t2c = t2k - 273.15
+    tdc = tdk - 273.15
 
     # saturated vapour pressure
-    es = 6.11 * 10.0 ** (7.5 * t2m / (237.3 + t2m))
+    es = 6.11 * 10.0 ** (7.5 * t2c / (237.3 + t2c))
     # vapour pressure
-    e = 6.11 * 10.0 ** (7.5 * td / (237.3 + td))
+    e = 6.11 * 10.0 ** (7.5 * tdc / (237.3 + tdc))
     rh = (e / es) * 100
     return rh
 
 
-def calculate_saturation_vapour_pressure(t2m):
+@optnumba_jit
+def calculate_saturation_vapour_pressure(tk):
     """
     Calculate saturation vapour pressure over water
-    :param t2m: (float array) 2m temperature [K]
+    :param tk: (float array) 2m temperature [K]
      returns relative humidity [hPa]
     http://www.thunderscientific.com/tech_info/reflibrary/its90formulas.pdf
     """
-
-    tk = __wrap(t2m)
 
     g = [
         -2.8365744e3,
@@ -122,7 +121,7 @@ def calculate_saturation_vapour_pressure(t2m):
 
     return ess
 
-
+@optnumba_jit
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
@@ -142,12 +141,47 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
 
     # convert to julian days counting from the beginning of the year
-    jd_ = to_julian_date(d, m, y)  # julian date of data
-    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
+    # jd_ = to_julian_date(d, m, y)  # julian date of data
+    jd_ = (d - 32075
+        + 1461 * (y + 4800 + (m - 14) / 12) / 4
+        + 367 * (m - 2 - (m - 14) / 12 * 12) / 12
+        - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4)
+
+    # jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
+    jd11_ = (1 - 32075
+        + 1461 * (y + 4800 + (1 - 14) / 12) / 4
+        + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12
+        - 3 * ((y + 4900 + (1 - 14) / 12) / 100) / 4)
+
+
     jd = jd_ - jd11_ + 1  # days since start of year
 
     # declination angle + time correction for solar angle
-    d, tc = solar_declination_angle(jd, h)
+    # d, tc = solar_declination_angle(jd, h)
+    
+    g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
+    while g > 360:
+        g = g - 360
+    grad = g * to_radians
+    # declination in [degrees]
+    d = (
+        0.396372
+        - 22.91327 * math.cos(grad)
+        + 4.025430 * math.sin(grad)
+        - 0.387205 * math.cos(2 * grad)
+        + 0.051967 * math.sin(2 * grad)
+        - 0.154527 * math.cos(3 * grad)
+        + 0.084798 * math.sin(3 * grad)
+    )
+    # time correction in [ h.degrees ]
+    tc = (
+        0.004297
+        + 0.107029 * math.cos(grad)
+        - 1.837877 * math.sin(grad)
+        - 0.837378 * math.cos(2 * grad)
+        - 2.340475 * math.sin(2 * grad)
+    )
+
     drad = d * to_radians
 
     latrad = lat * to_radians
@@ -159,7 +193,13 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     sharad = ((h - 12) * 15 + lon + tc) * to_radians
     csza = sindec_sinlat + cosdec_coslat * np.cos(sharad)
 
-    return np.clip(csza, 0, None)
+    # return np.clip(csza, 0, None)
+    # numba friendly clip implementation
+    for i in range(len(csza)):
+        if csza[i] < 0:
+            csza[i] == 0
+    
+    return csza
 
 
 def calculate_cos_solar_zenith_angle_integrated(
@@ -291,8 +331,8 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     return mrt
 
 
-@timer
-def calculate_utci_impl(t2m, mrt, va, rh):
+@optnumba_jit
+def calculate_utci_polynomial(t2m, mrt, va, rh):
 
     e_mrt = np.subtract(mrt, t2m)
 
@@ -551,6 +591,8 @@ def calculate_utci_impl(t2m, mrt, va, rh):
 
     return utci
 
+# thermofeel_has_numba = None
+# jited_calculate_utci_polynomial = None
 
 def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     """
@@ -568,6 +610,8 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     returns UTCI [°C]
 
     """
+
+
     t2 = __wrap(t2_k)
     va = __wrap(va_ms)
     mrt_kw = __wrap(mrt_k)
@@ -587,8 +631,22 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     t2m = kelvin_to_celsius(t2)  # polynomial approx. is in Celsius
     mrt = kelvin_to_celsius(mrt_kw)  # polynomial approx. is in Celsius
 
-    utci = calculate_utci_impl(t2m, mrt, va, rh)
+    # global thermofeel_has_numba
+    # global jited_calculate_utci_polynomial
+    # if thermofeel_has_numba is None:
+    #     try:
+    #         import numba
+    #         jited_calculate_utci_polynomial = numba.jit(nopython=True, nogil=True, parallel=True, cache=True)(calculate_utci_polynomial)
+    #         thermofeel_has_numba = True
+    #     except:
+    #         print('thermofeel cannot use numba, reverting to pure python code')
+    #    
+    # if thermofeel_has_numba:
+    #     utci = jited_calculate_utci_polynomial(t2m, mrt, va, rh)
+    # else:
+    #     utci = calculate_utci_polynomial(t2m, mrt, va, rh)
 
+    utci = calculate_utci_polynomial(t2m, mrt, va, rh)
     return utci
 
 
@@ -612,20 +670,18 @@ def calculate_wbgts(t2m):
     return wbgts
 
 
-def calculate_wbt(t_c, rh):
+def calculate_wbt(tc, rh):
     """
     calculate wet globe temperature
-    :param t2m: 2m temperature [°C]
+    :param tc: 2m temperature [°C]
     :param rh: relative humidity percentage[%]
 
     returns wet bulb temperature [°C]
     """
-    t_c = __wrap(t_c)
-    rh = __wrap(rh)
 
     tw = (
-        t_c * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
-        + np.arctan(t_c + rh)
+        tc * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
+        + np.arctan(tc + rh)
         - np.arctan(rh - 1.676331)
         + 0.00391838 * (rh) ** (3 / 2) * np.arctan(0.023101 * rh)
         - 4.686035
@@ -894,7 +950,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     at = kelvin_to_celsius(at)
     return at
 
-
+@optnumba_jit
 def calculate_wind_chill(t2m, va):
     """
     Wind Chill
@@ -903,11 +959,9 @@ def calculate_wind_chill(t2m, va):
 
     returns wind chill [°C]
     """
-    t2m = __wrap(t2m)
-    va = __wrap(va)
-    t2m = kelvin_to_celsius(t2m)
+    tc = t2m - 273.15  # kelvin_to_celsius(tk)
     va = va * 2.23694  # convert to miles per hour
-    windchill = 13.12 + 0.6215 * t2m - 11.37 * va ** 0.16 + 0.3965 + t2m + va ** 0.16
+    windchill = 13.12 + 0.6215 * tc - 11.37 * va ** 0.16 + 0.3965 + tc + va ** 0.16
     return windchill
 
 

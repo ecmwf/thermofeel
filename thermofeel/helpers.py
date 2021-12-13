@@ -15,6 +15,52 @@ import numpy as np
 to_radians = math.pi / 180
 
 
+
+def timer(func):
+    @functools.wraps(func)
+    def wrapper_timer(*args, **kwargs):
+        tic = time.perf_counter()
+        value = func(*args, **kwargs)
+        toc = time.perf_counter()
+        elapsed_time = toc - tic
+        print(f"{func} elapsed time: {elapsed_time:0.6f} s")
+        return value
+
+    return wrapper_timer
+
+
+optnumba_jit_functions = {}
+
+def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
+    def decorator_optnumba(func):
+        @functools.wraps(func)
+        def jited_function(*args, **kwargs):
+
+            global optnumba_jit_functions
+
+            if func in optnumba_jit_functions:
+                return optnumba_jit_functions[func](*args, **kwargs)
+
+            try:
+                import numba
+                print(f"Numba trying to compile {func}, args: nopython {nopython} nogil {nogil} parallel {parallel}")
+                optnumba_jit_functions[func] = numba.jit(nopython=nopython, nogil=nogil, parallel=parallel)(func)
+            except Exception as e:
+                print(f"Numba compilation failed for {func}, reverting to pure python code -- Exception caught: {e}")
+                optnumba_jit_functions[func] = func
+
+            assert(func in optnumba_jit_functions and optnumba_jit_functions[func] is not None)
+
+            return optnumba_jit_functions[func](*args, **kwargs)
+
+        return jited_function
+    
+    if _func is None:
+        return decorator_optnumba
+    else:
+        return decorator_optnumba(_func)
+
+
 def to_julian_date(d, m, y):
     return (
         d
@@ -60,17 +106,3 @@ def kPa_to_hPa(rh_kpa):
     return rh_hpa
 
 
-############################################################################################################
-
-
-def timer(func):
-    @functools.wraps(func)
-    def wrapper_timer(*args, **kwargs):
-        tic = time.perf_counter()
-        value = func(*args, **kwargs)
-        toc = time.perf_counter()
-        elapsed_time = toc - tic
-        print(f"{func} elapsed time: {elapsed_time:0.6f} s")
-        return value
-
-    return wrapper_timer

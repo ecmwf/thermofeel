@@ -1,2 +1,3 @@
 numpy
-pytest
+numba[jit]
+pytest[tests]
