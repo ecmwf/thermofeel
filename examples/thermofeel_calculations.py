@@ -321,6 +321,7 @@ def calc_windchill(messages, va):
     return thermofeel.calculate_wind_chill(t2m=t2m, va=va)
 
 
+@thermofeel.timer
 def check_messages(msgs):
     assert "2t" in msgs
     assert "2d" in msgs
