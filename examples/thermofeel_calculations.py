@@ -234,10 +234,16 @@ def calc_va(messages):
     return np.sqrt(u10 ** 2 + v10 ** 2)
 
 
+@thermofeel.optnumba_jit
+def calc_ehPa_(rh_pc, svp):
+    return svp * rh_pc * 0.01  # / 100.0
+
+
 @thermofeel.timer
 def calc_ehPa(t2m, t2d):
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
-    ehPa = thermofeel.calculate_saturation_vapour_pressure(t2m) * rh_pc / 100.0
+    svp = thermofeel.calculate_saturation_vapour_pressure(t2m)
+    ehPa = calc_ehPa_(rh_pc, svp)
     return ehPa
 
 
@@ -365,49 +371,49 @@ def output_gribs(output, msg, cossza, mrt, utci):
 cossza = None
 last_step_end = 0
 
+
 @thermofeel.timer
 def process_step(msgs, output):
 
-        check_messages(msgs)
+    check_messages(msgs)
 
-        # print(f"loaded {len(msgs)} parameters: {list(msgs.keys())}")
+    # print(f"loaded {len(msgs)} parameters: {list(msgs.keys())}")
 
-        msg = msgs["2t"]
+    msg = msgs["2t"]
 
-        step = msg["step"]
-        time = msg["time"]
-        dt = msgs["2t"]["base_datetime"]
+    step = msg["step"]
+    time = msg["time"]
+    dt = msgs["2t"]["base_datetime"]
 
-        ftime = int(time / 100)
+    ftime = int(time / 100)
 
-        step_begin = ftime
-        step_end = ftime + step
+    step_begin = ftime
+    step_end = ftime + step
 
-        print(
-            f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]"
-        )
+    print(
+        f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]"
+    )
 
-        global cossza
-        global last_step_end
-        if cossza is None:
-            print(f"[{step_begin},{step_end}]")
-            cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
-        else:
-            print(f"[{last_step_end},{step_end}]")
-            cossza += calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
+    global cossza
+    global last_step_end
+    if cossza is None:
+        print(f"[{step_begin},{step_end}]")
+        cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
+    else:
+        print(f"[{last_step_end},{step_end}]")
+        cossza += calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
 
-        last_step_end = step_end
+    last_step_end = step_end
 
-        mrt = calc_mrt(messages=msgs, cossza=cossza)
-        va = calc_va(messages=msgs)
-        utci = calc_utci(messages=msgs, mrt=mrt, va=va)
+    mrt = calc_mrt(messages=msgs, cossza=cossza)
+    va = calc_va(messages=msgs)
+    utci = calc_utci(messages=msgs, mrt=mrt, va=va)
 
-        # humidex = calc_humidex(messages=msgs)
-        # windchill = calc_windchill(messages=msgs, va=va)
-        # apparenttemp = calc_apparent_temp(messages=msgs, va=va)
+    # humidex = calc_humidex(messages=msgs)
+    # windchill = calc_windchill(messages=msgs, va=va)
+    # apparenttemp = calc_apparent_temp(messages=msgs, va=va)
 
-        output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci)
-
+    output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci)
 
 
 def main():

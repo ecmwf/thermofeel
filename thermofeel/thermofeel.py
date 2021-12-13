@@ -34,15 +34,15 @@ import math
 
 import numpy as np
 
+from .helpers import timer  # noqa
+from .helpers import to_julian_date  # noqa
 from .helpers import (
     __wrap,
     fahrenheit_to_celsius,
     kelvin_to_fahrenheit,
     kPa_to_hPa,
-    timer,
-    to_julian_date,
+    optnumba_jit,
     to_radians,
-    optnumba_jit
 )
 
 
@@ -121,6 +121,7 @@ def calculate_saturation_vapour_pressure(tk):
 
     return ess
 
+
 @optnumba_jit
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
@@ -142,23 +143,28 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
 
     # convert to julian days counting from the beginning of the year
     # jd_ = to_julian_date(d, m, y)  # julian date of data
-    jd_ = (d - 32075
+    jd_ = (
+        d
+        - 32075
         + 1461 * (y + 4800 + (m - 14) / 12) / 4
         + 367 * (m - 2 - (m - 14) / 12 * 12) / 12
-        - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4)
+        - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4
+    )
 
     # jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
-    jd11_ = (1 - 32075
+    jd11_ = (
+        1
+        - 32075
         + 1461 * (y + 4800 + (1 - 14) / 12) / 4
         + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12
-        - 3 * ((y + 4900 + (1 - 14) / 12) / 100) / 4)
-
+        - 3 * ((y + 4900 + (1 - 14) / 12) / 100) / 4
+    )
 
     jd = jd_ - jd11_ + 1  # days since start of year
 
     # declination angle + time correction for solar angle
     # d, tc = solar_declination_angle(jd, h)
-    
+
     g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
     while g > 360:
         g = g - 360
@@ -198,7 +204,7 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     for i in range(len(csza)):
         if csza[i] < 0:
             csza[i] == 0
-    
+
     return csza
 
 
@@ -289,6 +295,7 @@ def calculate_cos_solar_zenith_angle_integrated(
     return integral
 
 
+@optnumba_jit
 def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     """
     mrt - Mean Radiant Temperature
@@ -591,8 +598,10 @@ def calculate_utci_polynomial(t2m, mrt, va, rh):
 
     return utci
 
+
 # thermofeel_has_numba = None
 # jited_calculate_utci_polynomial = None
+
 
 def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     """
@@ -610,7 +619,6 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
     returns UTCI [°C]
 
     """
-
 
     t2 = __wrap(t2_k)
     va = __wrap(va_ms)
@@ -630,21 +638,6 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
 
     t2m = kelvin_to_celsius(t2)  # polynomial approx. is in Celsius
     mrt = kelvin_to_celsius(mrt_kw)  # polynomial approx. is in Celsius
-
-    # global thermofeel_has_numba
-    # global jited_calculate_utci_polynomial
-    # if thermofeel_has_numba is None:
-    #     try:
-    #         import numba
-    #         jited_calculate_utci_polynomial = numba.jit(nopython=True, nogil=True, parallel=True, cache=True)(calculate_utci_polynomial)
-    #         thermofeel_has_numba = True
-    #     except:
-    #         print('thermofeel cannot use numba, reverting to pure python code')
-    #    
-    # if thermofeel_has_numba:
-    #     utci = jited_calculate_utci_polynomial(t2m, mrt, va, rh)
-    # else:
-    #     utci = calculate_utci_polynomial(t2m, mrt, va, rh)
 
     utci = calculate_utci_polynomial(t2m, mrt, va, rh)
     return utci
@@ -949,6 +942,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     at = t2m + 0.33 * rh - 0.7 * va - 4
     at = kelvin_to_celsius(at)
     return at
+
 
 @optnumba_jit
 def calculate_wind_chill(t2m, va):
