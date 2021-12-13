@@ -422,6 +422,7 @@ def main():
     print(f"Thermofeel version: {thermofeel.__version__}")
     print(f"Python version: {sys.version}")
     print(f"Numpy version: {np.version.version}")
+    np.show_config()
 
     output = open(sys.argv[2], "wb")
 
