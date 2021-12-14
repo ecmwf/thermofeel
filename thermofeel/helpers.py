@@ -9,6 +9,7 @@
 import functools
 import math
 import time
+import os
 
 import numpy as np
 
@@ -41,20 +42,23 @@ def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
             if func in optnumba_jit_functions:
                 return optnumba_jit_functions[func](*args, **kwargs)
 
-            try:
-                import numba
-
-                print(
-                    f"Numba trying to compile {func}, args: nopython {nopython} nogil {nogil} parallel {parallel}"
-                )
-                optnumba_jit_functions[func] = numba.jit(
-                    nopython=nopython, nogil=nogil, parallel=parallel
-                )(func)
-            except Exception as e:
-                print(
-                    f"Numba compilation failed for {func}, reverting to pure python code -- Exception caught: {e}"
-                )
+            if os.environ.get('THERMOFEEL_NO_NUMBA'):
                 optnumba_jit_functions[func] = func
+            else:
+                try:
+                    import numba
+
+                    print(
+                        f"Numba trying to compile {func}, args: nopython {nopython} nogil {nogil} parallel {parallel}"
+                    )
+                    optnumba_jit_functions[func] = numba.jit(
+                        nopython=nopython, nogil=nogil, parallel=parallel
+                    )(func)
+                except Exception as e:
+                    print(
+                        f"Numba compilation failed for {func}, reverting to pure python code -- Exception caught: {e}"
+                    )
+                    optnumba_jit_functions[func] = func
 
             assert (
                 func in optnumba_jit_functions
