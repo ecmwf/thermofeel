@@ -42,8 +42,7 @@ from .helpers import (
     kelvin_to_fahrenheit,
     kPa_to_hPa,
     optnumba_jit,
-    to_radians,
-)
+    to_radians)
 
 
 # solar declination angle [degrees] + time correction for solar angle
@@ -124,7 +123,7 @@ def calculate_saturation_vapour_pressure(tk):
 
 @timer
 @optnumba_jit
-def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
+def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
     :param lat: (float array) latitude [degrees]
@@ -139,7 +138,7 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     see also:
     http://answers.google.com/answers/threadview/id/782886.html
 
-    returns cosine of the solar zenith angle
+    returns cosine of the solar zenith angle (all values, including negatives)
     """
 
     # convert to julian days counting from the beginning of the year
@@ -200,13 +199,31 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     sharad = ((h - 12) * 15 + lon + tc) * to_radians
     csza = sindec_sinlat + cosdec_coslat * np.cos(sharad)
 
-    # return np.clip(csza, 0, None)
-    # numba friendly clip implementation
-    for i in range(len(csza)):
-        if csza[i] < 0:
-            csza[i] == 0
-
+    # we dont clip negative values here
     return csza
+
+
+@timer
+def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
+    """
+    calculate solar zenith angle
+    :param lat: (float array) latitude [degrees]
+    :param lon: (float array) longitude [degrees]
+    :param y: year [int]
+    :param m: month [int]
+    :param d: day [int]
+    :param h: hour [int]
+
+    https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
+
+    see also:
+    http://answers.google.com/answers/threadview/id/782886.html
+
+    returns cosine of the solar zenith angle (all values, including negatives)
+    """
+    # we separate the function for clipping the negative values since numba doesn't support clip (yet)
+    csza = calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d)
+    return np.clip(csza, 0, None)
 
 
 @timer
@@ -289,10 +306,9 @@ def calculate_cos_solar_zenith_angle_integrated(
         t += (tf + ti) / 2.0
 
         for n in range(len(w)):
-            cossza = calculate_cos_solar_zenith_angle(
+            integral += w[n] * calculate_cos_solar_zenith_angle(
                 lat=lat, lon=lon, y=y, m=m, d=d, h=(h + t[n])
             )
-            integral += w[n] * cossza
 
     return integral
 

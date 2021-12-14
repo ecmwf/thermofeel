@@ -31,7 +31,6 @@ def timer(func):
 
 optnumba_jit_functions = {}
 
-
 def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
     def decorator_optnumba(func):
         @functools.wraps(func)
@@ -54,6 +53,7 @@ def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
                     optnumba_jit_functions[func] = numba.jit(
                         nopython=nopython, nogil=nogil, parallel=parallel
                     )(func)
+
                 except Exception as e:
                     print(
                         f"Numba compilation failed for {func}, reverting to pure python code -- Exception caught: {e}"
