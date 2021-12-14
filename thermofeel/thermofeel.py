@@ -122,6 +122,7 @@ def calculate_saturation_vapour_pressure(tk):
     return ess
 
 
+@timer
 @optnumba_jit
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
@@ -208,6 +209,7 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     return csza
 
 
+@timer
 def calculate_cos_solar_zenith_angle_integrated(
     lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=1, integration_order=3
 ):
