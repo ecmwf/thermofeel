@@ -394,14 +394,14 @@ def output_gribs(output, msg, cossza, mrt, utci):
     output_grib(output, msg, "261002", mrt)
 
 
-def main():
+cossza = None
+last_step_end = 0
 
-    cossza = None
-    last_step_end = 0
-    output = open(sys.argv[2], "wb")
+@timer
+def process_step(msgs, output):
 
-    print("----------------------------------------")
-    for msgs in decode_grib(sys.argv[1]):
+        global cossza
+        global last_step_end
 
         check_messages(msgs)
 
@@ -439,6 +439,13 @@ def main():
 
         output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci)
 
+def main():
+
+    output = open(sys.argv[2], "wb")
+
+    print("----------------------------------------")
+    for msgs in decode_grib(sys.argv[1]):
+        process_step(msgs, output)
         print("----------------------------------------")
 
 
