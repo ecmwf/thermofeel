@@ -203,7 +203,6 @@ def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     return csza
 
 
-@timer
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
@@ -226,7 +225,6 @@ def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     return np.clip(csza, 0, None)
 
 
-@timer
 def calculate_cos_solar_zenith_angle_integrated(
     lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=1, integration_order=3
 ):
