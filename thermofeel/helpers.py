@@ -8,8 +8,8 @@
 
 import functools
 import math
-import time
 import os
+import time
 
 import numpy as np
 
@@ -42,7 +42,7 @@ def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
             if func in optnumba_jit_functions:
                 return optnumba_jit_functions[func](*args, **kwargs)
 
-            if os.environ.get('THERMOFEEL_NO_NUMBA'):
+            if os.environ.get("THERMOFEEL_NO_NUMBA"):
                 optnumba_jit_functions[func] = func
             else:
                 try:
