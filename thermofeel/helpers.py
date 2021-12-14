@@ -31,6 +31,7 @@ def timer(func):
 
 optnumba_jit_functions = {}
 
+
 def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
     def decorator_optnumba(func):
         @functools.wraps(func)

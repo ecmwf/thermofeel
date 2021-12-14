@@ -42,7 +42,8 @@ from .helpers import (
     kelvin_to_fahrenheit,
     kPa_to_hPa,
     optnumba_jit,
-    to_radians)
+    to_radians,
+)
 
 
 # solar declination angle [degrees] + time correction for solar angle
@@ -121,7 +122,6 @@ def calculate_saturation_vapour_pressure(tk):
     return ess
 
 
-@timer
 @optnumba_jit
 def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
@@ -615,10 +615,6 @@ def calculate_utci_polynomial(t2m, mrt, va, rh):
     )
 
     return utci
-
-
-# thermofeel_has_numba = None
-# jited_calculate_utci_polynomial = None
 
 
 def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
