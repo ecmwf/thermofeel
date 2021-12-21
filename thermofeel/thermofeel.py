@@ -37,7 +37,6 @@ import numpy as np
 from .helpers import timer  # noqa
 from .helpers import to_julian_date  # noqa
 from .helpers import (
-    __wrap,
     fahrenheit_to_celsius,
     kelvin_to_fahrenheit,
     kPa_to_hPa,
@@ -615,7 +614,7 @@ def calculate_utci_polynomial(t2m, mrt, va, rh):
     return utci
 
 
-def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
+def calculate_utci(t2_k, va_ms, mrt_k, ehPa=None, td_k=None):
     """
     UTCI
     :param t2_k: (float array) is 2m temperature [K]
@@ -632,26 +631,20 @@ def calculate_utci(t2_k, va_ms, mrt_k, e_hPa=None, td_k=None):
 
     """
 
-    t2 = __wrap(t2_k)
-    va = __wrap(va_ms)
-    mrt_kw = __wrap(mrt_k)
-
-    if e_hPa is not None:
-        ehPa = __wrap(e_hPa)
+    if ehPa is not None:
         rh = ehPa / 10.0  # rh in kPa
     else:
         if td_k is not None:
-            t2d = __wrap(td_k)
-            rh_pc = calculate_relative_humidity_percent(t2, t2d)
-            ehPa = calculate_saturation_vapour_pressure(t2) * rh_pc / 100.0
+            rh_pc = calculate_relative_humidity_percent(t2_k, td_k)
+            ehPa = calculate_saturation_vapour_pressure(t2_k) * rh_pc / 100.0
             rh = ehPa / 10.0  # rh in kPa
         else:
             raise ValueError("Missing input e_hPa or td_k")
 
-    t2m = kelvin_to_celsius(t2)  # polynomial approx. is in Celsius
-    mrt = kelvin_to_celsius(mrt_kw)  # polynomial approx. is in Celsius
+    t2c = kelvin_to_celsius(t2_k)   # polynomial approx. is in Celsius
+    mrt = kelvin_to_celsius(mrt_k)  # polynomial approx. is in Celsius
 
-    utci = calculate_utci_polynomial(t2m, mrt, va, rh)
+    utci = calculate_utci_polynomial(t2c, mrt, va_ms, rh)
     return utci
 
 
@@ -667,7 +660,6 @@ def calculate_wbgts(t2m):
 
     returns Wet Bulb Globe Temperature [°C]
     """
-    t2m = __wrap(t2m)
     rh = calculate_saturation_vapour_pressure(t2m)
     rh = kPa_to_hPa(rh)
     t2m = kelvin_to_celsius(t2m)
@@ -825,9 +817,6 @@ def calculate_bgt(t_k, mrt, va):
 
     returns bulb globe temperature [°C]
     """
-    t_k = __wrap(t_k)
-    mrt = __wrap(mrt)
-    va = __wrap(va)
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
     a = f / 2
@@ -865,10 +854,6 @@ def calculate_wbgt(t_k, mrt, va, td):
     https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
 
     """
-    t_k = __wrap(t_k)
-    mrt = __wrap(mrt)
-    va = __wrap(va)
-    td = __wrap(td)
 
     bgt_c = calculate_bgt(t_k, mrt, va)
 
@@ -889,9 +874,6 @@ def calculate_mrt_from_bgt(t2m, bgt, va):
     :param va: wind speed at 10 meters [m/s]
     returns mean radiant temperature [K]
     """
-    t2m = __wrap(t2m)
-    bgt = __wrap(bgt)
-    va = __wrap(va)
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
     bgt4 = bgt ** 4
@@ -908,8 +890,6 @@ def calculate_humidex(t2m, td):
 
     returns humidex [°C]
     """
-    t2m = __wrap(t2m)
-    td = __wrap(td)
     e = 6.11 * np.exp(5417.7530 * ((1 / t2m) - (1 / td)))
     h = 0.5555 * (e - 10.0)
     humidex = (t2m + h) - 273.15
@@ -927,9 +907,6 @@ def calculate_net_effective_temperature(t2m, va, td):
     returns net effective temperature [°C]
     """
     rh = calculate_relative_humidity_percent(t2m, td)
-    t2m = __wrap(t2m)
-    va = __wrap(va)
-    rh = __wrap(rh)
     t2m = kelvin_to_celsius(t2m)
     rh = kPa_to_hPa(rh)
     ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
@@ -947,12 +924,11 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     """
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
-    t2m = __wrap(t2m)
-    va = __wrap(va)
-    rh = __wrap(rh)
+
     va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
     at = t2m + 0.33 * rh - 0.7 * va - 4
     at = kelvin_to_celsius(at)
+
     return at
 
 
@@ -978,9 +954,10 @@ def calculate_heat_index_simplified(t2m, rh=None):
        :param rh: Relative Humidity [pa]
        returns heat index [°C]
     """
-    t2m = __wrap(t2m)
+
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
+
     t2m = kelvin_to_celsius(t2m)
     rh = kPa_to_hPa(rh)
 
@@ -1016,8 +993,6 @@ def calculate_heat_index_adjusted(t2m, td):
        :param td: np.array 2m dewpoint temperature  [K]
        returns heat index [°C]
     """
-    t2m = __wrap(t2m)
-    td = __wrap(td)
 
     rh = calculate_relative_humidity_percent(t2m, td)
     t2m = kelvin_to_fahrenheit(t2m)

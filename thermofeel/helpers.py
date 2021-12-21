@@ -86,17 +86,6 @@ def to_julian_date(d, m, y):
     )
 
 
-# validate data convert int float to numpy array
-def __wrap(variable):
-    if isinstance(variable, int) or isinstance(variable, float):
-        variable = np.array(variable)
-        return variable
-    if variable is None:
-        raise ValueError
-    else:
-        return variable
-
-
 # convert Fahrenheit to Kelvin
 # def __fahrenheit_to_kelvin(tf):
 #     tk = 5 * (tf - 273) / 9 + 32
