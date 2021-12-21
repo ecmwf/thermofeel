@@ -11,8 +11,6 @@ import math
 import os
 import time
 
-import numpy as np
-
 to_radians = math.pi / 180
 
 

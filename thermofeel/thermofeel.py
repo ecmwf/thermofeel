@@ -641,7 +641,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, ehPa=None, td_k=None):
         else:
             raise ValueError("Missing input e_hPa or td_k")
 
-    t2c = kelvin_to_celsius(t2_k)   # polynomial approx. is in Celsius
+    t2c = kelvin_to_celsius(t2_k)  # polynomial approx. is in Celsius
     mrt = kelvin_to_celsius(mrt_k)  # polynomial approx. is in Celsius
 
     utci = calculate_utci_polynomial(t2c, mrt, va_ms, rh)
