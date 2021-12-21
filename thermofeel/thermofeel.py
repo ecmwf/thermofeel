@@ -72,7 +72,7 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
-@optnumba_jit
+@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
 def calculate_relative_humidity_percent(t2k, tdk):
     """
     Calculate relative humidity in percent
@@ -93,7 +93,7 @@ def calculate_relative_humidity_percent(t2k, tdk):
     return rh
 
 
-@optnumba_jit
+@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
 def calculate_saturation_vapour_pressure(tk):
     """
     Calculate saturation vapour pressure over water
@@ -121,7 +121,7 @@ def calculate_saturation_vapour_pressure(tk):
     return ess
 
 
-@optnumba_jit
+@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
 def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
@@ -703,7 +703,7 @@ def calculate_vapour_pressure(t_d):
     return e
 
 
-def sea_level_pa_to_atmosphere(t_k, slpa, h):
+def calculate_sea_level_pa_to_atmosphere(t_k, slpa, h):
     """
     calculate atmospheric pressure from sea level pressure
     using the Barometric Formula
@@ -742,7 +742,7 @@ def calculate_equivalent_potential_temperature(slpa, t_k, t_d):
 
     """
     e = calculate_saturation_vapour_pressure(t2m=t_k)
-    apa = sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
+    apa = calculate_sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
     rs = np.exp(e / apa - e)
 
     tl = 1 / (1 / t_d - 56) + np.log(t_k / t_d) / 800 + 56
@@ -779,7 +779,7 @@ def calculate_wbt_dj(t_k, slpa, t_d, rh=None):
     ca = 2675
 
     # atmospheric pressure
-    apa = sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
+    apa = calculate_sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
 
     # vapour pressure
     # vp = calculate_vapour_pressure(t_d=t_d)
@@ -932,7 +932,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     return at
 
 
-@optnumba_jit
+@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
 def calculate_wind_chill(t2m, va):
     """
     Wind Chill

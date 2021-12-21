@@ -90,7 +90,7 @@ class TestThermalCalculator(unittest.TestCase):
         rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
         ehPa = tmf.calculate_saturation_vapour_pressure(self.t2m) * rh_pc / 100.0
         utci = tmf.calculate_utci(
-            t2_k=self.t2m, va_ms=self.va, mrt_k=self.mrt, e_hPa=ehPa
+            t2_k=self.t2m, va_ms=self.va, mrt_k=self.mrt, ehPa=ehPa
         )
         # np.savetxt("utci.csv", utci)
         self.assert_equal(self.utci, utci)

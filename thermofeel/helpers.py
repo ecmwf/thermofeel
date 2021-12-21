@@ -30,7 +30,7 @@ def timer(func):
 optnumba_jit_functions = {}
 
 
-def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
+def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=False):
     def decorator_optnumba(func):
         @functools.wraps(func)
         def jited_function(*args, **kwargs):
