@@ -1056,7 +1056,7 @@ def calculate_heat_index_adjusted(t2m, td):
     return hi
 
 
-# Helpers
+# Converters
 
 # convert Celsius to Kelvin
 def celsius_to_kelvin(tc):
@@ -1068,3 +1068,22 @@ def celsius_to_kelvin(tc):
 def kelvin_to_celsius(tk):
     tc = tk - 273.15
     return tc
+
+
+# convert Kelvin to Fahrenheit
+def kelvin_to_fahrenheit(tk):
+    tf = (tk - 273.15) * 9 / 5 + 32
+    return tf
+
+
+# convert Fahrenheit to Celsius
+def fahrenheit_to_celsius(tf):
+    tc = (tf - 32) * 5 / 9
+    return tc
+
+
+# convert Fahrenheit to Kelvin
+def fahrenheit_to_kelvin(tf):
+    tk = 5 * (tf - 273) / 9 + 32
+    return tk
+
