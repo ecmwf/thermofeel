@@ -153,26 +153,6 @@ def decode_grib(fpath):
 
 
 @thermofeel.timer
-def calc_cossza_int(dt, begin, end):
-
-    # print(dt.year, dt.month, dt.day, dt.hour)
-
-    integral = thermofeel.calculate_cos_solar_zenith_angle_integrated(
-        lat=lats,
-        lon=lons,
-        y=dt.year,
-        m=dt.month,
-        d=dt.day,
-        h=dt.hour,
-        tbegin=begin,
-        tend=end,
-        integration_order=2,
-    )
-
-    return integral
-
-
-@thermofeel.timer
 def calc_heat_index_ad(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
@@ -212,117 +192,11 @@ def calc_rela_humid_perc(messages):
 
 
 @thermofeel.timer
-def calc_mrt(messages, cossza):
-
-    step = messages["2t"]["step"]
-
-    factor = 1.0 / (step * 3600.0)
-
-    ssrd = messages["ssrd"]["values"]
-    ssr = messages["ssr"]["values"]
-    fdir = messages["fdir"]["values"]
-    strd = messages["strd"]["values"]
-    strr = messages["str"]["values"]
-
-    mrt = thermofeel.calculate_mean_radiant_temperature(
-        ssrd=ssrd * factor,
-        ssr=ssr * factor,
-        fdir=fdir * factor,
-        strd=strd * factor,
-        strr=strr * factor,
-        cossza=cossza * factor,
-    )
-
-    return mrt
-
-
-@thermofeel.timer
 def calc_va(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
 
     return np.sqrt(u10 ** 2 + v10 ** 2)
-
-
-@thermofeel.optnumba_jit
-def calc_ehPa_(rh_pc, svp):
-    return svp * rh_pc * 0.01  # / 100.0
-
-
-@thermofeel.timer
-def calc_ehPa(t2m, t2d):
-    rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
-    svp = thermofeel.calculate_saturation_vapour_pressure(t2m)
-    ehPa = calc_ehPa_(rh_pc, svp)
-    return ehPa
-
-
-@thermofeel.timer
-def calc_utci_in_kelvin(t2m, va, mrt, ehPa):
-    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
-    return thermofeel.celsius_to_kelvin(utci)
-
-
-@thermofeel.timer
-def filter_utci(t2m, va, mrt, ehPa, utci):
-    e_mrt = np.subtract(mrt, t2m)
-
-    misses = np.where(t2m >= thermofeel.celsius_to_kelvin(70))
-    t = np.where(t2m <= thermofeel.celsius_to_kelvin(-70))
-    misses = np.union1d(t, misses)
-
-    t = np.where(va >= 25.0)  # 90kph
-    misses = np.union1d(t, misses)
-
-    t = np.where(ehPa > 50.0)
-    misses = np.union1d(t, misses)
-
-    t = np.where(e_mrt >= 100.0)
-    misses = np.union1d(t, misses)
-
-    t = np.where(e_mrt <= -30)
-    misses = np.union1d(t, misses)
-
-    print(f"utci missing values: {len(misses)}")
-
-    utci[misses] = MISSING_VALUE
-
-    return misses
-
-
-@thermofeel.timer
-def validate_utci(utci, misses):
-
-    utci[misses] = np.nan
-
-    bads = 0
-    for i in range(len(utci)):
-        v = utci[i]
-        if not np.isnan(v) and (v < UTCI_MIN_VALUE or v > UTCI_MAX_VALUE):
-            bads += 1
-            print("UTCI [", i, "] = ", utci[i], " : lat/lon ", lats[i], lons[i])
-
-    nmisses = len(misses)
-    if nmisses > 0 or bads > 0:
-        print(f"UTCI => MISS {nmisses} BADS {bads}")
-
-    utci[misses] = MISSING_VALUE
-
-
-@thermofeel.timer
-def calc_utci(messages, mrt, va):
-
-    t2m = messages["2t"]["values"]
-    t2d = messages["2d"]["values"]
-
-    ehPa = calc_ehPa(t2m, t2d)
-    utci = calc_utci_in_kelvin(t2m, va, mrt, ehPa)
-
-    filter_utci(t2m, va, mrt, ehPa, utci)
-
-    # validate_utci(utci, filter_utci(t2m, va, mrt, ehPa, utci))
-
-    return utci
 
 
 @thermofeel.timer
@@ -337,11 +211,6 @@ def check_messages(msgs):
     assert "2d" in msgs
     assert "10u" in msgs
     assert "10v" in msgs
-    assert "ssrd" in msgs
-    assert "ssr" in msgs
-    assert "fdir" in msgs
-    assert "str" in msgs
-    assert "strd" in msgs
 
     assert lats.size == lons.size
 
@@ -367,21 +236,12 @@ def output_grib(output, msg, paramid, values, missing=None):
 
 
 @thermofeel.timer
-def output_gribs(output, msg, cossza, mrt, utci, apparenttemp, humidex, hia):
+def output_gribs(output, msg, t2, apparenttemp, humidex, hia):
 
-    # output_grib(output, msg, "167", t2)
-    # output_grib(output,msg,"157",rhp)
+    output_grib(output, msg, "167", t2)
     output_grib(output, msg, "260255", apparenttemp)
     output_grib(output, msg, "260005", humidex)  # wind chill parameter ID
     output_grib(output, msg, "26004", hia)
-    # output_grib(output, msg, "260005", windchill)
-    output_grib(output, msg, "214001", cossza)
-    output_grib(output, msg, "261001", utci, missing=MISSING_VALUE)
-    output_grib(output, msg, "261002", mrt)
-
-
-cossza = None
-last_step_end = 0
 
 
 @thermofeel.timer
@@ -406,21 +266,8 @@ def process_step(msgs, output):
         f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]"
     )
 
-    global cossza
-    global last_step_end
-    if cossza is None:
-        print(f"[{step_begin},{step_end}]")
-        cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
-    else:
-        print(f"[{last_step_end},{step_end}]")
-        cossza += calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
-
-    last_step_end = step_end
-
-    mrt = calc_mrt(messages=msgs, cossza=cossza)
+    t2 = msg["values"]
     va = calc_va(messages=msgs)
-    utci = calc_utci(messages=msgs, mrt=mrt, va=va)
-
     humidex = calc_humidex(messages=msgs)
     # windchill = calc_windchill(messages=msgs, va=va)
     apparenttemp = calc_apparent_temp(messages=msgs, va=va)
@@ -429,9 +276,7 @@ def process_step(msgs, output):
     output_gribs(
         output=output,
         msg=msg,
-        cossza=cossza,
-        mrt=mrt,
-        utci=utci,
+        t2=t2,
         apparenttemp=apparenttemp,
         hia=hia,
         humidex=humidex,
