@@ -173,45 +173,6 @@ def calc_cossza_int(dt, begin, end):
 
 
 @thermofeel.timer
-def calc_heat_index_ad(messages):
-    t2m = messages["2t"]["values"]
-    td = messages["2d"]["values"]
-
-    hia = thermofeel.calculate.heat_index_adjusted(t2m=t2m, td=td)
-
-    return hia
-
-
-@thermofeel.timer
-def calc_apparent_temp(messages, va):
-    t2m = messages["2t"]["values"]
-
-    at = thermofeel.calculate_apparent_temperature(t2m=t2m, va=va)
-
-    return at
-
-
-@thermofeel.timer
-def calc_humidex(messages):
-    t2m = messages["2t"]["values"]
-    td = messages["2d"]["values"]
-
-    humidex = thermofeel.calculate_humidex(t2m=t2m, td=td)
-
-    return humidex
-
-
-@thermofeel.timer
-def calc_rela_humid_perc(messages):
-    t2m = messages["2t"]["values"]
-    td = messages["2d"]["values"]
-
-    rhp = thermofeel.calculate_relative_humidity_percent(t2m=t2m, td=td)
-
-    return rhp
-
-
-@thermofeel.timer
 def calc_mrt(messages, cossza):
 
     step = messages["2t"]["step"]
@@ -326,12 +287,6 @@ def calc_utci(messages, mrt, va):
 
 
 @thermofeel.timer
-def calc_windchill(messages, va):
-    t2m = messages["2t"]["values"]
-    return thermofeel.calculate_wind_chill(t2m=t2m, va=va)
-
-
-@thermofeel.timer
 def check_messages(msgs):
     assert "2t" in msgs
     assert "2d" in msgs
@@ -367,14 +322,7 @@ def output_grib(output, msg, paramid, values, missing=None):
 
 
 @thermofeel.timer
-def output_gribs(output, msg, cossza, mrt, utci, apparenttemp, humidex, hia):
-
-    # output_grib(output, msg, "167", t2)
-    # output_grib(output,msg,"157",rhp)
-    output_grib(output, msg, "260255", apparenttemp)
-    output_grib(output, msg, "260005", humidex)  # wind chill parameter ID
-    output_grib(output, msg, "26004", hia)
-    # output_grib(output, msg, "260005", windchill)
+def output_gribs(output, msg, cossza, mrt, utci):
     output_grib(output, msg, "214001", cossza)
     output_grib(output, msg, "261001", utci, missing=MISSING_VALUE)
     output_grib(output, msg, "261002", mrt)
@@ -421,21 +369,7 @@ def process_step(msgs, output):
     va = calc_va(messages=msgs)
     utci = calc_utci(messages=msgs, mrt=mrt, va=va)
 
-    humidex = calc_humidex(messages=msgs)
-    # windchill = calc_windchill(messages=msgs, va=va)
-    apparenttemp = calc_apparent_temp(messages=msgs, va=va)
-    hia = calc_heat_index_ad(messages=msgs)
-
-    output_gribs(
-        output=output,
-        msg=msg,
-        cossza=cossza,
-        mrt=mrt,
-        utci=utci,
-        apparenttemp=apparenttemp,
-        hia=hia,
-        humidex=humidex,
-    )
+    output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci)
 
 
 def main():
