@@ -425,6 +425,7 @@ def process_step(msgs, output):
     # windchill = calc_windchill(messages=msgs, va=va)
     apparenttemp = calc_apparent_temp(messages=msgs, va=va)
     hia = calc_heat_index_ad(messages=msgs)
+
     output_gribs(
         output=output,
         msg=msg,
@@ -450,7 +451,6 @@ def main():
     for msgs in decode_grib(sys.argv[1]):
         process_step(msgs, output)
         print("----------------------------------------")
-
 
 if __name__ == "__main__":
     sys.exit(main())
