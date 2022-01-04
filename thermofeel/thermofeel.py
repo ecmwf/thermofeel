@@ -72,7 +72,7 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
-@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
+@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_relative_humidity_percent(t2k, tdk):
     """
     Calculate relative humidity in percent
@@ -93,7 +93,7 @@ def calculate_relative_humidity_percent(t2k, tdk):
     return rh
 
 
-@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
+@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_saturation_vapour_pressure(tk):
     """
     Calculate saturation vapour pressure over water
@@ -121,7 +121,7 @@ def calculate_saturation_vapour_pressure(tk):
     return ess
 
 
-@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
+@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
@@ -932,7 +932,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     return at
 
 
-@optnumba_jit(parallel=False) # function does not have benefit from parallel execution
+@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_wind_chill(t2m, va):
     """
     Wind Chill
