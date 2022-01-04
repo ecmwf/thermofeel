@@ -452,5 +452,6 @@ def main():
         process_step(msgs, output)
         print("----------------------------------------")
 
+
 if __name__ == "__main__":
     sys.exit(main())
