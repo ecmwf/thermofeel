@@ -30,7 +30,7 @@ def timer(func):
 optnumba_jit_functions = {}
 
 
-def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=False):
+def optnumba_jit(_func=None, *, nopython=True, nogil=True, parallel=True):
     def decorator_optnumba(func):
         @functools.wraps(func)
         def jited_function(*args, **kwargs):
@@ -82,24 +82,6 @@ def to_julian_date(d, m, y):
         + 367 * (m - 2 - (m - 14) / 12 * 12) / 12
         - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4
     )
-
-
-# convert Fahrenheit to Kelvin
-# def __fahrenheit_to_kelvin(tf):
-#     tk = 5 * (tf - 273) / 9 + 32
-#     return tk
-
-
-# convert Kelvin to Fahrenheit
-def kelvin_to_fahrenheit(tk):
-    tf = (tk - 273.15) * 9 / 5 + 32
-    return tf
-
-
-# convert Fahrenheit to Celsius
-def fahrenheit_to_celsius(tf):
-    tc = (tf - 32) * 5 / 9
-    return tc
 
 
 # convert from kPa to hPa for e (saturation water vapour pressure)

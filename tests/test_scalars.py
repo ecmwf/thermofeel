@@ -122,7 +122,7 @@ class TestThermalCalculator(unittest.TestCase):
 
     def test_bgt(self):
         t_k = np.array([278.15, 300, 300])
-        va = np.array([20, 20, -10]) #  negative va values are treated as 0
+        va = np.array([20, 20, -10])  # negative va values are treated as 0
         mrt = np.array([278.15, 310, 310])
         bgt = tmf.calculate_bgt(t_k, va, mrt)
         # print(f"bgt {bgt}")
