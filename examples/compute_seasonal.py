@@ -152,17 +152,17 @@ def decode_grib(fpath):
     f.close()
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def calc_heat_index_ad(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
-    hia = thermofeel.calculate.heat_index_adjusted(t2m=t2m, td=td)
+    hia = thermofeel.calculate_heat_index_adjusted(t2m=t2m, td=td)
 
     return hia
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def calc_apparent_temp(messages, va):
     t2m = messages["2t"]["values"]
 
@@ -171,7 +171,7 @@ def calc_apparent_temp(messages, va):
     return at
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def calc_humidex(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
@@ -181,7 +181,7 @@ def calc_humidex(messages):
     return humidex
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def calc_rela_humid_perc(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
@@ -191,7 +191,7 @@ def calc_rela_humid_perc(messages):
     return rhp
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def calc_va(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
@@ -199,13 +199,13 @@ def calc_va(messages):
     return np.sqrt(u10 ** 2 + v10 ** 2)
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def calc_windchill(messages, va):
     t2m = messages["2t"]["values"]
     return thermofeel.calculate_wind_chill(t2m=t2m, va=va)
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def check_messages(msgs):
     assert "2t" in msgs
     assert "2d" in msgs
@@ -235,16 +235,16 @@ def output_grib(output, msg, paramid, values, missing=None):
     eccodes.codes_release(handle)
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def output_gribs(output, msg, t2, apparenttemp, humidex, hia):
 
     output_grib(output, msg, "167", t2)
     output_grib(output, msg, "260255", apparenttemp)
     output_grib(output, msg, "260005", humidex)  # wind chill parameter ID
-    output_grib(output, msg, "26004", hia)
+    output_grib(output, msg, "260004", hia)
 
 
-@thermofeel.timer
+#@thermofeel.timer
 def process_step(msgs, output):
 
     check_messages(msgs)
