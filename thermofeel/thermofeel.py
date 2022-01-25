@@ -36,11 +36,7 @@ import numpy as np
 
 from .helpers import timer  # noqa
 from .helpers import to_julian_date  # noqa
-from .helpers import (
-    kPa_to_hPa,
-    optnumba_jit,
-    to_radians,
-)
+from .helpers import kPa_to_hPa, optnumba_jit, to_radians
 
 
 # solar declination angle [degrees] + time correction for solar angle
@@ -1084,4 +1080,3 @@ def fahrenheit_to_celsius(tf):
 def fahrenheit_to_kelvin(tf):
     tk = 5 * (tf - 273) / 9 + 32
     return tk
-
