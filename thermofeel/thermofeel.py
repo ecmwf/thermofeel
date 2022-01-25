@@ -37,8 +37,6 @@ import numpy as np
 from .helpers import timer  # noqa
 from .helpers import to_julian_date  # noqa
 from .helpers import (
-    fahrenheit_to_celsius,
-    kelvin_to_fahrenheit,
     kPa_to_hPa,
     optnumba_jit,
     to_radians,
