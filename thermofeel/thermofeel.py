@@ -683,6 +683,7 @@ def calculate_wbt(tc, rh):
     )
     return tw
 
+
 def calculate_bgt(t_k, mrt, va):
     """
     calculate globe temperature
@@ -913,19 +914,20 @@ def calculate_heat_index_adjusted(t2m, td):
     hi_filter4 = np.where(t2m < 87)
     hi_filter5 = np.where(rh > 85)
     hi_filter6 = np.where(t2m < 80)
-    hi_filter7 =np.where(hi < 80)
+    hi_filter7 = np.where(hi < 80)
 
     adjustment1 = (
-            (13 - rh[hi_filter1 and hi_filter2 and hi_filter3])
-            / 4
-            * np.sqrt(
-        17 - np.abs(t2m[hi_filter1 and hi_filter2 and hi_filter3] - 0.95) / 17
-    )
+        (13 - rh[hi_filter1 and hi_filter2 and hi_filter3])
+        / 4
+        * np.sqrt(17 - np.abs(t2m[hi_filter1 and hi_filter2 and hi_filter3] - 95) / 17)
     )
 
-    adjustment2 = (rh[hi_filter1 and hi_filter4 and hi_filter5] - 85) / 10 * (
-            (87 - t2m[hi_filter1 and hi_filter4 and hi_filter5]) / 5
+    adjustment2 = (
+        (rh[hi_filter1 and hi_filter4 and hi_filter5] - 85)
+        / 10
+        * ((87 - t2m[hi_filter1 and hi_filter4 and hi_filter5]) / 5)
     )
+
     adjustment3 = 0.5 * (
         t2m[hi_filter6]
         + 61.0
