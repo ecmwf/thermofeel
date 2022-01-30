@@ -5,7 +5,7 @@ It is a key component of calculating Wet Bulb Globe Temperature and Universal Th
 More information: https://link.springer.com/article/10.1007/s00484-020-01900-5
 
 How To Use
-======================================
+------------
 
 These methods will return slightly different values. This is to be anticipated.
 

@@ -26,3 +26,5 @@ It contains in total 16 methods including 11 thermal indices:
 * Wind Chill
 
 
+
+

@@ -8,7 +8,7 @@ More information: http://www.csgnetwork.com/canhumidexcalc.html
 
 
 How To Use
-======================================
+------------------
 You need 2m temperature in kelvin and dew point temperature in kelvin.
 
 .. code-block:: python
@@ -17,7 +17,7 @@ You need 2m temperature in kelvin and dew point temperature in kelvin.
 
 
 Interpret the Output
-======================================
+-----------------------
 
 .. csv-table:: Humidex Thresholds
     :file: humidexthresholds.csv

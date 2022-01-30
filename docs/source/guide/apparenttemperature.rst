@@ -11,7 +11,7 @@ Apparent temperature is similar to the Heat Index methods also available to calc
 More Information: https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
 
 How To Use
-======================================
+-----------
 You need 2m temperature in kelvin, wind speed at 10 meters height
 and optional relative humidity as water vapour pressure,
 because this can be calculated from 2m temperature.
@@ -27,7 +27,7 @@ an approximation of 1.2 meter wind speed.
 
 
 Interpret the Output
-======================================
+--------------------
 
 Here is a suggested way for you to interpret apparent temperature outputs, it is by no means the only way to go about defining thermal stress.
 

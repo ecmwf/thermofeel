@@ -12,7 +12,7 @@ the difference in the heat index output is in the mean about 0.004 degrees Celsi
 more information: https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2015GL066868
 
 How To Use
-======================================
+----------------
 
 
 **Cosine Solar Zenith Angle Instantaneous**
@@ -30,6 +30,6 @@ How To Use
 
 
 Interpret the Output
-======================================
+-------------------------
 
 The maximum value is 0.9 the values should range between 0 and 0.9.

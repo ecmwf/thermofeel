@@ -8,7 +8,7 @@ More Information: https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/gdj3.10
 
 
 How To Use
-======================================
+----------------
 Please use with numpy arrays.
 
 You will need 2m temperature in kelvin, mean radiant temperature in kelvin,
@@ -23,7 +23,7 @@ relative humidity (calculated as shown below,using dew point temperature) and 10
 
 
 Interpret the Output
-======================================
+-------------------------
 
 .. csv-table:: UTCI Thresholds
     :file: utcithresholds.csv

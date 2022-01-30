@@ -14,7 +14,7 @@ We carry out the calculation in Fahrenheit and then convert to Celsius in keepin
 with the other thermal indices in this library.
 
 How To Use
-======================================
+------------------
 You need 2m temperature in kelvin and optional relative humidity
 as water vapour pressure, because this can be calculated from 2m temperature.
 
@@ -31,7 +31,7 @@ use numpy array
 
 
 Interpret the Output
-======================================
+----------------------
 Here is a suggested way for you to interpret heat index outputs, it is by no means the only way to go about defining thermal stress.
 Heat Index and Apparent Temperature have the same thresholds.
 

@@ -27,6 +27,8 @@
     * Saturation vapour pressure
     * Wet Bulb Globe Temperature Simple
     * Wet Bulb Globe Temperature
+    * Theoretical Wet Bulb Temperature
+    * Globe Temperature
 
   """
 
@@ -322,6 +324,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     :param cossza: is cosine of solar zenith angle [degrees]
 
     returns Mean Radiant Temperature [K]
+    https://link.springer.com/article/10.1007/s00484-020-01900-5
     """
     dsw = ssrd - fdir
     rsw = ssrd - ssr
@@ -674,6 +677,7 @@ def calculate_wbt(tc, rh):
     :param rh: relative humidity percentage[%]
 
     returns wet bulb temperature [°C]
+    https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
     """
 
     tw = (
@@ -685,129 +689,6 @@ def calculate_wbt(tc, rh):
     )
     return tw
 
-
-def calculate_vapour_pressure(t_d):
-    """
-    calculate vapour pressure using teten's formula
-    :param t_d: 2m dew point temperature [K]
-
-    returns vapour pressure [pa]
-
-    """
-    e0 = 6.113
-    b = 17.2694
-    T1 = 273.15
-    T2 = 35.86
-    e = e0 * np.exp(b * (t_d - T1) / (t_d - T2))
-
-    return e
-
-
-def calculate_sea_level_pa_to_atmosphere(t_k, slpa, h):
-    """
-    calculate atmospheric pressure from sea level pressure
-    using the Barometric Formula
-    https://sciencing.com/manometer-2718.html
-
-    :param slpa: mean sea level pressure [pa]
-    :param t_k: 2m temperature [K]
-    :param h: pressure height [m]
-
-    returns atmospheric pressure [pa]
-
-    """
-
-    # atmospheric pressure
-    # mass of one air molecule
-    m = 28.9647
-    # acceleration due to gravity
-    g = 9.81
-    # Boltzmann's constant ideal gas constant divided by Avogadro's number
-    k = 1.38 * 10 ** -23
-    apa = h * (slpa * np.exp(-m * g * h / k * t_k))
-
-    return apa
-
-
-def calculate_equivalent_potential_temperature(slpa, t_k, t_d):
-    """
-    calculate equivalent potential temperature
-    :param slpa: Mean Sea Level Pressure [pa]
-    :param t_k: 2m Temperature [K]
-    :param t_d: 2m Dew Point Temperature [K]
-
-    returns equivalent potential temperature pt [K]
-
-    https://journals.ametsoc.org/view/journals/mwre/108/7/1520-0493_1980_108_1046_tcoept_2_0_co_2.xml
-
-    """
-    e = calculate_saturation_vapour_pressure(t2m=t_k)
-    apa = calculate_sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
-    rs = np.exp(e / apa - e)
-
-    tl = 1 / (1 / t_d - 56) + np.log(t_k / t_d) / 800 + 56
-
-    apam = apa / 100
-    exp1 = 0.2854 * (1 - 0.28 * 10 ** -3 * rs)
-    pt = (
-        t_k
-        * (1000 / apa / apam) ** exp1
-        * np.exp((3.376 / tl - 0.00254) * rs * (1 + 0.81 * 10 ** -3 * rs))
-    )
-
-    return pt
-
-
-def calculate_wbt_dj(t_k, slpa, t_d, rh=None):
-    """
-    calculate wet bulb temperature
-    :param t2m: 2m temperature [K]
-    :param slpa: Mean Sea Level Pressure [pa]
-    :param rh: Relative Humidity [%]
-    :param t_d: 2m dew point temperature [K]
-
-    returns wet bulb temperature [°C]
-    """
-    if rh is not None:
-        rh = rh
-    elif t_d is not None:
-        rh = calculate_relative_humidity_percent(t2m=t_k, td=t_d)
-    else:
-        print("input a relative humidity")
-
-    # constant for cold
-    ca = 2675
-
-    # atmospheric pressure
-    apa = calculate_sea_level_pa_to_atmosphere(t_k=t_k, slpa=slpa, h=2)
-
-    # vapour pressure
-    # vp = calculate_vapour_pressure(t_d=t_d)
-
-    # saturation vapour pressure
-    svp = calculate_saturation_vapour_pressure(t2m=t_k)
-
-    # rs saturation mixing ratio (rs)
-    rs = np.exp(svp / apa - svp)
-
-    # log derivative of saturation vapour pressure
-    ldsvp = 1 / (svp / 100)
-
-    # Non Dimensional Pressure
-    pnd = (apa / 1000) ** 0.2845  # Heat Capacity
-
-    # equivilant potential temperature
-    ept = calculate_equivalent_potential_temperature(slp=slpa, t_k=t_k, t_d=t_d)
-
-    eptnd = ept * pnd
-
-    wbt = eptnd - 273.15 - ((ca * rs) / (1 + ca * rs * ldsvp))
-
-    # sph = vp * rh * 0.01
-
-    return wbt
-
-
 def calculate_bgt(t_k, mrt, va):
     """
     calculate globe temperature
@@ -816,6 +697,8 @@ def calculate_bgt(t_k, mrt, va):
     :param va: wind speed at 10 meters [m/s]
 
     returns bulb globe temperature [°C]
+
+    https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
     """
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
@@ -873,6 +756,8 @@ def calculate_mrt_from_bgt(t2m, bgt, va):
     :param bgt: bulb globe temperature in Kelvin [K]
     :param va: wind speed at 10 meters [m/s]
     returns mean radiant temperature [K]
+
+    https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
     """
 
     f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
@@ -889,6 +774,7 @@ def calculate_humidex(t2m, td):
     :param td: dew point temperature [K]
 
     returns humidex [°C]
+    http://www.csgnetwork.com/canhumidexcalc.html
     """
     e = 6.11 * np.exp(5417.7530 * ((1 / t2m) - (1 / td)))
     h = 0.5555 * (e - 10.0)
@@ -904,7 +790,8 @@ def calculate_net_effective_temperature(t2m, va, td):
     :param rh: Relative Humidity [pa]
     :param va: Wind speed at 10 meters [m/s]
 
-    returns net effective temperature [°C]
+    returns normal effective temperature [°C]
+    https://www.sciencedirect.com/topics/engineering/effective-temperature
     """
     rh = calculate_relative_humidity_percent(t2m, td)
     t2m = kelvin_to_celsius(t2m)
@@ -921,6 +808,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     :param rh: Relative Humidity [pa]
 
     returns apparent temperature [K]
+    https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
     """
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
@@ -940,6 +828,8 @@ def calculate_wind_chill(t2m, va):
     :param va: wind speed at 10 meters [m/s]
 
     returns wind chill [°C]
+
+     http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
     """
     tc = t2m - 273.15  # kelvin_to_celsius(tk)
     va = va * 2.23694  # convert to miles per hour
@@ -953,6 +843,7 @@ def calculate_heat_index_simplified(t2m, rh=None):
        :param t2m: np.array 2m temperature [K]
        :param rh: Relative Humidity [pa]
        returns heat index [°C]
+       https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
     """
 
     if rh is None:
@@ -992,6 +883,7 @@ def calculate_heat_index_adjusted(t2m, td):
        :param t2m: np.array 2m temperature [K]
        :param td: np.array 2m dewpoint temperature  [K]
        returns heat index [°C]
+       https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
     """
 
     rh = calculate_relative_humidity_percent(t2m, td)
@@ -1027,16 +919,18 @@ def calculate_heat_index_adjusted(t2m, td):
     hi_filter4 = np.where(t2m < 87)
     hi_filter5 = np.where(rh > 85)
     hi_filter6 = np.where(t2m < 80)
+    hi_filter7 =np.where(hi < 80)
 
     adjustment1 = (
-        (13 - rh[hi_filter1 and hi_filter2 and hi_filter3])
-        / 4
-        * np.sqrt(
-            17 - np.abs(t2m[hi_filter1 and hi_filter2 and hi_filter3] - 0.95) / 17
-        )
+            (13 - rh[hi_filter1 and hi_filter2 and hi_filter3])
+            / 4
+            * np.sqrt(
+        17 - np.abs(t2m[hi_filter1 and hi_filter2 and hi_filter3] - 0.95) / 17
     )
-    adjustment2 = (rh[hi_filter1 and hi_filter4 and hi_filter5] - 85) * (
-        (87 - t2m[hi_filter1 and hi_filter4 and hi_filter5]) / 5
+    )
+
+    adjustment2 = (rh[hi_filter1 and hi_filter4 and hi_filter5] - 85) / 10 * (
+            (87 - t2m[hi_filter1 and hi_filter4 and hi_filter5]) / 5
     )
     adjustment3 = 0.5 * (
         t2m[hi_filter6]
@@ -1049,9 +943,10 @@ def calculate_heat_index_adjusted(t2m, td):
         hi[hi_filter1 and hi_filter2 and hi_filter3] - adjustment1
     )
     hi[hi_filter1 and hi_filter4 and hi_filter5] = (
-        hi[hi_filter1 and hi_filter4 and hi_filter5] - adjustment2
+        hi[hi_filter1 and hi_filter4 and hi_filter5] + adjustment2
     )
     hi[hi_filter6] = adjustment3
+    hi[hi_filter7] = adjustment3
     hi = fahrenheit_to_celsius(hi)
     return hi
 
