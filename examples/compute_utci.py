@@ -212,11 +212,17 @@ def calc_rela_humid_perc(messages):
 
 
 @thermofeel.timer
-def calc_mrt(messages, cossza):
+def calc_mrt(messages, cossza, begin, end):
+
+    assert(begin < end)
 
     step = messages["2t"]["step"]
 
-    factor = 1.0 / (step * 3600.0)
+    seconds_since_start_forecast = step * 3600
+    seconds_in_time_step = (end - begin) * 3600
+
+    f1 = 1. / float(seconds_since_start_forecast)
+    f2 = 1. / float(seconds_in_time_step)
 
     ssrd = messages["ssrd"]["values"]
     ssr = messages["ssr"]["values"]
@@ -225,12 +231,12 @@ def calc_mrt(messages, cossza):
     strr = messages["str"]["values"]
 
     mrt = thermofeel.calculate_mean_radiant_temperature(
-        ssrd=ssrd * factor,
-        ssr=ssr * factor,
-        fdir=fdir * factor,
-        strd=strd * factor,
-        strr=strr * factor,
-        cossza=cossza * factor,
+        ssrd=ssrd * f1,  # de-accumulate since forecast start
+        ssr=ssr * f1,
+        fdir=fdir * f1,
+        strd=strd * f1,
+        strr=strr * f1,
+        cossza=cossza * f2,  # de-accumulate time step integration
     )
 
     return mrt
@@ -259,7 +265,7 @@ def calc_ehPa(t2m, t2d):
 
 @thermofeel.timer
 def calc_utci_in_kelvin(t2m, va, mrt, ehPa):
-    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, e_hPa=ehPa)
+    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, ehPa=ehPa)
     return thermofeel.celsius_to_kelvin(utci)
 
 
@@ -295,16 +301,18 @@ def validate_utci(utci, misses):
 
     utci[misses] = np.nan
 
-    bads = 0
+    field_stats("utci", utci)
+
+    out_of_bounds = 0
     for i in range(len(utci)):
         v = utci[i]
         if not np.isnan(v) and (v < UTCI_MIN_VALUE or v > UTCI_MAX_VALUE):
-            bads += 1
+            out_of_bounds += 1
             print("UTCI [", i, "] = ", utci[i], " : lat/lon ", lats[i], lons[i])
 
     nmisses = len(misses)
-    if nmisses > 0 or bads > 0:
-        print(f"UTCI => MISS {nmisses} BADS {bads}")
+    if nmisses > 0 or out_of_bounds > 0:
+        print(f"UTCI => MISS {nmisses} out_of_bounds {out_of_bounds}")
 
     utci[misses] = MISSING_VALUE
 
@@ -362,6 +370,10 @@ def output_grib(output, msg, paramid, values, missing=None):
 
 @thermofeel.timer
 def output_gribs(output, msg, cossza, mrt, utci):
+
+    field_stats("cossza", cossza)
+    field_stats("mrt", mrt)
+
     output_grib(output, msg, "214001", cossza)
     output_grib(output, msg, "261001", utci, missing=MISSING_VALUE)
     output_grib(output, msg, "261002", mrt)
@@ -369,6 +381,24 @@ def output_gribs(output, msg, cossza, mrt, utci):
 
 cossza = None
 last_step_end = 0
+
+
+
+def ifs_step_intervals(step):
+    """Computes the time integration interval for the IFS forecasting system given a forecast output step"""
+    assert(step != 0 and step is not None)
+
+    assert(step > 0)
+    assert(step <= 360)
+
+    if step <= 144:
+        assert(step % 3 == 0)
+        return step - 3
+    else:
+        if step <= 360:
+            assert(step % 6 == 0)
+            return step - 6
+
 
 
 @thermofeel.timer
@@ -380,31 +410,25 @@ def process_step(msgs, output):
 
     msg = msgs["2t"]
 
-    step = msg["step"]
+    step = msg["step"]  # end of the forecast integration
     time = msg["time"]
     dt = msgs["2t"]["base_datetime"]
 
-    ftime = int(time / 100)
+    ftime = int(time / 100)  # forecast time in hours
 
-    step_begin = ftime
+    integration_start = ifs_step_intervals(step)  # start of forecast integration step
+
+    step_begin = ftime + integration_start
     step_end = ftime + step
 
     print(
         f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]"
     )
 
-    global cossza
-    global last_step_end
-    if cossza is None:
-        print(f"[{step_begin},{step_end}]")
-        cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
-    else:
-        print(f"[{last_step_end},{step_end}]")
-        cossza += calc_cossza_int(dt=dt, begin=last_step_end, end=step_end)
+    # print(f"[{step_begin},{step_end}]")
+    cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
 
-    last_step_end = step_end
-
-    mrt = calc_mrt(messages=msgs, cossza=cossza)
+    mrt = calc_mrt(messages=msgs, cossza=cossza, begin=step_begin, end=step_end)
     va = calc_va(messages=msgs)
     utci = calc_utci(messages=msgs, mrt=mrt, va=va)
 
