@@ -663,7 +663,7 @@ def calculate_wbgts(t2m):
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
-def calculate_wbt_dj(t2k,p,tdk):
+def calculate_wbt_dj(t2k,p,tdk,ept=False):
     """
         calculate wet globe temperature
         :param tc: 2m temperature [K]
@@ -674,7 +674,7 @@ def calculate_wbt_dj(t2k,p,tdk):
         https://www.nature.com/articles/nclimate1827#Sec2
         """
 
-    rh = calculate_relative_humidity_percent(t2k=t2k, tdk=tdk, ept=False)
+    rh = calculate_relative_humidity_percent(t2k=t2k, tdk=tdk)
 
     #saturation vapour pressure
     esat = np.exp(-2991.2729 / t2k ** 2
