@@ -663,13 +663,12 @@ def calculate_wbgts(t2m):
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
-def calculate_wbt_dj(t2k,p,tdk,ept=False):
+def calculate_wbt_dj(t2k,p,tdk, ept=False):
     """
         calculate wet globe temperature
         :param tc: 2m temperature [K]
         :param td: 2m  dew point temperature [K]
         :param p: Surface pressure [mbar]
-
         returns wet bulb temperature [°C]
         https://www.nature.com/articles/nclimate1827#Sec2
         """
@@ -682,16 +681,16 @@ def calculate_wbt_dj(t2k,p,tdk,ept=False):
                   - 0.028354721 * t2k + 1.7838301 * 10 ** -5 *
                   t2k ** 2 - 8.4150417 * 10 ** -10 * t2k ** 3 +
                   4.4412543 * 10 ** -13 * t2k ** 4 + 2.858487 *
-                  np.ln(t2k))/100
+                  np.log(t2k))/100
 
     #saturation mixing ratio
-    wsat = 621.97 * esat(p - esat)
+    wsat = 621.97 * esat * np.subtract(p,esat)
 
     #mixing ratio
     w = rh / 100 * wsat
 
     # Lifting condensation temperature
-    tl = 1 / (1 / (t2k - 55) - np.ln(rh / 100) / 2840) + 55
+    tl = 1 / (1 / (t2k - 55) - np.log(rh / 100) / 2840) + 55
 
     #equivilant potential temperature
     oe = t2k * (1000 / p) ** \
