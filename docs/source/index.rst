@@ -37,7 +37,6 @@ Indices and tables
    guide/net
    guide/apparenttemperature
    guide/windchill
-   guide/examplecode
 
 License
 -------

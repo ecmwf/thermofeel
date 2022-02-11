@@ -1,6 +1,6 @@
 Apparent Temperature
 ======================================
-Was developed by *Steadman,1984* to describe the thermal comfort/resistance of an average adult walking
+Was developed by *Steadman,(1984)* to describe the thermal comfort/resistance of an average adult walking
 when they are exposed to certain combination of temperatures, relative humidity's and wind speed.
 
 The method used here follows the Apparent Temperature method used by the *Australian Bureau of Meteorology*
@@ -12,19 +12,16 @@ More Information: https://journals.ametsoc.org/view/journals/apme/23/12/1520-045
 
 How To Use
 -----------
-You need 2m temperature in kelvin, wind speed at 10 meters height
-and optional relative humidity as water vapour pressure,
-because this can be calculated from 2m temperature.
+You need 2m temperature in Kelvin, 10m wind speed in m/s and, optionally, relative humidity such as water vapour pressure 
+(because this can be calculated from 2m temperature).
 
-The wind speed in this method is converted to 2 meters as
-an approximation of 1.2 meter wind speed.
+The wind speed in this method is converted to 2 meters as an approximation of 1.2 meter wind speed.
 
 
 .. code-block:: python
 
-   calculate_apparent_temperature(2m temperature,relative humidity,wind speed)
+   calculate_apparent_temperature(2m_temperature, 10m_wind_speed, relative_humidity)
     
-
 
 Interpret the Output
 --------------------

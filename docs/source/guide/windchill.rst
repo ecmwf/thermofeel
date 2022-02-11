@@ -9,11 +9,11 @@ More information: http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816
 How To Use 
 ---------------
 
-You will need 2m temperature in kelvin and 10 meter height wind speed.
+You will need 2m temperature in Kelvin and 10 m wind speed in m/s.
 
 .. code-block:: python
 
-    calculate_wind_chill(2m temperature, wind speed)
+    calculate_wind_chill(2m_temperature, wind_speed)
 
 
 Interpret the Output

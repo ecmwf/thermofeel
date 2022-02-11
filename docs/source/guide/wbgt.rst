@@ -1,6 +1,6 @@
 Wet Bulb Globe Temperature
 ======================================
-This is one of the most used heat indexes and was developed in the US by the Army and Marines.
+The wet bulb globe temperature is one of the most used heat indexes and was developed in the US by the Army and Marines.
 Traditionally it is calculated using natural wet-bulb temperature, globe temperature and dry bulb temperature.
 
 Here we present a contemporary WBGT method that uses globe temperature from *De Dear* calculated using Mean Radiant Temperature and WBGT from Stull et al. 2011 and one of WBGT
@@ -11,45 +11,46 @@ More Information: https://www.sciencedirect.com/science/article/abs/pii/S0378778
 How To Use
 ---------------
 
-**Wet Bulb Globe Temperature Simple/ Approximation**
+**Wet Bulb Globe Temperature Simple**
 
-You need 2m Temperature in Kelvin
+You need 2m Temperature in Kelvin. It returns the wet bulb globe temperature in Celsius.
 
 .. code-block:: python
 
-   calculate_wbgts(2m temperature)
+   calculate_wbgts(2m_temperature)
 
 **Wet Bulb Temperature**
-You need 2m Temperature in Celsius and Relative Humidity Percent
+
+You need 2m temperature in Celsius and relative humidity percent. It returns wet bulb temperature in Celsius.
 
 .. code-block:: python
 
-    calculate_wbt(2m temperature, relative humidity percent)
+    calculate_wbt(2m_temperature, relative_humidity_percent)
 
-**Globe Temperature***
+**Globe Temperature**
 
-You need 2m Temperature in Kelvin, Mean Radiant Temperature and Wind Speed
+You need 2m temperature in Kelvin, mean radiant temperature and 10m wind speed
 
 .. code-block:: python
 
-    calculate_gbt(2m temperature, Mean Radiant Temperature, Wind Speed)
+    calculate_gbt(2m_temperature, mean_radiant_temperature, 10m_wind_speed)
 
 **Wet Bulb Globe Temperature**
 
 **This method is not tested for Windows**
 
-You need 2m Temperature in Kelvin, Mean Radiant Temperature in Kelvin and 10 meter height wind speed.
+You need 2m temperature in Kelvin, mean radiant temperature in Kelvin and 10 m wind speed in m/s and  2m dew point temperature in Celsius. It returns wet bulb globe temperature in Celsius
 
 .. code-block:: python
 
-   calculate_wbgt(2m temperature, mean radiant temperature, wind speed)
+   calculate_wbgt(2m_temperature, mean_radiant_temperature, 10m_wind_speed)
 
 
 Interpret the Output
 ---------------------
 
-Here is a suggested way for you to interpret wet bulb globe temperature outputs, it is by no means the only way to go about defining thermal stress.
-These are based upon the Wet Bulb Globe Temperature and as such might have a different accuracy for the approximation.
+Here is a suggested way for you to interpret wet bulb globe temperature outputs. However, it is by no means the only way to go to classify thermal stress.
+These are based upon the wet bulb globe temperature and as such might have a different accuracy for the approximation.
 
 .. csv-table:: WBGT Thresholds
     :file: wbgtthresholds.csv
