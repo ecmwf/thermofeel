@@ -144,7 +144,14 @@ class TestThermalCalculator(unittest.TestCase):
         wbgt = tmf.calculate_wbgt(t_k, va, mrt, td_k)
         # print(f"wbgt {wbgt}")
         assert wbgt[0] == pytest.approx(22.03818628, abs=1e-6)
-
+        
+    def test_wbt_dj(self):
+        t2m = np.array([295])
+        td = np.array([290])
+        p=np.array([1000])
+        wbtdj = tmf.calculate_wbt_dj(t2k=t2m,p=p,tdk=td)
+        assert wbtdj == pytest.approx(45.114,abs=1e-3)
+        
     def test_calculate_cos_solar_zenith_angle(self):
         # should return ~ 0.360303587797559
         cossza = tmf.calculate_cos_solar_zenith_angle(
