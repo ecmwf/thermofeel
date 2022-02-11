@@ -942,6 +942,7 @@ def calculate_heat_index_adjusted(t2m, td):
     hi_filter6 = np.where(t2m < 80)
     hi_filter7 = np.where((hi_initial + t2m)/2 < 80)
 
+
     adjustment1 = (
         (13 - rh[f_adjust1]) / 4 * np.sqrt(17 - np.abs(t2m[f_adjust1] - 95) / 17)
     )
@@ -960,9 +961,7 @@ def calculate_heat_index_adjusted(t2m, td):
     hi[f_adjust2] = hi[f_adjust2] + adjustment2
 
     hi[hi_filter6] = adjustment3
-
-    hi = fahrenheit_to_celsius(hi)
-    return hi
+    hi[hi_filter7] = hi_initial[hi_filter7]
 
 
 # Converters
