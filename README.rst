@@ -48,6 +48,9 @@ System dependencies
 thermofeel core functions depend on:
  * numpy
 
+Optionally, thermofeel depends on:
+ * numba - automatically detect and use Numba JIT to accelerate function execution
+
 Contributing
 ============
 
