@@ -9,12 +9,12 @@
 
 ## To run this code you need to use pip install thermofeel
 
-import numpy as np
-import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-from thermofeel import *
-from netCDF4 import Dataset, num2date, date2num
+import matplotlib.pyplot as plt
+import numpy as np
+from netCDF4 import Dataset, date2num, num2date
 
+from thermofeel import *
 
 # read in two netcdf files containing all the variables
 # to calculate the thermal indexes
