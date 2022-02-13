@@ -117,7 +117,7 @@ class TestThermalCalculator(unittest.TestCase):
 
     def test_heat_index_adjusted(self):
         hia = tmf.calculate_heat_index_adjusted(self.t2m, self.td)
-        # np.savetxt("hia.csv", hia)
+        #np.savetxt("hia.csv", hia)
         self.assert_equal(self.heatindexadjusted, hia)
 
     # def test_wbgt(self):
