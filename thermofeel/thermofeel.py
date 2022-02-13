@@ -940,8 +940,7 @@ def calculate_heat_index_adjusted(t2m, td):
     hi_filter4 = np.where(t2m < 87)
     hi_filter5 = np.where(rh > 85)
     hi_filter6 = np.where(t2m < 80)
-    hi_filter7 = np.where((hi_initial + t2m)/2 < 80)
-
+    hi_filter7 = np.where((hi_initial + t2m) / 2 < 80)
 
     adjustment1 = (
         (13 - rh[f_adjust1]) / 4 * np.sqrt(17 - np.abs(t2m[f_adjust1] - 95) / 17)
@@ -962,7 +961,7 @@ def calculate_heat_index_adjusted(t2m, td):
 
     hi[hi_filter6] = adjustment3
     hi[hi_filter7] = hi_initial[hi_filter7]
-    
+
     return hi
 
 
