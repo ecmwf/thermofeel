@@ -961,8 +961,10 @@ def calculate_heat_index_adjusted(t2m, td):
 
     hi[hi_filter6] = adjustment3
     hi[hi_filter7] = hi_initial[hi_filter7]
-
-    return hi
+    
+    hi_c = fahrenheit_to_celsius(hi)
+    
+    return hi_c
 
 
 # Converters
