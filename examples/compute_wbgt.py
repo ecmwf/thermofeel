@@ -309,7 +309,7 @@ def process_step(msgs, output):
     t2m = msg["values"]
     mrt = calc_mrt(messages=msgs, cossza=cossza)
     va = calc_va(messages=msgs)
-    utci = calc_wbgt_in_l(messages=msgs, mrt=mrt, va=va)
+    utci = calc_wbgt_in_kelvin(messages=msgs, mrt=mrt, va=va, mrt=mrt, td=td)
 
     output_gribs(
         output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci, td=td, t2m=t2m, va=va

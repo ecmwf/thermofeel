@@ -7,14 +7,33 @@
 # nor does it submit to any jurisdiction.
 
 
-## To run this code you need to use pip install thermofeel
+# To run this code you need to use pip install thermofeel
 # import statements
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
-from netCDF4 import Dataset, date2num, num2date
+from netCDF4 import Dataset  # , date2num, num2date
 
-from thermofeel import *
+from thermofeel import (
+    calculate_apparent_temperature,
+    calculate_bgt,
+    calculate_cos_solar_zenith_angle,
+    calculate_cos_solar_zenith_angle_integrated,
+    calculate_heat_index_adjusted,
+    calculate_heat_index_simplified,
+    calculate_humidex,
+    calculate_mean_radiant_temperature,
+    calculate_mrt_from_bgt,
+    calculate_net_effective_temperature,
+    calculate_relative_humidity_percent,
+    calculate_saturation_vapour_pressure,
+    calculate_utci,
+    calculate_wbgt,
+    calculate_wbgts,
+    calculate_wbt,
+    calculate_wind_chill,
+    kelvin_to_celsius,
+)
 
 # read in two netcdf files containing all the variables
 # to calculate the thermal indexes
