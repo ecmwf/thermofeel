@@ -10,11 +10,11 @@
 ## To run this code you need to use pip install thermofeel
 
 import numpy as np
-from thermofeel import *
-from scipy.integrate import quadrature
-from netCDF4 import Dataset, num2date, date2num
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+from thermofeel import *
+from netCDF4 import Dataset, num2date, date2num
+
 
 
 # read in two netcdf files containing all the variables 
