@@ -150,6 +150,7 @@ class TestThermalCalculator(unittest.TestCase):
         td = np.array([290])
         p = np.array([1000])
         wbtdj = tmf.calculate_wbt_dj(t2k=t2m, p=p, tdk=td)
+
         assert wbtdj == pytest.approx(45.114, abs=1e-3)
 
     def test_calculate_cos_solar_zenith_angle(self):
