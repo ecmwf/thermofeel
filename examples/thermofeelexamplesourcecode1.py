@@ -8,7 +8,7 @@
 
 
 ## To run this code you need to use pip install thermofeel
-
+# import statements
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np

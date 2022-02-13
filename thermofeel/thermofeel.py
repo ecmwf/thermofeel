@@ -663,41 +663,50 @@ def calculate_wbgts(t2m):
     wbgts = 0.567 * t2m + 0.393 * rh + 3.38
     return wbgts
 
-def calculate_wbt_dj(t2k,p,tdk, ept=False):
+
+def calculate_wbt_dj(t2k, p, tdk, ept=False):
     """
-        calculate wet globe temperature
-        :param tc: 2m temperature [K]
-        :param td: 2m  dew point temperature [K]
-        :param p: Surface pressure [mbar]
-        returns wet bulb temperature [°C]
-        https://www.nature.com/articles/nclimate1827#Sec2
-        """
+    calculate wet globe temperature
+    :param tc: 2m temperature [K]
+    :param td: 2m  dew point temperature [K]
+    :param p: Surface pressure [mbar]
+    returns wet bulb temperature [°C]
+    https://www.nature.com/articles/nclimate1827#Sec2
+    """
 
     rh = calculate_relative_humidity_percent(t2k=t2k, tdk=tdk)
 
-    #saturation vapour pressure
-    esat = np.exp(-2991.2729 / t2k ** 2
-                  - 6017.0128/t2k + 18.87643854
-                  - 0.028354721 * t2k + 1.7838301 * 10 ** -5 *
-                  t2k ** 2 - 8.4150417 * 10 ** -10 * t2k ** 3 +
-                  4.4412543 * 10 ** -13 * t2k ** 4 + 2.858487 *
-                  np.log(t2k))/100
+    # saturation vapour pressure
+    esat = (
+        np.exp(
+            -2991.2729 / t2k ** 2
+            - 6017.0128 / t2k
+            + 18.87643854
+            - 0.028354721 * t2k
+            + 1.7838301 * 10 ** -5 * t2k ** 2
+            - 8.4150417 * 10 ** -10 * t2k ** 3
+            + 4.4412543 * 10 ** -13 * t2k ** 4
+            + 2.858487 * np.log(t2k)
+        )
+        / 100
+    )
 
-    #saturation mixing ratio
-    wsat = 621.97 * esat * np.subtract(p,esat)
+    # saturation mixing ratio
+    wsat = 621.97 * esat * np.subtract(p, esat)
 
-    #mixing ratio
+    # mixing ratio
     w = rh / 100 * wsat
 
     # Lifting condensation temperature
     tl = 1 / (1 / (t2k - 55) - np.log(rh / 100) / 2840) + 55
 
-    #equivilant potential temperature
-    oe = t2k * (1000 / p) ** \
-         (0.2854 * (1 - 0.28 * 10 ** -3 * w)) * \
-        np.exp((3.376 / tl - 0.00254) * w
-               * (1 + 0.81 * 10 ** -3 * w))
-    #wbt
+    # equivilant potential temperature
+    oe = (
+        t2k
+        * (1000 / p) ** (0.2854 * (1 - 0.28 * 10 ** -3 * w))
+        * np.exp((3.376 / tl - 0.00254) * w * (1 + 0.81 * 10 ** -3 * w))
+    )
+    # wbt
     wbt = 45.114 - 51.489 * (oe / 273.15) ** -3.504
 
     if ept is True:
@@ -761,7 +770,7 @@ def calculate_bgt(t_k, mrt, va):
     return bgt_c
 
 
-def calculate_wbgt(t_k, mrt, va, td, p = None):
+def calculate_wbgt(t_k, mrt, va, td, p=None):
     """
     calculate wet bulb globe temperature
     :param t_k: 2m temperature [K]
@@ -784,7 +793,7 @@ def calculate_wbgt(t_k, mrt, va, td, p = None):
         t_c = kelvin_to_celsius(t_k)
         tw_c = calculate_wbt(t_c, rh)
     else:
-        wbt = calculate_wbt_dj(t2k= t_k,p=p,tdk=td)
+        wbt = calculate_wbt_dj(t2k=t_k, p=p, tdk=td)
         tw_c = kelvin_to_celsius(wbt)
 
     wbgt = 0.7 * tw_c + 0.2 * bgt_c + 0.1 * t_c
@@ -962,13 +971,12 @@ def calculate_heat_index_adjusted(t2m, td):
     hi_filter4 = np.where(t2m < 87)
     hi_filter5 = np.where(rh > 85)
     hi_filter6 = np.where(t2m < 80)
-    hi_filter7 = np.where((hi_initial + t2m)/2 < 80)
-
+    hi_filter7 = np.where((hi_initial + t2m) / 2 < 80)
 
     adjustment1 = (
         (13 - rh[hi_filter1 and hi_filter2 and hi_filter3])
         / 4
-        * np.sqrt(17 - np.abs(t2m[hi_filter1 and hi_filter2 and hi_filter3 ] - 95) / 17)
+        * np.sqrt(17 - np.abs(t2m[hi_filter1 and hi_filter2 and hi_filter3] - 95) / 17)
     )
 
     adjustment2 = (
@@ -992,7 +1000,7 @@ def calculate_heat_index_adjusted(t2m, td):
     )
     hi[hi_filter6] = adjustment3
     hi[hi_filter7] = hi_initial[hi_filter7]
-    
+
     return hi
 
 
