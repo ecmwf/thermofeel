@@ -962,6 +962,8 @@ def calculate_heat_index_adjusted(t2m, td):
 
     hi[hi_filter6] = adjustment3
     hi[hi_filter7] = hi_initial[hi_filter7]
+    
+    return hi
 
 
 # Converters
