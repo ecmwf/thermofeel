@@ -214,15 +214,15 @@ def calc_rela_humid_perc(messages):
 @thermofeel.timer
 def calc_mrt(messages, cossza, begin, end):
 
-    assert(begin < end)
+    assert begin < end
 
     step = messages["2t"]["step"]
 
     seconds_since_start_forecast = step * 3600
     seconds_in_time_step = (end - begin) * 3600
 
-    f1 = 1. / float(seconds_since_start_forecast)
-    f2 = 1. / float(seconds_in_time_step)
+    f1 = 1.0 / float(seconds_since_start_forecast)
+    f2 = 1.0 / float(seconds_in_time_step)
 
     ssrd = messages["ssrd"]["values"]
     ssr = messages["ssr"]["values"]
@@ -383,22 +383,20 @@ cossza = None
 last_step_end = 0
 
 
-
 def ifs_step_intervals(step):
     """Computes the time integration interval for the IFS forecasting system given a forecast output step"""
-    assert(step != 0 and step is not None)
+    assert step != 0 and step is not None
 
-    assert(step > 0)
-    assert(step <= 360)
+    assert step > 0
+    assert step <= 360
 
     if step <= 144:
-        assert(step % 3 == 0)
+        assert step % 3 == 0
         return step - 3
     else:
         if step <= 360:
-            assert(step % 6 == 0)
+            assert step % 6 == 0
             return step - 6
-
 
 
 @thermofeel.timer
