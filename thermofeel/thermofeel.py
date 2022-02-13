@@ -36,9 +36,8 @@ import math
 
 import numpy as np
 
-from .helpers import timer  # noqa
 from .helpers import to_julian_date  # noqa
-from .helpers import kPa_to_hPa, optnumba_jit, to_radians
+from .helpers import func_timers, kPa_to_hPa, optnumba_jit, timer, to_radians  # noqa
 
 
 # solar declination angle [degrees] + time correction for solar angle
