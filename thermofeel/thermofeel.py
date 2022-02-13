@@ -978,15 +978,10 @@ def calculate_heat_index_adjusted(t2m, td):
     f_adjust2 = hi_filter1 and hi_filter4 and hi_filter5
 
     adjustment1 = (
-        (13 - rh[f_adjust1])
-        / 4
-        * np.sqrt(17 - np.abs(t2m[f_adjust1] - 95) / 17)
+        (13 - rh[f_adjust1]) / 4 * np.sqrt(17 - np.abs(t2m[f_adjust1] - 95) / 17)
     )
 
-    adjustment2 = (
-        (rh[f_adjust2] - 85) / 10
-        * ((87 - t2m[f_adjust2]) / 5)
-    )
+    adjustment2 = (rh[f_adjust2] - 85) / 10 * ((87 - t2m[f_adjust2]) / 5)
 
     adjustment3 = 0.5 * (
         t2m[hi_filter6]
