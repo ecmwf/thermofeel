@@ -701,17 +701,18 @@ def calculate_wbt_dj(t2k, p, tdk, ept=False):
     tl = 1 / (1 / (t2k - 55) - np.log(rh / 100) / 2840) + 55
 
     # equivilant potential temperature
+
     oe = (
         t2k
         * (1000 / p) ** (0.2854 * (1 - 0.28 * 10**-3 * w))
         * np.exp((3.376 / tl - 0.00254) * w * (1 + 0.81 * 10**-3 * w))
     )
-    # wbt
-    wbt = 45.114 - 51.489 * (oe / 273.15) ** -3.504
 
     if ept is True:
         return oe
     else:
+        # calculate wbt
+        wbt = 45.114 - 51.489 * (oe / 273.15) ** -3.504
         return wbt
 
 
