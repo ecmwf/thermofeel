@@ -24,9 +24,11 @@ MISSING_VALUE = -9999.0
 
 
 def field_stats(name, values):
+
     print(
         f"{name} avg {np.nanmean(values)} max {np.nanmax(values)} "
-        f"min {np.nanmin(values)} stddev {np.nanstd(values, dtype=np.float64)}"
+        f"min {np.nanmin(values)} stddev {np.nanstd(values, dtype=np.float64)} "
+        f"missing {np.count_nonzero(np.isnan(values))}"
     )
 
 
@@ -169,6 +171,8 @@ def calc_cossza_int(dt, begin, end):
         integration_order=2,
     )
 
+    field_stats("cossza", integral)
+
     return integral
 
 
@@ -214,15 +218,15 @@ def calc_rela_humid_perc(messages):
 @thermofeel.timer
 def calc_mrt(messages, cossza, begin, end):
 
-    assert(begin < end)
+    assert begin < end
 
     step = messages["2t"]["step"]
 
     seconds_since_start_forecast = step * 3600
     seconds_in_time_step = (end - begin) * 3600
 
-    f1 = 1. / float(seconds_since_start_forecast)
-    f2 = 1. / float(seconds_in_time_step)
+    f1 = 1.0 / float(seconds_since_start_forecast)
+    f2 = 1.0 / float(seconds_in_time_step)
 
     ssrd = messages["ssrd"]["values"]
     ssr = messages["ssr"]["values"]
@@ -239,15 +243,17 @@ def calc_mrt(messages, cossza, begin, end):
         cossza=cossza * f2,  # de-accumulate time step integration
     )
 
+    field_stats("mrt", mrt)
+
     return mrt
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_va(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
 
-    return np.sqrt(u10 ** 2 + v10 ** 2)
+    return np.sqrt(u10**2 + v10**2)
 
 
 @thermofeel.optnumba_jit
@@ -263,13 +269,13 @@ def calc_ehPa(t2m, t2d):
     return ehPa
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_utci_in_kelvin(t2m, va, mrt, ehPa):
     utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=va, mrt_k=mrt, ehPa=ehPa)
     return thermofeel.celsius_to_kelvin(utci)
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def filter_utci(t2m, va, mrt, ehPa, utci):
     e_mrt = np.subtract(mrt, t2m)
 
@@ -289,14 +295,14 @@ def filter_utci(t2m, va, mrt, ehPa, utci):
     t = np.where(e_mrt <= -30)
     misses = np.union1d(t, misses)
 
-    print(f"utci missing values: {len(misses)}")
-
+    utci[misses] = np.nan
+    field_stats("utci", utci)
     utci[misses] = MISSING_VALUE
 
     return misses
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def validate_utci(utci, misses):
 
     utci[misses] = np.nan
@@ -333,7 +339,6 @@ def calc_utci(messages, mrt, va):
     return utci
 
 
-@thermofeel.timer
 def check_messages(msgs):
     assert "2t" in msgs
     assert "2d" in msgs
@@ -370,10 +375,6 @@ def output_grib(output, msg, paramid, values, missing=None):
 
 @thermofeel.timer
 def output_gribs(output, msg, cossza, mrt, utci):
-
-    field_stats("cossza", cossza)
-    field_stats("mrt", mrt)
-
     output_grib(output, msg, "214001", cossza)
     output_grib(output, msg, "261001", utci, missing=MISSING_VALUE)
     output_grib(output, msg, "261002", mrt)
@@ -383,22 +384,20 @@ cossza = None
 last_step_end = 0
 
 
-
 def ifs_step_intervals(step):
     """Computes the time integration interval for the IFS forecasting system given a forecast output step"""
-    assert(step != 0 and step is not None)
+    assert step != 0 and step is not None
 
-    assert(step > 0)
-    assert(step <= 360)
+    assert step > 0
+    assert step <= 360
 
     if step <= 144:
-        assert(step % 3 == 0)
+        assert step % 3 == 0
         return step - 3
     else:
         if step <= 360:
-            assert(step % 6 == 0)
+            assert step % 6 == 0
             return step - 6
-
 
 
 @thermofeel.timer
@@ -434,6 +433,8 @@ def process_step(msgs, output):
 
     output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci)
 
+    return step
+
 
 def main():
 
@@ -444,10 +445,22 @@ def main():
 
     output = open(sys.argv[2], "wb")
 
+    steps = []
+
     print("----------------------------------------")
     for msgs in decode_grib(sys.argv[1]):
-        process_step(msgs, output)
+        step = process_step(msgs, output)
+        steps.append(step)
         print("----------------------------------------")
+
+    print(f"Processed steps: {steps}")
+
+    print("Performance summary:")
+    print("--------------------")
+    for func, stats in thermofeel.func_timers.items():
+        assert stats["calls"] > 0
+        average = stats["elapsed"] / stats["calls"]
+        print(func, "->", stats, f"average {average:0.6f} s")
 
 
 if __name__ == "__main__":

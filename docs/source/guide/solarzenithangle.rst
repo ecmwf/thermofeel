@@ -18,6 +18,8 @@ How To Use
 
 Inputs are h (hour), latitude (in degrees), longitude (in degrees), y (year), m (month) and d (day).
 
+It returns the average of cosine of the solar zenith angle in degrees.
+
 .. code-block:: python
 
     calculate_solar_zenith_angle(h, lat, lon, y, m, d)

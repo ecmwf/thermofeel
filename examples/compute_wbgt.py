@@ -152,7 +152,7 @@ def decode_grib(fpath):
     f.close()
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_cossza_int(dt, begin, end):
 
     # print(dt.year, dt.month, dt.day, dt.hour)
@@ -172,7 +172,7 @@ def calc_cossza_int(dt, begin, end):
     return integral
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_mrt(messages, cossza):
 
     step = messages["2t"]["step"]
@@ -197,20 +197,20 @@ def calc_mrt(messages, cossza):
     return mrt
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_va(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
 
-    return np.sqrt(u10 ** 2 + v10 ** 2)
+    return np.sqrt(u10**2 + v10**2)
 
 
-#@thermofeel.optnumba_jit
+# @thermofeel.optnumba_jit
 def calc_ehPa_(rh_pc, svp):
     return svp * rh_pc * 0.01  # / 100.0
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_ehPa(t2m, t2d):
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
     svp = thermofeel.calculate_saturation_vapour_pressure(t2m)
@@ -218,26 +218,23 @@ def calc_ehPa(t2m, t2d):
     return ehPa
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_wbgt_in_kelvin(t2m, va, mrt, td):
     wbgt = thermofeel.calculate_wbgt(t_k=t2m, va=va, mrt=mrt, td=td)
     return thermofeel.celsius_to_kelvin(wbgt)
 
 
-
-
-
-#@thermofeel.timer
+# @thermofeel.timer
 def check_messages(msgs):
-    #assert "2t" in msgs
-    #assert "2d" in msgs
-    #assert "10u" in msgs
-    #assert "10v" in msgs
-    #assert "ssrd" in msgs
-    #assert "ssr" in msgs
-    #assert "fdir" in msgs
-    #assert "str" in msgs
-    #assert "strd" in msgs
+    # assert "2t" in msgs
+    # assert "2d" in msgs
+    # assert "10u" in msgs
+    # assert "10v" in msgs
+    # assert "ssrd" in msgs
+    # assert "ssr" in msgs
+    # assert "fdir" in msgs
+    # assert "str" in msgs
+    # assert "strd" in msgs
 
     assert lats.size == lons.size
 
@@ -262,11 +259,11 @@ def output_grib(output, msg, paramid, values, missing=None):
     eccodes.codes_release(handle)
 
 
-#@thermofeel.timer
-def output_gribs(output, msg, cossza, mrt, wbgt,va,td,t2m):
-    output_grib(output,msg,"207",va)
-    output_grib(output,msg,"168",td)
-    output_grib(output,msg,"167",t2m)
+# @thermofeel.timer
+def output_gribs(output, msg, cossza, mrt, wbgt, va, td, t2m):
+    output_grib(output, msg, "207", va)
+    output_grib(output, msg, "168", td)
+    output_grib(output, msg, "167", t2m)
     output_grib(output, msg, "214001", cossza)
     output_grib(output, msg, "261001", wbgt, missing=MISSING_VALUE)
     output_grib(output, msg, "261002", mrt)
@@ -276,7 +273,7 @@ cossza = None
 last_step_end = 0
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def process_step(msgs, output):
 
     check_messages(msgs)
@@ -312,9 +309,11 @@ def process_step(msgs, output):
     t2m = msg["values"]
     mrt = calc_mrt(messages=msgs, cossza=cossza)
     va = calc_va(messages=msgs)
-    utci = calc_wbgt_in_l(messages=msgs, mrt=mrt, va=va)
+    utci = calc_wbgt_in_kelvin(messages=msgs, t2m=t2m, va=va, mrt=mrt, td=td)
 
-    output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci,td=td,t2m=t2m,va=va)
+    output_gribs(
+        output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci, td=td, t2m=t2m, va=va
+    )
 
 
 def main():

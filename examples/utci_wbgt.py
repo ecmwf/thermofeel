@@ -30,7 +30,7 @@ def calc_10m_wind_speed(messages):
     u = m10u["values"]
     v = m10v["values"]
 
-    va = np.sqrt(u ** 2 + v ** 2)
+    va = np.sqrt(u**2 + v**2)
 
     print(f"va --> {va}")
 

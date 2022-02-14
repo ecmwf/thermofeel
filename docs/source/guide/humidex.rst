@@ -10,9 +10,11 @@ How To Use
 ------------------
 You need 2m temperature and 2m dew point temperature in Kelvin.
 
+It returns humidex in Celsius. 
+
 .. code-block:: python
 
-   calculate_humidex(2m_temperature, dew_point_temperature)
+   calculate_humidex(2m_temperature, 2m_dew_point_temperature)
 
 
 Interpret the Output
