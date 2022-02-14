@@ -15,6 +15,7 @@ import math
 import sys
 from datetime import datetime, timedelta, timezone
 
+import argparse
 import eccodes
 import numpy as np
 
@@ -210,7 +211,7 @@ def calc_humidex(messages):
 
 
 @thermofeel.timer
-def calc_rela_humid_perc(messages):
+def calc_relative_humid_pc(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
@@ -431,7 +432,7 @@ def ifs_step_intervals(step):
 
 
 @thermofeel.timer
-def process_step(msgs, output):
+def process_step(args, msgs, output):
 
     check_messages(msgs)
 
@@ -455,10 +456,12 @@ def process_step(msgs, output):
     )
 
     # print(f"[{step_begin},{step_end}]")
+
     cossza = calc_cossza_int(dt=dt, begin=step_begin, end=step_end)
 
     mrt = calc_mrt(messages=msgs, cossza=cossza, begin=step_begin, end=step_end)
     va = calc_va(messages=msgs)
+
     utci = calc_utci(messages=msgs, mrt=mrt, va=va)
 
     output_gribs(output=output, msg=msg, cossza=cossza, mrt=mrt, utci=utci)
@@ -467,6 +470,23 @@ def process_step(msgs, output):
 
 
 def main():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("input", help="input file with GRIB messages")
+    parser.add_argument("output", help="output file with GRIB messages")
+
+    parser.add_argument("--utci", help="compute utci", action="store_true")
+    parser.add_argument("--mrt", help="compute mrt", action="store_true")
+    parser.add_argument("--windchill", help="compute windchill", action="store_true")
+    parser.add_argument("--net", help="compute net effective temperature", action="store_true")
+    parser.add_argument("--wbgt", help="compute wbgt", action="store_true")
+    parser.add_argument("--humidex", help="compute humidex", action="store_true")
+    parser.add_argument("--relative-humidity-percent", help="compute relative humidity percent", action="store_true")
+    parser.add_argument("--apparent-temp", help="compute apparent temperature", action="store_true")
+    parser.add_argument("--heat-index-adjusted", help="compute heat index adjusted", action="store_true")
+    
+    args = parser.parse_args()
 
     print(f"Thermofeel version: {thermofeel.__version__}")
     print(f"Python version: {sys.version}")
@@ -479,7 +499,7 @@ def main():
 
     print("----------------------------------------")
     for msgs in decode_grib(sys.argv[1]):
-        step = process_step(msgs, output)
+        step = process_step(args, msgs, output)
         steps.append(step)
         print("----------------------------------------")
 
