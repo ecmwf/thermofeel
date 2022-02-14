@@ -37,7 +37,7 @@ from thermofeel import (
 
 # read in two netcdf files containing all the variables
 # to calculate the thermal indexes
-my_example_nc_file2 = "../examples/radiation.nc"
+my_example_nc_file2 = "radiation.nc"
 fh2 = Dataset(my_example_nc_file2, mode="r")
 lons = fh2.variables["longitude"][:]
 lats = fh2.variables["latitude"][:]
@@ -49,7 +49,7 @@ strr = fh2.variables["str"][0]
 
 lon_mg, lat_mg = np.meshgrid(lons, lats)
 
-my_example_nc_file3 = "../examples/utcicomponents1.nc"
+my_example_nc_file3 = "utcicomponents1.nc"
 fh3 = Dataset(my_example_nc_file3, mode="r")
 windspeed = np.sqrt(fh3.variables["u10"][0] ** 2 + fh3.variables["v10"][0] ** 2)
 t2m = fh3.variables["t2m"][0]
