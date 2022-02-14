@@ -69,7 +69,7 @@ def calculate_relative_humidity_percent(t2k, tdk):
     """
     Calculate relative humidity in percent
     :param t2k: (float array) 2m temperature [K]
-    :param td: (float array) dew point temperature [K]
+    :param tdk: (float array) dew point temperature [K]
     returns relative humidity [%]
     """
 
@@ -116,12 +116,12 @@ def calculate_saturation_vapour_pressure(tk):
 def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
+    :param h: hour [int]
     :param lat: (float array) latitude [degrees]
     :param lon: (float array) longitude [degrees]
     :param y: year [int]
     :param m: month [int]
     :param d: day [int]
-    :param h: hour [int]
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
     see also:
     http://answers.google.com/answers/threadview/id/782886.html
@@ -193,12 +193,12 @@ def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
+    :param h: hour [int]    
     :param lat: (float array) latitude [degrees]
     :param lon: (float array) longitude [degrees]
     :param y: year [int]
     :param m: month [int]
     :param d: day [int]
-    :param h: hour [int]
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
     see also:
     http://answers.google.com/answers/threadview/id/782886.html
@@ -222,8 +222,8 @@ def calculate_cos_solar_zenith_angle_integrated(
     :param h: hour [int]
     :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
     :param tend:  offset in hours from forecast time to end of time interval for integration [int]
-    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
     :param intervals_per_hour:  number of time intregrations per hour [int]
+    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)    
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
     This uses Gaussian numerical integration. See https://en.wikipedia.org/wiki/Gaussian_quadrature
     returns average of cosine of the solar zenith angle during interval [degrees]
@@ -602,7 +602,7 @@ def calculate_utci(t2_k, va_ms, mrt_k, ehPa=None, td_k=None):
     :param t2_k: (float array) is 2m temperature [K]
     :param va_ms: (float array) is wind speed at 10 meters [m/s]
     :param mrt_k:(float array) is mean radiant temperature [K]
-    :param e_hPa: (float array) is water vapour pressure [hPa]
+    :param ehPa: (float array) is water vapour pressure [hPa]
     :param td_k: (float array) is 2m dew point temperature [K]
     Calculate UTCI with a 6th order polynomial approximation according to:
     Brode, P. et al. Deriving the operational procedure for the
@@ -631,7 +631,6 @@ def calculate_wbgts(t2m):
     """
     wgbts - Wet Bulb Globe Temperature Simple
     :param t2m: 2m temperature [K]
-    :param rh: relative humidity [pa]
     https://link.springer.com/article/10.1007/s00484-011-0453-2
     http://www.bom.gov.au/info/thermal_stress/#approximation
     https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
@@ -646,10 +645,10 @@ def calculate_wbgts(t2m):
 
 def calculate_wbt_dj(t2k, p, tdk, ept=False):
     """
-    calculate wet globe temperature
-    :param tc: 2m temperature [K]
-    :param td: 2m  dew point temperature [K]
-    :param p: Surface pressure [mbar]
+    calculate wet globe temperature    
+    :param t2k: 2m temperature [K]
+    :param p: Surface pressure [mbar]    
+    :param tdk: 2m  dew point temperature [K]
     returns wet bulb temperature [°C]
     https://www.nature.com/articles/nclimate1827#Sec2
     """
@@ -718,7 +717,7 @@ def calculate_wbt(tc, rh):
 def calculate_bgt(t_k, mrt, va):
     """
     calculate globe temperature
-    :param t2m: 2m temperature [K]
+    :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
     returns bulb globe temperature [°C]
@@ -809,9 +808,8 @@ def calculate_net_effective_temperature(t2m, va, td):
     """
     Net - Normal Effective Temperature used in Hong Kong, Poland and Germany
     :param t2m: 2m temperature [K]
+    :param va: Wind speed at 10 meters [m/s]    
     :param td: 2m dew point temperature [K]
-    :param rh: Relative Humidity [pa]
-    :param va: Wind speed at 10 meters [m/s]
     returns normal effective temperature [°C]
     https://www.sciencedirect.com/topics/engineering/effective-temperature
     """
@@ -827,6 +825,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     """
     Apparent Temperature version without radiation
     :param t2m: 2m Temperature [K]
+    :param va: Wind speed at 10 meters [m/s]        
     :param rh: Relative Humidity [pa]
     returns apparent temperature [K]
     https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
