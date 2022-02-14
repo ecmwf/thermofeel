@@ -15,16 +15,24 @@ with the other thermal indices in this library.
 
 How To Use
 ------------------
+
+**Simplified Heat Index**
+
 You need 2m temperature in Kelvin and, optionally, relative humidity
-such as saturation vapour pressure (because this can be directly calculated from 2m temperature)
+such as saturation vapour pressure (because this can be directly calculated from 2m temperature).
+Please use numpy arrays.
+
+It returns the heat index in Celsius. 
 
 .. code-block:: python
 
     calculate_heat_index_simplified(2m_temperature,relative_humidity)
 
-use numpy array
+**Adjusted Heat Index**
 
-You need 2m temperature and 2m dew point temperature in Kelvin.
+You need 2m temperature and 2m dew point temperature in Kelvin. 
+
+It returns the heat index in Celsius. 
 
 .. code-block:: python
 

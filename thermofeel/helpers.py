@@ -13,15 +13,26 @@ import time
 
 to_radians = math.pi / 180
 
+func_timers = {}
+
 
 def timer(func):
     @functools.wraps(func)
     def wrapper_timer(*args, **kwargs):
+        entry = func_timers.get(func, {})
+
         tic = time.perf_counter()
         value = func(*args, **kwargs)
         toc = time.perf_counter()
-        elapsed_time = toc - tic
-        print(f"{func} elapsed time: {elapsed_time:0.6f} s")
+        elapsed = toc - tic
+
+        total = elapsed + entry.get("elapsed", 0)
+        entry["elapsed"] = total
+        entry["calls"] = entry.get("calls", 0) + 1
+        func_timers[func] = entry
+
+        # print(f"{func} elapsed time: {elapsed:0.6f} s")
+
         return value
 
     return wrapper_timer

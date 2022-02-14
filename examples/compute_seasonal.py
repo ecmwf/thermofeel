@@ -196,7 +196,7 @@ def calc_va(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
 
-    return np.sqrt(u10 ** 2 + v10 ** 2)
+    return np.sqrt(u10**2 + v10**2)
 
 
 # @thermofeel.timer

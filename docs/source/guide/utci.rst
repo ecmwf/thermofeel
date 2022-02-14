@@ -9,16 +9,18 @@ More Information: https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/gdj3.10
 
 How To Use
 ----------------
+
+You will need 2m temperature and mean radiant temperature in Kelvin,
+relative humidity (calculated as shown below,using 2m dew point temperature in Kelvin) and 10 meter height wind speed in m/s.
 Please use with numpy arrays.
 
-You will need 2m temperature in Kelvin, mean radiant temperature in Kelvin,
-relative humidity (calculated as shown below,using 2m dew point temperature in Kelvin) and 10 meter height wind speed in m/s.
+It returns the universal thermal climate index in Celsius. 
 
 .. code-block:: python
 
     rh_pc = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
     ehPa = tfc.calculate_saturation_vapour_pressure(self.t2m) * rh_pc / 100.0
-    calculate_utci(2m_temperature,mean_radiant_temperature, 10m_wind_speed,
+    utci = calculate_utci(2m_temperature,mean_radiant_temperature, 10m_wind_speed,
     2m_dew_point_temperature=None, ehPa=None)
 
 

@@ -12,7 +12,9 @@ There are two different methods that will return slightly different values. This
 
 **Mean Radiant Temperature**
 
-All the radiation variables are in :math:`J/{m}^{-2}` and the cosine of solar zenit angle in degrees. Please use numpy arrays
+All the radiation variables are in :math:`J/{m}^{-2}` and the cosine of solar zenit angle in degrees. Please use numpy arrays.
+
+It returns the mean radiant temperature in Kelvin.
 
 .. code-block:: python
 
@@ -22,7 +24,9 @@ All the radiation variables are in :math:`J/{m}^{-2}` and the cosine of solar ze
 
 **Mean Radiant Temperature from Globe Temperature**
 
-2m temperature and 2m wet bulb temperaature are expressed in Kelvin and 10m wind speed in m/s. 
+2m temperature and 2m wet bulb temperaature are expressed in Kelvin and 10m wind speed in m/s. Please use numpy arrays.
+
+It returns the mean global radiant temperature in Kelvin.
 
 .. code-block:: python
 
