@@ -350,7 +350,7 @@ def calc_wbgt(messages, mrt, va):
 
 
 def calc_net_effective_temperature(messages, va):
-    
+
     t2m = messages["2t"]["values"]  # Kelvin
     t2d = messages["2d"]["values"]
 
