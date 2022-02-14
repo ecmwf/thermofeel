@@ -339,6 +339,32 @@ def calc_utci(messages, mrt, va):
     return utci
 
 
+def calc_wbgt(messages, mrt, va):
+
+    t2m = messages["2t"]["values"]  # Kelvin
+    t2d = messages["2d"]["values"]
+
+    wbgt = thermofeel.calculate_wbgt(t2m, mrt, va, t2d)
+
+    return thermofeel.celsius_to_kelvin(wbgt)
+
+
+def calc_net_effective_temperature(messages, va):
+    
+    t2m = messages["2t"]["values"]  # Kelvin
+    t2d = messages["2d"]["values"]
+
+    net = thermofeel.calculate_net_effective_temperature(t2m, va, t2d)
+
+    return thermofeel.celsius_to_kelvin(net)
+
+
+# @thermofeel.timer
+def calc_windchill(messages, va):
+    t2m = messages["2t"]["values"]
+    return thermofeel.calculate_wind_chill(t2m=t2m, va=va)
+
+
 def check_messages(msgs):
     assert "2t" in msgs
     assert "2d" in msgs

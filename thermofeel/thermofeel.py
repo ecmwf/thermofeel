@@ -776,9 +776,9 @@ def calculate_wbgt(t_k, mrt, va, td, p=None):
     :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [°C] ( Davies-Jones [K])
+    :param td: dew point temperature [K]
 
-    optional :param p: surface pressure [mbars] ( Davies-Jones [K])
+    optional :param p: surface pressure [mbars] ( Davies-Jones )
 
     returns wet bulb globe temperature [°C]
 
@@ -788,8 +788,8 @@ def calculate_wbgt(t_k, mrt, va, td, p=None):
 
     bgt_c = calculate_bgt(t_k, mrt, va)
 
-    rh = calculate_relative_humidity_percent(t_k, td)
     if p is None:
+        rh = calculate_relative_humidity_percent(t_k, td)
         t_c = kelvin_to_celsius(t_k)
         tw_c = calculate_wbt(t_c, rh)
     else:
