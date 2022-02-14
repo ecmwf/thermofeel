@@ -6,6 +6,10 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+# Note: This script is intended only as example usage of thermofeel library.
+#       It is designed to be used with ECMWF forecast data.
+#       The function ifs_step_intervals() is used to calculate the time interval based on the forecast step.
+#       This is particular to the IFS model and ECMWF's NWP operational system.
 
 import math
 import sys
