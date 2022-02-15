@@ -521,6 +521,7 @@ def process_step(args, msgs, output):
         output_grib(output, template, "10", ws)
 
     # Cosine of Solar Zenith Angle - shortName uvcossza
+    # TODO: 214001 only exists for GRIB1 -- but here we use it for GRIB2 (waiting for WMO)
     if args.cossza:
         cossza = calc_field("cossza", calc_cossza_int, msgs)
         output_grib(output, template, "214001", cossza)
@@ -539,11 +540,6 @@ def process_step(args, msgs, output):
     if args.heatx:
         heatx = calc_field("heatx", calc_heatx, msgs)
         output_grib(output, template, "260004", heatx)
-
-    # Wet Bulb Globe Temperature - shortName wbgt
-    if args.wbgt:  #
-        wbgt = calc_field("wbgt", calc_wbgt, msgs)
-        output_grib(output, template, "260004", wbgt)
 
     # Wind Chill factor - shortName wcf
     if args.windchill:
@@ -584,6 +580,12 @@ def process_step(args, msgs, output):
         wbt = calc_field("wbt", calc_wbt, msgs)
         output_grib(output, template, "212004", wbt)
 
+    # Wet Bulb Globe Temperature - shortName wbgt
+    # TODO: 212005 is experimental GRIB code, update once WMO publishes
+    if args.wbgt:  #
+        wbgt = calc_field("wbgt", calc_wbgt, msgs)
+        output_grib(output, template, "212005", wbgt)
+
     return step
 
 
@@ -611,9 +613,6 @@ def command_line_options():
         "--heatx", help="compute Heat Index (adjusted)", action="store_true"
     )
     parser.add_argument(
-        "--wbgt", help="compute Wet Bulb Globe Temperature", action="store_true"
-    )
-    parser.add_argument(
         "--windchill", help="compute Windchill factor", action="store_true"
     )
     parser.add_argument(
@@ -628,6 +627,9 @@ def command_line_options():
     parser.add_argument(
         "--net", help="compute net effective temperature", action="store_true"
     )
+    parser.add_argument(
+        "--wbgt", help="compute Wet Bulb Globe Temperature", action="store_true"
+    )
     parser.add_argument("--bgt", help="compute  Globe Temperature", action="store_true")
     parser.add_argument(
         "--wbt", help="compute Wet Bulb Temperature", action="store_true"
@@ -636,6 +638,7 @@ def command_line_options():
     args = parser.parse_args()
 
     return args
+
 
 def main():
 
