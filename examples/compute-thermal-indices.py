@@ -171,6 +171,9 @@ def decode_grib(fpath):
     f.close()
 
 
+###########################################################################################################
+
+
 @thermofeel.timer
 def calc_cossza_int(messages):
     dt = messages["2t"]["base_datetime"]
@@ -363,7 +366,7 @@ def calc_utci(messages):
     missing = filter_utci(t2m, ws, mrt, ehPa, utci)
     misses["utci"] = missing
 
-    # validate_utci(utci, filter_utci(t2m, va, mrt, ehPa, utci))
+    # validate_utci(utci, missing)
 
     return utci
 
@@ -584,8 +587,7 @@ def process_step(args, msgs, output):
     return step
 
 
-def main():
-
+def command_line_options():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("input", help="input file with GRIB messages")
@@ -632,6 +634,12 @@ def main():
     )
 
     args = parser.parse_args()
+
+    return args
+
+def main():
+
+    args = command_line_options()
 
     print(f"Thermofeel version: {thermofeel.__version__}")
     print(f"Python version: {sys.version}")
