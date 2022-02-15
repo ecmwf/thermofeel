@@ -348,7 +348,7 @@ def filter_utci(t2m, va, mrt, ehPa, utci):
     return misses
 
 
-# @thermofeel.timer
+@thermofeel.timer
 def validate_utci(utci, misses):
 
     utci[misses] = np.nan
@@ -692,8 +692,6 @@ def main():
     np.show_config()
 
     output = open(args.output, "wb")
-
-    steps = []
 
     steps = []
 
