@@ -297,7 +297,7 @@ def calc_ws(messages, results):
 
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
-    ws = np.sqrt(u10 ** 2 + v10 ** 2)
+    ws = np.sqrt(u10**2 + v10**2)
     results["ws"] = ws
     return ws
 
