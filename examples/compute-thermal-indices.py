@@ -297,7 +297,7 @@ def calc_ws(messages, results):
 
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
-    ws = np.sqrt(u10**2 + v10**2)
+    ws = np.sqrt(u10 ** 2 + v10 ** 2)
     results["ws"] = ws
     return ws
 
@@ -411,6 +411,44 @@ def calc_wbgt(messages, results):
     results["wbgt"] = wbgt
 
     return wbgt
+
+
+@thermofeel.timer
+def calc_bgt(messages, results):
+
+    if "bgt" in results:
+        return results["bgt"]
+
+    t2m = messages["2t"]["values"]  # Kelvin
+
+    ws = calc_ws(messages, results)
+    mrt = calc_mrt(messages, results)
+
+    bgt = thermofeel.calculate_bgt(t2m, mrt, ws)
+    bgt = thermofeel.celsius_to_kelvin(bgt)
+
+    field_stats("bgt", bgt)
+    results["bgt"] = bgt
+
+    return bgt
+
+
+@thermofeel.timer
+def calc_wbt(messages, results):
+    if "wbt" in results:
+        return results["wbt"]
+
+    t2m = messages["2t"]["values"]
+    t2m = thermofeel.kelvin_to_celcius(t2m)
+
+    rh = calc_rhp(messages, results)
+
+    wbt = thermofeel.calculate_relative_humidity_percent(t2m=t2m, rh=rh)
+
+    field_stats("wbt", wbt)
+    results["wbt"] = wbt
+
+    return wbt
 
 
 @thermofeel.timer
@@ -584,6 +622,18 @@ def process_step(args, msgs, output):
         net = calc_net(msgs, results)
         output_grib(output, template, "212002", net)
 
+    # Globe Temperature - shortName gt
+    # TODO: 212003 is experimental GRIB code, update once WMO publishes
+    if args.bgt:
+        bgt = calc_bgt(msgs, results)
+        output_grib(output, template, "212003", bgt)
+
+    # Wet Bulb Temperature - shortName wbt
+    # TODO: 212004 is experimental GRIB code, update once WMO publishes
+    if args.wbt:
+        wbt = calc_wbt(msgs, results)
+        output_grib(output, template, "212004", wbt)
+
     return step
 
 
@@ -628,6 +678,10 @@ def main():
     parser.add_argument("--humidex", help="compute humidex", action="store_true")
     parser.add_argument(
         "--net", help="compute net effective temperature", action="store_true"
+    )
+    parser.add_argument("--bgt", help="compute  Globe Temperature", action="store_true")
+    parser.add_argument(
+        "--wbt", help="compute Wet Bulb Temperature", action="store_true"
     )
 
     args = parser.parse_args()
