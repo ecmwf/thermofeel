@@ -31,8 +31,8 @@ MISSING_VALUE = -9999.0
 def field_stats(name, values):
 
     print(
-        f"{name} avg {np.nanmean(values)} max {np.nanmax(values)} "
-        f"min {np.nanmin(values)} stddev {np.nanstd(values, dtype=np.float64)} "
+        f"{name} min {np.nanmin(values)} max {np.nanmax(values)} "
+        f"avg {np.nanmean(values)} stddev {np.nanstd(values, dtype=np.float64)} "
         f"missing {np.count_nonzero(np.isnan(values))}"
     )
 
@@ -297,8 +297,12 @@ def calc_ws(messages, results):
 
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
+
     ws = np.sqrt(u10**2 + v10**2)
+
+    field_stats("ws", ws)
     results["ws"] = ws
+
     return ws
 
 
