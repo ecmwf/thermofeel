@@ -58,7 +58,9 @@ td = fh3.variables["d2m"][0]
 # calculate all indexes from thermofeel
 rhp = calculate_relative_humidity_percent(t2k=t2m, tdk=td)
 svp = calculate_saturation_vapour_pressure(tk=t2m)
-cosszainstant = calculate_cos_solar_zenith_angle(h=6, lat=lat_mg, lon=lon_mg, y=2020, m=6, d=8)
+cosszainstant = calculate_cos_solar_zenith_angle(
+    h=6, lat=lat_mg, lon=lon_mg, y=2020, m=6, d=8
+)
 cosszaintegrated = calculate_cos_solar_zenith_angle_integrated(
     lat=lat_mg, lon=lon_mg, y=2020, m=6, d=8, h=6, tbegin=0, tend=6
 )
