@@ -223,7 +223,7 @@ def calculate_cos_solar_zenith_angle_integrated(
     :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
     :param tend:  offset in hours from forecast time to end of time interval for integration [int]
     :param intervals_per_hour:  number of time intregrations per hour [int]
-    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)    
+    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
     This uses Gaussian numerical integration. See https://en.wikipedia.org/wiki/Gaussian_quadrature
     returns average of cosine of the solar zenith angle during interval [degrees]
@@ -316,7 +316,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
 
     # filter statement for solar zenith angle
     csza_filter1 = np.where((cossza > 0.01))
-   # print(csza_filter1)
+    # print(csza_filter1)
     fdir[csza_filter1] = fdir[csza_filter1] / cossza[csza_filter1]
 
     # calculate mean radiant temperature
@@ -645,9 +645,9 @@ def calculate_wbgts(t2m):
 
 def calculate_wbt_dj(t2k, p, tdk, ept=False):
     """
-    calculate wet globe temperature    
+    calculate wet globe temperature
     :param t2k: 2m temperature [K]
-    :param p: Surface pressure [mbar]    
+    :param p: Surface pressure [mbar]
     :param tdk: 2m  dew point temperature [K]
     returns wet bulb temperature [°C]
     https://www.nature.com/articles/nclimate1827#Sec2
@@ -808,7 +808,7 @@ def calculate_net_effective_temperature(t2m, va, td):
     """
     Net - Normal Effective Temperature used in Hong Kong, Poland and Germany
     :param t2m: 2m temperature [K]
-    :param va: Wind speed at 10 meters [m/s]    
+    :param va: Wind speed at 10 meters [m/s]
     :param td: 2m dew point temperature [K]
     returns normal effective temperature [°C]
     https://www.sciencedirect.com/topics/engineering/effective-temperature
@@ -825,7 +825,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     """
     Apparent Temperature version without radiation
     :param t2m: 2m Temperature [K]
-    :param va: Wind speed at 10 meters [m/s]        
+    :param va: Wind speed at 10 meters [m/s]
     :param rh: Relative Humidity [pa]
     returns apparent temperature [K]
     https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
