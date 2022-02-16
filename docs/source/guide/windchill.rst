@@ -4,16 +4,22 @@ Wind Chill is an indication of cold thermal conditions.
 Originally developed by Siple and Passel (1945)
 And updated by the Canadian Meteorological Service in 2001.
 
-More information: http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
+More information: 
+
+- https://www.jstor.org/stable/985324 
+
+- http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
 
 How To Use 
 ---------------
 
-You will need 2m temperature in kelvin and 10 meter height wind speed.
+You will need 2m temperature in Kelvin and 10 m wind speed in m/s.
+
+It returns the wind chill temperature in Celsius. 
 
 .. code-block:: python
 
-    calculate_wind_chill(2m temperature, wind speed)
+    calculate_wind_chill(2m_temperature, 10m_wind_speed)
 
 
 Interpret the Output

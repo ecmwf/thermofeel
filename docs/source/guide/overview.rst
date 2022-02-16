@@ -13,7 +13,7 @@ It contains in total 16 methods including 11 thermal indices:
 
 * Relative Humidity (as water vapour pressure and percentage)
 * Solar Zenith Angle (Instantaneous and Integrated)
-* Mean Radiant Temperature (From Radiation and Wet Bulb Globe Temperature)
+* Mean Radiant Temperature (From radiation and Wet Bulb Globe Temperature)
 * Universal Thermal Climate Index (UTCI)
 * Wet Bulb Temperature
 * Globe Temperature from Mean Radiant Temperature

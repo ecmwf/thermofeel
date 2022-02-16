@@ -56,9 +56,11 @@ t2m = fh3.variables["t2m"][0]
 td = fh3.variables["d2m"][0]
 
 # calculate all indexes from thermofeel
-rhp = calculate_relative_humidity_percent(t2m=t2m, td=td)
-svp = calculate_saturation_vapour_pressure(t2m=t2m)
-cosszainstant = calculate_cos_solar_zenith_angle(6, lat_mg, lon_mg, 2020, 6, 8)
+rhp = calculate_relative_humidity_percent(t2k=t2m, tdk=td)
+svp = calculate_saturation_vapour_pressure(tk=t2m)
+cosszainstant = calculate_cos_solar_zenith_angle(
+    h=6, lat=lat_mg, lon=lon_mg, y=2020, m=6, d=8
+)
 cosszaintegrated = calculate_cos_solar_zenith_angle_integrated(
     lat=lat_mg, lon=lon_mg, y=2020, m=6, d=8, h=6, tbegin=0, tend=6
 )
@@ -70,7 +72,7 @@ mrtintegrate = calculate_mean_radiant_temperature(
 )
 utci = calculate_utci(t2_k=t2m, va_ms=windspeed, mrt_k=mrtintegrate, td_k=td)
 wbgts = calculate_wbgts(t2m=t2m)
-wbt = calculate_wbt(t_c=kelvin_to_celsius(t2m), rh=rhp)
+wbt = calculate_wbt(tc=kelvin_to_celsius(t2m), rh=rhp)
 bgt = calculate_bgt(t_k=t2m, mrt=mrtintegrate, va=windspeed)
 wbgt = calculate_wbgt(t_k=t2m, mrt=mrtintegrate, va=windspeed, td=td)
 mrtbg = calculate_mrt_from_bgt(t2m=t2m, bgt=bgt, va=windspeed)
