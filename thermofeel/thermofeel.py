@@ -761,8 +761,8 @@ def calculate_wbgt(t_k, mrt, va, td, p=None):
 
     bgt_c = calculate_bgt(t_k, mrt, va)
 
-    rh = calculate_relative_humidity_percent(t_k, td)
     if p is None:
+        rh = calculate_relative_humidity_percent(t_k, td)
         t_c = kelvin_to_celsius(t_k)
         tw_c = calculate_wbt(t_c, rh)
     else:
