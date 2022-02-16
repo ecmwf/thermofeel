@@ -193,7 +193,7 @@ def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
-    :param h: hour [int]    
+    :param h: hour [int]
     :param lat: (float array) latitude [degrees]
     :param lon: (float array) longitude [degrees]
     :param y: year [int]
@@ -918,8 +918,6 @@ def calculate_heat_index_adjusted(t2m, td):
         0.00085282,
         0.00000199,
     ]
-
-    hi_initial = 0.5 * (t2m + 61 + ((t2m - 68) * 1.2) + (rh * 0.094))
 
     hi_initial = 0.5 * (t2m + 61 + ((t2m - 68) * 1.2) + (rh * 0.094))
 
