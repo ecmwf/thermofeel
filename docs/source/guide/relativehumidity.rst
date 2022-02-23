@@ -1,27 +1,31 @@
-Relative Humidity and Water Vapour Pressure
-============================================
+Relative Humidity and Saturation Vapour Pressure
+================================================
 
-There are two types of Relative Humidity used in *thermofeel* and sometimes such as in the UTCI these are \
-used together.
+There are two methods to compute Relative Humidity used in *thermofeel* and these are used together in some \
+index calculations, such as in the UTCI.
 
 Relative Humidity Percent: https://www.theweatherprediction.com/habyhints/186/
-Saturation/Water Vapour Pressure: http://www.thunderscientific.com/tech_info/reflibrary/its90formulas.pdf
+
+Saturation Vapour Pressure over Water: http://www.thunderscientific.com/tech_info/reflibrary/its90formulas.pdf
 
 How To Use
 --------------
 
-**saturation/water vapour pressure**
-You will only need 2m temperature
+**Saturation Vapour Pressure over Water**
+
+The input is 2m temperature in Kelvin. The output is in hPa. 
 
 .. code-block:: python
 
-   calculate_saturation_vapour_pressure(2m temperature)
+   calculate_saturation_vapour_pressure(2m_temperature)
 
-***Relative Humidity Percent**
+**Relative Humidity Percent**
+
+The inputs are 2m temperature and dew point temperature in Kelvin. The output is in %. 
 
 .. code-block:: python
 
-   calculate_relative_humidity_percent(2m temperature,dew point temperature)
+   calculate_relative_humidity_percent(2m_temperature,2m_dew_point_temperature)
 
 
 

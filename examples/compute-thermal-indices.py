@@ -25,22 +25,33 @@ UTCI_MIN_VALUE = thermofeel.celsius_to_kelvin(-80)
 UTCI_MAX_VALUE = thermofeel.celsius_to_kelvin(90)
 MISSING_VALUE = -9999.0
 
-############################################################################################################
+###########################################################################################################
+
+lats = None
+lons = None
+
+results = {}
+misses = {}
+
+###########################################################################################################
 
 
 def field_stats(name, values):
 
+    if name in misses:
+        values[misses[name]] = np.nan
+
     print(
-        f"{name} avg {np.nanmean(values)} max {np.nanmax(values)} "
-        f"min {np.nanmin(values)} stddev {np.nanstd(values, dtype=np.float64)} "
+        f"{name} min {np.nanmin(values)} max {np.nanmax(values)} "
+        f"avg {np.nanmean(values)} stddev {np.nanstd(values, dtype=np.float64)} "
         f"missing {np.count_nonzero(np.isnan(values))}"
     )
 
+    if name in misses:
+        values[misses[name]] = MISSING_VALUE
 
-############################################################################################################
 
-lats = None
-lons = None
+###########################################################################################################
 
 
 def decode_grib(fpath):
@@ -159,16 +170,14 @@ def decode_grib(fpath):
     f.close()
 
 
+###########################################################################################################
+
+
 @thermofeel.timer
-def calc_cossza_int(messages, results):
-
-    if "cossza" in results:
-        return results["cossza"]
-
+def calc_cossza_int(messages):
     dt = messages["2t"]["base_datetime"]
     time, step, begin, end = timestep_interval(messages)
 
-    # print(dt.year, dt.month, dt.day, dt.hour)
     cossza = thermofeel.calculate_cos_solar_zenith_angle_integrated(
         lat=lats,
         lon=lons,
@@ -181,87 +190,57 @@ def calc_cossza_int(messages, results):
         integration_order=2,
     )
 
-    field_stats("cossza", cossza)
-    results["cossza"] = cossza
-
     return cossza
 
 
 @thermofeel.timer
-def calc_heatx(messages, results):
-    if "heatx" in results:
-        return results["heatx"]
-
+def calc_heatx(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
     heatx = thermofeel.calculate.heat_index_adjusted(t2m=t2m, td=td)
 
-    field_stats("heatx", heatx)
-    results["heatx"] = heatx
-
     return heatx
 
 
 @thermofeel.timer
-def calc_aptmp(messages, results):
-    if "aptmp" in results:
-        return results["aptmp"]
-
+def calc_aptmp(messages):
     t2m = messages["2t"]["values"]
 
-    ws = calc_ws(messages, results)
+    ws = calc_field("ws", calc_ws, messages)
 
     aptmp = thermofeel.calculate_apparent_temperature(t2m=t2m, va=ws)
-
-    field_stats("aptmp", aptmp)
-    results["aptmp"] = aptmp
 
     return aptmp
 
 
 @thermofeel.timer
-def calc_humidex(messages, results):
-    if "humidex" in results:
-        return results["humidex"]
-
+def calc_humidex(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
     humidex = thermofeel.calculate_humidex(t2m=t2m, td=td)
 
-    field_stats("humidex", humidex)
-    results["humidex"] = humidex
-
     return humidex
 
 
 @thermofeel.timer
-def calc_rhp(messages, results):
-    if "rhp" in results:
-        return results["rhp"]
-
+def calc_rhp(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
     rhp = thermofeel.calculate_relative_humidity_percent(t2m=t2m, td=td)
 
-    field_stats("rhp", rhp)
-    results["rhp"] = rhp
-
     return rhp
 
 
 @thermofeel.timer
-def calc_mrt(messages, results):
-    if "mrt" in results:
-        return results["mrt"]
-
+def calc_mrt(messages):
     time, step, begin, end = timestep_interval(messages)
 
     assert begin < end
 
-    cossza = calc_cossza_int(messages, results)
+    cossza = calc_field("cossza", calc_cossza_int, messages)
 
     seconds_since_start_forecast = step * 3600
     seconds_in_time_step = (end - begin) * 3600
@@ -284,21 +263,28 @@ def calc_mrt(messages, results):
         cossza=cossza * f2,  # de-accumulate time step integration
     )
 
-    field_stats("mrt", mrt)
-    results["mrt"] = mrt
-
     return mrt
 
 
-@thermofeel.timer
-def calc_ws(messages, results):
-    if "ws" in results:
-        return results["ws"]
+def calc_field(name, func, messages):
+    if name in results:
+        return results[name]
 
+    values = func(messages)
+
+    field_stats(name, values)
+    results[name] = values
+
+    return values
+
+
+@thermofeel.timer
+def calc_ws(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
-    ws = np.sqrt(u10 ** 2 + v10 ** 2)
-    results["ws"] = ws
+
+    ws = np.sqrt(u10**2 + v10**2)
+
     return ws
 
 
@@ -341,10 +327,6 @@ def filter_utci(t2m, va, mrt, ehPa, utci):
     t = np.where(e_mrt <= -30)
     misses = np.union1d(t, misses)
 
-    utci[misses] = np.nan
-    field_stats("utci", utci)
-    utci[misses] = MISSING_VALUE
-
     return misses
 
 
@@ -370,120 +352,83 @@ def validate_utci(utci, misses):
 
 
 @thermofeel.timer
-def calc_utci(messages, results):
-
-    if "utci" in results:
-        return results["utci"]
-
+def calc_utci(messages):
     t2m = messages["2t"]["values"]
     t2d = messages["2d"]["values"]
 
-    ws = calc_ws(messages, results)
-    mrt = calc_mrt(messages, results)
+    ws = calc_field("ws", calc_ws, messages)
+    mrt = calc_field("mrt", calc_mrt, messages)
 
     ehPa = compute_ehPa(t2m, t2d)
     utci = compute_utci_in_kelvin(t2m, ws, mrt, ehPa)
 
-    filter_utci(t2m, ws, mrt, ehPa, utci)
-    # validate_utci(utci, filter_utci(t2m, va, mrt, ehPa, utci))
+    missing = filter_utci(t2m, ws, mrt, ehPa, utci)
+    misses["utci"] = missing
 
-    results["utci"] = utci
+    # validate_utci(utci, missing)
 
     return utci
 
 
 @thermofeel.timer
-def calc_wbgt(messages, results):
-
-    if "wbgt" in results:
-        return results["wbgt"]
-
+def calc_wbgt(messages):
     t2m = messages["2t"]["values"]  # Kelvin
     t2d = messages["2d"]["values"]
 
-    ws = calc_ws(messages, results)
-    mrt = calc_mrt(messages, results)
+    ws = calc_field("ws", calc_ws, messages)
+    mrt = calc_field("mrt", calc_mrt, messages)
 
     wbgt = thermofeel.calculate_wbgt(t2m, mrt, ws, t2d)
     wbgt = thermofeel.celsius_to_kelvin(wbgt)
-
-    field_stats("wbgt", wbgt)
-    results["wbgt"] = wbgt
 
     return wbgt
 
 
 @thermofeel.timer
-def calc_bgt(messages, results):
-
-    if "bgt" in results:
-        return results["bgt"]
-
+def calc_bgt(messages):
     t2m = messages["2t"]["values"]  # Kelvin
 
-    ws = calc_ws(messages, results)
-    mrt = calc_mrt(messages, results)
+    ws = calc_field("ws", calc_ws, messages)
+    mrt = calc_field("mrt", calc_mrt, messages)
 
     bgt = thermofeel.calculate_bgt(t2m, mrt, ws)
     bgt = thermofeel.celsius_to_kelvin(bgt)
-
-    field_stats("bgt", bgt)
-    results["bgt"] = bgt
 
     return bgt
 
 
 @thermofeel.timer
-def calc_wbt(messages, results):
-    if "wbt" in results:
-        return results["wbt"]
-
+def calc_wbt(messages):
     t2m = messages["2t"]["values"]
     t2m = thermofeel.kelvin_to_celcius(t2m)
 
-    rh = calc_rhp(messages, results)
+    rhp = calc_field("rhp", calc_rhp, messages)
 
-    wbt = thermofeel.calculate_relative_humidity_percent(t2m=t2m, rh=rh)
-
-    field_stats("wbt", wbt)
-    results["wbt"] = wbt
+    wbt = thermofeel.calculate_relative_humidity_percent(t2m=t2m, rh=rhp)
 
     return wbt
 
 
 @thermofeel.timer
-def calc_net(messages, results):
-
-    if "net" in results:
-        return results["net"]
-
+def calc_net(messages):
     t2m = messages["2t"]["values"]  # Kelvin
     t2d = messages["2d"]["values"]
 
-    ws = calc_ws(messages, results)
+    ws = calc_field("ws", calc_ws, messages)
 
     net = thermofeel.calculate_net_effective_temperature(t2m, ws, t2d)
     net = thermofeel.celsius_to_kelvin(net)
-
-    field_stats("net", net)
-    results["net"] = net
 
     return net
 
 
 @thermofeel.timer
-def calc_windchill(messages, results):
-    if "windchill" in results:
-        return results["windchill"]
-
+def calc_windchill(messages):
     t2m = messages["2t"]["values"]
 
-    ws = calc_ws(messages, results)
+    ws = calc_field("ws", calc_ws, messages)
 
     windchill = thermofeel.calculate_wind_chill(t2m, ws)
-
-    field_stats("windchill", windchill)
-    results["windchill"] = windchill
 
     return windchill
 
@@ -510,7 +455,7 @@ def check_messages(msgs):
 
 @thermofeel.timer
 def output_grib(output, msg, paramid, values, missing=None):
-    # encode results in GRIB
+    """Encode field in GRIB2"""
     grib = msg["grib"]
     handle = eccodes.codes_clone(grib)
     eccodes.codes_set_long(handle, "edition", 2)
@@ -563,82 +508,87 @@ def process_step(args, msgs, output):
         f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]"
     )
 
+    global results
+    global misses
+
     results = {}
+    misses = {}
 
     # Windspeed - shortName ws
     if args.ws:
-        ws = calc_ws(msgs, results)
+        ws = calc_field("ws", calc_ws, msgs)
         output_grib(output, template, "10", ws)
 
     # Cosine of Solar Zenith Angle - shortName uvcossza
+    # TODO: 214001 only exists for GRIB1 -- but here we use it for GRIB2 (waiting for WMO)
     if args.cossza:
-        cossza = calc_cossza_int(msgs, results)
+        cossza = calc_field("cossza", calc_cossza_int, msgs)
         output_grib(output, template, "214001", cossza)
 
     # Mean Radiant Temperature - shortName mrt
     if args.mrt:
-        mrt = calc_mrt(msgs, results)
+        mrt = calc_field("mrt", calc_mrt, msgs)
         output_grib(output, template, "261002", mrt)
 
     # Univeral Thermal Climate Index - shortName utci
     if args.utci:
-        utci = calc_utci(msgs, results)
+        utci = calc_field("utci", calc_utci, msgs)
         output_grib(output, template, "261001", utci, missing=MISSING_VALUE)
 
     # Heat Index (adjusted) - shortName heatx
     if args.heatx:
-        heatx = calc_heatx(msgs, results)
+        heatx = calc_field("heatx", calc_heatx, msgs)
         output_grib(output, template, "260004", heatx)
-
-    # Wet Bulb Globe Temperature - shortName wbgt
-    if args.wbgt:  #
-        wbgt = calc_wbgt(msgs, results)
-        output_grib(output, template, "260004", wbgt)
 
     # Wind Chill factor - shortName wcf
     if args.windchill:
-        windchill = calc_windchill(msgs, results)
+        windchill = calc_field("windchill", calc_windchill, msgs)
         output_grib(output, template, "260005", windchill)
 
     # Apparent Temperature - shortName aptmp
     if args.aptmp:
-        aptmp = calc_aptmp(msgs, results)
+        aptmp = calc_field("aptmp", calc_aptmp, msgs)
         output_grib(output, template, "260255", aptmp)
 
     # Relative humidity percent at 2m - shortName 2r
     if args.rhp:
-        rhp = calc_rhp(msgs, results)
+        rhp = calc_field("rhp", calc_rhp, msgs)
         output_grib(output, template, "260242", rhp)
 
     # Humidex - shortName hx
     # TODO: 212001 is experimental GRIB code, update once WMO publishes
     if args.humidex:
-        humidex = calc_humidex(msgs, results)
+        humidex = calc_field("humidex", calc_humidex, msgs)
         output_grib(output, template, "212001", humidex)
 
     # Net Effective Temperature - shortName net
     # TODO: 212002 is experimental GRIB code, update once WMO publishes
     if args.net:
-        net = calc_net(msgs, results)
+        net = calc_field("net", calc_net, msgs)
         output_grib(output, template, "212002", net)
 
     # Globe Temperature - shortName gt
     # TODO: 212003 is experimental GRIB code, update once WMO publishes
     if args.bgt:
-        bgt = calc_bgt(msgs, results)
+        bgt = calc_field("bgt", calc_bgt, msgs)
         output_grib(output, template, "212003", bgt)
 
     # Wet Bulb Temperature - shortName wbt
     # TODO: 212004 is experimental GRIB code, update once WMO publishes
     if args.wbt:
-        wbt = calc_wbt(msgs, results)
+        wbt = calc_field("wbt", calc_wbt, msgs)
         output_grib(output, template, "212004", wbt)
+
+    # Wet Bulb Globe Temperature - shortName wbgt
+    # TODO: 212005 is experimental GRIB code, update once WMO publishes
+    if args.wbgt:  #
+        wbgt = calc_field("wbgt", calc_wbgt, msgs)
+        output_grib(output, template, "212005", wbgt)
 
     return step
 
 
-def main():
-
+def command_line_options():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("input", help="input file with GRIB messages")
@@ -662,9 +612,6 @@ def main():
         "--heatx", help="compute Heat Index (adjusted)", action="store_true"
     )
     parser.add_argument(
-        "--wbgt", help="compute Wet Bulb Globe Temperature", action="store_true"
-    )
-    parser.add_argument(
         "--windchill", help="compute Windchill factor", action="store_true"
     )
     parser.add_argument(
@@ -679,12 +626,22 @@ def main():
     parser.add_argument(
         "--net", help="compute net effective temperature", action="store_true"
     )
+    parser.add_argument(
+        "--wbgt", help="compute Wet Bulb Globe Temperature", action="store_true"
+    )
     parser.add_argument("--bgt", help="compute  Globe Temperature", action="store_true")
     parser.add_argument(
         "--wbt", help="compute Wet Bulb Temperature", action="store_true"
     )
 
     args = parser.parse_args()
+
+    return args
+
+
+def main():
+
+    args = command_line_options()
 
     print(f"Thermofeel version: {thermofeel.__version__}")
     print(f"Python version: {sys.version}")

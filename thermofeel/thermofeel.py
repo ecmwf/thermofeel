@@ -8,7 +8,6 @@
 
 """
   thermofeel is a library to calculate human thermal comfort indexes.
-
     Currently calculates the thermal indexes:
     * Universal Thermal Climate Index
     * Mean Radiant Temperature
@@ -19,7 +18,6 @@
     * Apparent Temperature
     * Wind Chill
     * Normal Effective Temperature (NET)
-
     In support of the above indexes, it also calculates:
     * Solar Declination Angle
     * Solar Zenith Angle
@@ -29,7 +27,6 @@
     * Wet Bulb Globe Temperature
     * Theoretical Wet Bulb Temperature
     * Globe Temperature
-
   """
 
 import math
@@ -71,9 +68,8 @@ def solar_declination_angle(jd, h):
 def calculate_relative_humidity_percent(t2k, tdk):
     """
     Calculate relative humidity in percent
-    :param t2m: (float array) 2m temperature [K]
-    :param td: (float array) dew point temperature [K]
-
+    :param t2k: (float array) 2m temperature [K]
+    :param tdk: (float array) dew point temperature [K]
     returns relative humidity [%]
     """
 
@@ -120,18 +116,15 @@ def calculate_saturation_vapour_pressure(tk):
 def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
+    :param h: hour [int]
     :param lat: (float array) latitude [degrees]
     :param lon: (float array) longitude [degrees]
     :param y: year [int]
     :param m: month [int]
     :param d: day [int]
-    :param h: hour [int]
-
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
-
     see also:
     http://answers.google.com/answers/threadview/id/782886.html
-
     returns cosine of the solar zenith angle (all values, including negatives)
     """
 
@@ -200,18 +193,15 @@ def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
     calculate solar zenith angle
+    :param h: hour [int]
     :param lat: (float array) latitude [degrees]
     :param lon: (float array) longitude [degrees]
     :param y: year [int]
     :param m: month [int]
     :param d: day [int]
-    :param h: hour [int]
-
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
-
     see also:
     http://answers.google.com/answers/threadview/id/782886.html
-
     returns cosine of the solar zenith angle (all values, including negatives)
     """
     # we separate the function for clipping the negative values since numba doesn't support clip (yet)
@@ -232,13 +222,10 @@ def calculate_cos_solar_zenith_angle_integrated(
     :param h: hour [int]
     :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
     :param tend:  offset in hours from forecast time to end of time interval for integration [int]
-    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
     :param intervals_per_hour:  number of time intregrations per hour [int]
-
+    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
     https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
-
     This uses Gaussian numerical integration. See https://en.wikipedia.org/wiki/Gaussian_quadrature
-
     returns average of cosine of the solar zenith angle during interval [degrees]
     """
 
@@ -315,7 +302,6 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     :param strd: is Surface thermal radiation downwards [J/m^-2]
     :param strr: is Surface net thermal radiation [J/m^-2]
     :param cossza: is cosine of solar zenith angle [degrees]
-
     returns Mean Radiant Temperature [K]
     https://link.springer.com/article/10.1007/s00484-020-01900-5
     """
@@ -616,15 +602,12 @@ def calculate_utci(t2_k, va_ms, mrt_k, ehPa=None, td_k=None):
     :param t2_k: (float array) is 2m temperature [K]
     :param va_ms: (float array) is wind speed at 10 meters [m/s]
     :param mrt_k:(float array) is mean radiant temperature [K]
-    :param e_hPa: (float array) is water vapour pressure [hPa]
+    :param ehPa: (float array) is water vapour pressure [hPa]
     :param td_k: (float array) is 2m dew point temperature [K]
-
     Calculate UTCI with a 6th order polynomial approximation according to:
     Brode, P. et al. Deriving the operational procedure for the
     Universal Thermal Climate Index (UTCI). Int J Biometeorol (2012) 56: 48.1
-
     returns UTCI [°C]
-
     """
 
     if ehPa is not None:
@@ -648,12 +631,9 @@ def calculate_wbgts(t2m):
     """
     wgbts - Wet Bulb Globe Temperature Simple
     :param t2m: 2m temperature [K]
-    :param rh: relative humidity [pa]
-
     https://link.springer.com/article/10.1007/s00484-011-0453-2
     http://www.bom.gov.au/info/thermal_stress/#approximation
     https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
-
     returns Wet Bulb Globe Temperature [°C]
     """
     rh = calculate_saturation_vapour_pressure(t2m)
@@ -666,9 +646,9 @@ def calculate_wbgts(t2m):
 def calculate_wbt_dj(t2k, p, tdk, ept=False):
     """
     calculate wet globe temperature
-    :param tc: 2m temperature [K]
-    :param td: 2m  dew point temperature [K]
+    :param t2k: 2m temperature [K]
     :param p: Surface pressure [mbar]
+    :param tdk: 2m  dew point temperature [K]
     returns wet bulb temperature [°C]
     https://www.nature.com/articles/nclimate1827#Sec2
     """
@@ -720,7 +700,6 @@ def calculate_wbt(tc, rh):
     calculate wet globe temperature
     :param tc: 2m temperature [°C]
     :param rh: relative humidity percentage[%]
-
     returns wet bulb temperature [°C]
     https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
     """
@@ -738,12 +717,10 @@ def calculate_wbt(tc, rh):
 def calculate_bgt(t_k, mrt, va):
     """
     calculate globe temperature
-    :param t2m: 2m temperature [K]
+    :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-
     returns bulb globe temperature [°C]
-
     https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
     """
 
@@ -776,14 +753,10 @@ def calculate_wbgt(t_k, mrt, va, td, p=None):
     :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [K]
-
-    optional :param p: surface pressure [mbars] ( Davies-Jones )
-
+    :param td: dew point temperature [°C] ( Davies-Jones [K])
+    optional :param p: surface pressure [mbars] ( Davies-Jones [K])
     returns wet bulb globe temperature [°C]
-
     https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
-
     """
 
     bgt_c = calculate_bgt(t_k, mrt, va)
@@ -807,7 +780,6 @@ def calculate_mrt_from_bgt(t2m, bgt, va):
     :param bgt: bulb globe temperature in Kelvin [K]
     :param va: wind speed at 10 meters [m/s]
     returns mean radiant temperature [K]
-
     https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
     """
 
@@ -823,7 +795,6 @@ def calculate_humidex(t2m, td):
     humidex - heat index used by the Canadian Meteorological Service
     :param t2m: 2m temperature [K]
     :param td: dew point temperature [K]
-
     returns humidex [°C]
     http://www.csgnetwork.com/canhumidexcalc.html
     """
@@ -837,10 +808,8 @@ def calculate_net_effective_temperature(t2m, va, td):
     """
     Net - Normal Effective Temperature used in Hong Kong, Poland and Germany
     :param t2m: 2m temperature [K]
-    :param td: 2m dew point temperature [K]
-    :param rh: Relative Humidity [pa]
     :param va: Wind speed at 10 meters [m/s]
-
+    :param td: 2m dew point temperature [K]
     returns normal effective temperature [°C]
     https://www.sciencedirect.com/topics/engineering/effective-temperature
     """
@@ -856,8 +825,8 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     """
     Apparent Temperature version without radiation
     :param t2m: 2m Temperature [K]
+    :param va: Wind speed at 10 meters [m/s]
     :param rh: Relative Humidity [pa]
-
     returns apparent temperature [K]
     https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
     """
@@ -877,9 +846,7 @@ def calculate_wind_chill(t2m, va):
     Wind Chill
     :param t2m: 2m Temperature [K]
     :param va: wind speed at 10 meters [m/s]
-
     returns wind chill [°C]
-
      http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
     """
     tc = t2m - 273.15  # kelvin_to_celsius(tk)
