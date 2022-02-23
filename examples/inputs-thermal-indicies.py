@@ -159,7 +159,7 @@ def decode_grib(fpath):
     f.close()
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_cossza_int(messages, results):
 
     if "cossza" in results:
@@ -187,7 +187,7 @@ def calc_cossza_int(messages, results):
     return cossza
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_heatx(messages, results):
     if "heatx" in results:
         return results["heatx"]
@@ -203,7 +203,7 @@ def calc_heatx(messages, results):
     return heatx
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_aptmp(messages, results):
     if "aptmp" in results:
         return results["aptmp"]
@@ -220,7 +220,7 @@ def calc_aptmp(messages, results):
     return aptmp
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_humidex(messages, results):
     if "humidex" in results:
         return results["humidex"]
@@ -236,7 +236,7 @@ def calc_humidex(messages, results):
     return humidex
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_rhp(messages, results):
     if "rhp" in results:
         return results["rhp"]
@@ -252,7 +252,7 @@ def calc_rhp(messages, results):
     return rhp
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_mrt(messages, results):
     if "mrt" in results:
         return results["mrt"]
@@ -263,7 +263,7 @@ def calc_mrt(messages, results):
 
     cossza = calc_cossza_int(messages, results)
 
-    #seconds_since_start_forecast = step * 3600
+    # seconds_since_start_forecast = step * 3600
     seconds_in_time_step = (end - begin) * 3600
 
     f2 = 1.0 / float(seconds_in_time_step)
@@ -289,34 +289,34 @@ def calc_mrt(messages, results):
     return mrt
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_ws(messages, results):
     if "ws" in results:
         return results["ws"]
 
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
-    ws = np.sqrt(u10 ** 2 + v10 ** 2)
+    ws = np.sqrt(u10**2 + v10**2)
     results["ws"] = ws
     return ws
 
 
-#@thermofeel.optnumba_jit
+# @thermofeel.optnumba_jit
 def compute_ehPa_(rh_pc, svp):
     return svp * rh_pc * 0.01  # / 100.0
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def compute_ehPa(t2m, t2d):
     rh_pc = t2d
-    svp = thermofeel.calculate_saturation_vapour_pressure(t2m+273.15)
+    svp = thermofeel.calculate_saturation_vapour_pressure(t2m + 273.15)
     ehPa = compute_ehPa_(rh_pc, svp)
     return ehPa
 
 
 # @thermofeel.timer
 def compute_utci_in_kelvin(t2m, ws, mrt, ehPa):
-    utci = thermofeel.calculate_utci(t2_k=t2m+273.15, va_ms=ws, mrt_k=mrt, e_hPa=ehPa)
+    utci = thermofeel.calculate_utci(t2_k=t2m + 273.15, va_ms=ws, mrt_k=mrt, e_hPa=ehPa)
     return thermofeel.celsius_to_kelvin(utci)
 
 
@@ -347,7 +347,7 @@ def filter_utci(t2m, va, mrt, ehPa, utci):
     return misses
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def validate_utci(utci, misses):
 
     utci[misses] = np.nan
@@ -368,7 +368,7 @@ def validate_utci(utci, misses):
     utci[misses] = MISSING_VALUE
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_utci(messages, results):
 
     if "utci" in results:
@@ -379,18 +379,18 @@ def calc_utci(messages, results):
 
     ws = messages["10u"]["values"]
     mrt = calc_mrt(messages, results)
-    ehPa =compute_ehPa(t2m,rh)
+    ehPa = compute_ehPa(t2m, rh)
     utci = compute_utci_in_kelvin(t2m, ws, mrt, ehPa)
 
-    filter_utci(t2m+273.15, ws, mrt, ehPa, utci)
-    #validate_utci(utci, filter_utci(t2m, va, mrt, ehPa, utci))
+    filter_utci(t2m + 273.15, ws, mrt, ehPa, utci)
+    # validate_utci(utci, filter_utci(t2m, va, mrt, ehPa, utci))
 
     results["utci"] = utci
 
     return utci
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_wbgt(messages, results):
 
     if "wbgt" in results:
@@ -411,7 +411,7 @@ def calc_wbgt(messages, results):
     return wbgt
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_bgt(messages, results):
 
     if "bgt" in results:
@@ -431,7 +431,7 @@ def calc_bgt(messages, results):
     return bgt
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_wbt(messages, results):
     if "wbt" in results:
         return results["wbt"]
@@ -449,7 +449,7 @@ def calc_wbt(messages, results):
     return wbt
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_net(messages, results):
 
     if "net" in results:
@@ -469,7 +469,7 @@ def calc_net(messages, results):
     return net
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def calc_windchill(messages, results):
     if "windchill" in results:
         return results["windchill"]
@@ -488,14 +488,14 @@ def calc_windchill(messages, results):
 
 def check_messages(msgs):
     assert "2t" in msgs
-    #assert "2d" in msgs
-    #assert "10u" in msgs
-    #assert "10v" in msgs
-    #assert "ssrd" in msgs
-    #assert "ssr" in msgs
-    #assert "fdir" in msgs
-    #assert "str" in msgs
-    #assert "strd" in msgs
+    # assert "2d" in msgs
+    # assert "10u" in msgs
+    # assert "10v" in msgs
+    # assert "ssrd" in msgs
+    # assert "ssr" in msgs
+    # assert "fdir" in msgs
+    # assert "str" in msgs
+    # assert "strd" in msgs
 
     assert lats.size == lons.size
 
@@ -506,7 +506,7 @@ def check_messages(msgs):
         assert ftime == m["forecast_datetime"]
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def output_grib(output, msg, paramid, values, missing=None):
     # encode results in GRIB
     grib = msg["grib"]
@@ -547,7 +547,7 @@ def timestep_interval(messages):
     return time, step, step_begin, step_end
 
 
-#@thermofeel.timer
+# @thermofeel.timer
 def process_step(args, msgs, output):
 
     check_messages(msgs)
