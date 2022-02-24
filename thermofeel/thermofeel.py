@@ -312,12 +312,15 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     # calculate fp projected factor area
 
     gamma = np.arcsin(cossza) * 180 / np.pi
-    fp = 0.308 * np.cos(to_radians * gamma * (0.998 -((gamma * gamma)/50000)))
+    fp = 0.308 * np.cos(to_radians * gamma * (0.998 - ((gamma * gamma) / 50000)))
 
-    # filter statement for solar zenith angle
-    csza_filter1 = np.where((cossza > 0.01))
-    # print(csza_filter1)
-    fdir[csza_filter1] = fdir[csza_filter1] / cossza[csza_filter1]
+    Istar = fdir * cossza
+
+    # print(
+    #     f"min {np.min(Istar)} max {np.max(Istar)} "
+    #     f"avg {np.mean(Istar)} stddev {np.std(Istar, dtype=np.float64)} "
+    #     f"missing {np.count_nonzero(np.isnan(Istar))}"
+    # )
 
     # calculate mean radiant temperature
     mrt = np.power(
@@ -326,7 +329,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
             * (
                 0.5 * strd
                 + 0.5 * lur
-                + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * fdir)
+                + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * Istar)
             )
         ),
         0.25,

@@ -243,10 +243,10 @@ def calc_mrt(messages):
     cossza = calc_field("cossza", calc_cossza_int, messages)
 
     seconds_since_start_forecast = step * 3600
-    seconds_in_time_step = (end - begin) * 3600
+    # seconds_in_time_step = (end - begin) * 3600
 
     f1 = 1.0 / float(seconds_since_start_forecast)
-    f2 = 1.0 / float(seconds_in_time_step)
+    # f2 = 1.0 / float(seconds_in_time_step)
 
     ssrd = messages["ssrd"]["values"]
     ssr = messages["ssr"]["values"]
@@ -260,7 +260,8 @@ def calc_mrt(messages):
         fdir=fdir * f1,
         strd=strd * f1,
         strr=strr * f1,
-        cossza=cossza * f2,  # de-accumulate time step integration
+        cossza=cossza,
+        # cossza=cossza * f2,  # de-accumulate time step integration
     )
 
     return mrt
@@ -643,10 +644,10 @@ def main():
 
     args = command_line_options()
 
-    print(f"Thermofeel version: {thermofeel.__version__}")
-    print(f"Python version: {sys.version}")
-    print(f"Numpy version: {np.version.version}")
-    np.show_config()
+    # print(f"Thermofeel version: {thermofeel.__version__}")
+    # print(f"Python version: {sys.version}")
+    # print(f"Numpy version: {np.version.version}")
+    # np.show_config()
 
     output = open(args.output, "wb")
 
