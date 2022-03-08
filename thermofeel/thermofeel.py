@@ -959,13 +959,13 @@ def wbt_lijigren(
 
     tref = t2m
     tsfc = t2m
-    sza = np.acos(cossza)
+    sza = np.arccos(cossza)
     eair = rh * calculate_saturation_vapour_pressure(t2m)
     twb_prev = td
     h = h_sphere_and_cylinder_in_air(tref, ps, va, diamglobe, diamwick, Pr, cp, rair)
     h = h[0]
     tref = 0.5 * (twb_prev + t2m)
-    emis_atm = emisatm(t2m, rh)
+    emis_atm = emisatm(t2m, rh,ps)
     emiswick = 0.95
     albwick = 0.4
     dwick = 0.007
