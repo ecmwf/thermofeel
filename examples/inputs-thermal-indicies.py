@@ -26,6 +26,47 @@ UTCI_MAX_VALUE = thermofeel.celsius_to_kelvin(90)
 MISSING_VALUE = -9999.0
 
 ############################################################################################################
+to_radians = math.pi / 180
+def calculate_mean_radiant_temperature_2(ssrd, ssr, fdir, strd, strr, cossza):
+    """
+    mrt - Mean Radiant Temperature
+    :param ssrd: is surface solar radiation downwards [J/m^-2]
+    :param ssr: is surface net solar radiation [J/m^-2]
+    :param fdir: is Total sky direct solar radiation at surface [J/m^-2]
+    :param strd: is Surface thermal radiation downwards [J/m^-2]
+    :param strr: is Surface net thermal radiation [J/m^-2]
+    :param cossza: is cosine of solar zenith angle [degrees]
+    returns Mean Radiant Temperature [K]
+    https://link.springer.com/article/10.1007/s00484-020-01900-5
+    """
+    dsw = ssrd - fdir
+    rsw = ssrd - ssr
+    lur = strd - strr
+
+    # calculate fp projected factor area
+
+    gamma = np.arcsin(cossza) * 180 / np.pi
+    fp = 0.308 * np.cos(to_radians * gamma * (0.998 -((gamma * gamma)/50000)))
+
+    # filter statement for solar zenith angle
+    #csza_filter1 = np.where((cossza > 0.01))
+    # print(csza_filter1)
+    fdir = fdir * cossza
+
+    # calculate mean radiant temperature
+    mrt = np.power(
+        (
+            (1 / 0.0000000567)
+            * (
+                0.5 * strd
+                + 0.5 * lur
+                + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * fdir)
+            )
+        ),
+        0.25,
+    )
+
+    return mrt
 
 
 def field_stats(name, values):
@@ -264,9 +305,9 @@ def calc_mrt(messages, results):
     cossza = calc_cossza_int(messages, results)
 
     #seconds_since_start_forecast = step * 3600
-    seconds_in_time_step = (end - begin) * 3600
-
-    f2 = 1.0 / float(seconds_in_time_step)
+    #seconds_in_time_step = (end - begin) * 3600
+    #f1 = 1.0 / float(seconds_since_start_forecast)
+    #f2 = 1.0 / float(seconds_in_time_step)
 
     ssrd = messages["ssrd"]["values"]
     ssr = messages["ssr"]["values"]
@@ -274,13 +315,13 @@ def calc_mrt(messages, results):
     strd = messages["strd"]["values"]
     strr = messages["str"]["values"]
 
-    mrt = thermofeel.calculate_mean_radiant_temperature(
+    mrt = calculate_mean_radiant_temperature_2(
         ssrd=ssrd,  # de-accumulate since forecast start
-        ssr=ssr,
+        ssr=ssr ,
         fdir=fdir,
         strd=strd,
         strr=strr,
-        cossza=cossza * f2,  # de-accumulate time step integration
+        cossza=cossza  # de-accumulate time step integration
     )
 
     field_stats("mrt", mrt)
