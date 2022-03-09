@@ -882,7 +882,7 @@ def bgt_lijigren(
     """
 
     :param t2m: (float array) 2m temperature [K]
-    :param rh:
+    :param rh: Humidity Ratio by Vapor Partial Pressure
     :param ps: (float array) Surface Pressure [Pa]
     :param ssrd: is surface solar radiation downwards [J/m^-2]
     :param fdir: is total sky radiation [J/m^-2]
@@ -937,7 +937,7 @@ def wbt_lijigren(
 
     :param t2m: (float array) 2m temperature [K]
     :param td: (float array) 2m dew point temperature [K]
-    :param rh:
+    :param rh: Humidity Ratio by Vapor Partial Pressure
     :param ps: (float array) Surface Pressure [Pa]
     :param va: 10 meter wind speed [m/s]
     :param ssrd: is surface solar radiation downwards [J/m^-2]
@@ -986,7 +986,7 @@ def wbt_lijigren(
         Sc = viscosity(tref) / (density * diffusivity(t2m, ps))
         twb = (
             t2m
-            - h_evap(t2m) / ratio * (ewick - eair) / (ps - ewick) * np.power(Pr, Sc, a)
+            - h_evap(t2m) / ratio * (ewick - eair) / (ps - ewick) * np.power(Pr/Sc, a)
             + (Fatm / h * -1)
         )
         twb_filter = np.where(np.abs(twb - twb_prev))
