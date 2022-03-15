@@ -882,7 +882,7 @@ def bgt_lijigren(
     """
 
     :param t2m: (float array) 2m temperature [K]
-    :param rh:
+    :param rh: Humidity Ratio by Vapor Partial Pressure
     :param ps: (float array) Surface Pressure [Pa]
     :param ssrd: is surface solar radiation downwards [J/m^-2]
     :param fdir: is total sky radiation [J/m^-2]
@@ -937,7 +937,7 @@ def wbt_lijigren(
 
     :param t2m: (float array) 2m temperature [K]
     :param td: (float array) 2m dew point temperature [K]
-    :param rh:
+    :param rh: Humidity Ratio by Vapor Partial Pressure
     :param ps: (float array) Surface Pressure [Pa]
     :param va: 10 meter wind speed [m/s]
     :param ssrd: is surface solar radiation downwards [J/m^-2]
@@ -959,13 +959,13 @@ def wbt_lijigren(
 
     tref = t2m
     tsfc = t2m
-    sza = np.acos(cossza)
+    sza = np.arccos(cossza)
     eair = rh * calculate_saturation_vapour_pressure(t2m)
     twb_prev = td
     h = h_sphere_and_cylinder_in_air(tref, ps, va, diamglobe, diamwick, Pr, cp, rair)
     h = h[0]
     tref = 0.5 * (twb_prev + t2m)
-    emis_atm = emisatm(t2m, rh)
+    emis_atm = emisatm(t2m, rh,ps)
     emiswick = 0.95
     albwick = 0.4
     dwick = 0.007
@@ -986,7 +986,7 @@ def wbt_lijigren(
         Sc = viscosity(tref) / (density * diffusivity(t2m, ps))
         twb = (
             t2m
-            - h_evap(t2m) / ratio * (ewick - eair) / (ps - ewick) * np.power(Pr, Sc, a)
+            - h_evap(t2m) / ratio * (ewick - eair) / (ps - ewick) * np.power(Pr/Sc, a)
             + (Fatm / h * -1)
         )
         twb_filter = np.where(np.abs(twb - twb_prev))
