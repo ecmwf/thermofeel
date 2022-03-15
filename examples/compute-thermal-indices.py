@@ -20,6 +20,7 @@ import eccodes
 import numpy as np
 
 import thermofeel as thermofeel
+import math
 
 UTCI_MIN_VALUE = thermofeel.celsius_to_kelvin(-80)
 UTCI_MAX_VALUE = thermofeel.celsius_to_kelvin(90)
@@ -34,6 +35,43 @@ results = {}
 misses = {}
 
 ###########################################################################################################
+to_radians = math.pi / 180
+def calculate_mean_radiant_temperature_dsrp(ssrd, ssr, dsrp, strd,fdir, strr,cossza):
+    """
+    mrt - Mean Radiant Temperature
+    :param ssrd: is surface solar radiation downwards [J/m^-2]
+    :param ssr: is surface net solar radiation [J/m^-2]
+    :param fdir: is Total sky direct solar radiation at surface [J/m^-2]
+    :param strd: is Surface thermal radiation downwards [J/m^-2]
+    :param strr: is Surface net thermal radiation [J/m^-2]
+    :param cossza: is cosine of solar zenith angle [degrees]
+    returns Mean Radiant Temperature [K]
+    https://link.springer.com/article/10.1007/s00484-020-01900-5
+    """
+    dsw = ssrd-fdir
+    rsw = ssrd - ssr
+    lur = strd - strr
+
+    # calculate fp projected factor area
+
+    gamma = np.arcsin(cossza) * 180 / np.pi
+    fp = 0.308 * np.cos(to_radians * gamma * 0.998 - (gamma * gamma / 50000))
+    Istar = dsrp
+
+    # calculate mean radiant temperature
+    mrt = np.power(
+        (
+            (1 / 0.0000000567)
+            * (
+                0.5 * strd
+                + 0.5 * lur
+                + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * Istar)
+            )
+        ),
+        0.25,
+    )
+
+    return mrt
 
 
 def field_stats(name, values):
@@ -163,7 +201,7 @@ def decode_grib(fpath):
 
             md["grib"] = msg  # keep grib open
 
-            assert sname not in messages
+            # assert sname not in messages
 
             messages[sname] = md
 
@@ -173,7 +211,7 @@ def decode_grib(fpath):
 ###########################################################################################################
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_cossza_int(messages):
     dt = messages["2t"]["base_datetime"]
     time, step, begin, end = timestep_interval(messages)
@@ -193,7 +231,7 @@ def calc_cossza_int(messages):
     return cossza
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_heatx(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
@@ -203,7 +241,7 @@ def calc_heatx(messages):
     return heatx
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_aptmp(messages):
     t2m = messages["2t"]["values"]
 
@@ -214,7 +252,7 @@ def calc_aptmp(messages):
     return aptmp
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_humidex(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
@@ -224,7 +262,7 @@ def calc_humidex(messages):
     return humidex
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_rhp(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
@@ -234,7 +272,7 @@ def calc_rhp(messages):
     return rhp
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_mrt(messages):
     time, step, begin, end = timestep_interval(messages)
 
@@ -243,26 +281,29 @@ def calc_mrt(messages):
     cossza = calc_field("cossza", calc_cossza_int, messages)
 
     seconds_since_start_forecast = step * 3600
-    # seconds_in_time_step = (end - begin) * 3600
+    seconds_in_time_step = (end - begin) * 3600
 
     f1 = 1.0 / float(seconds_since_start_forecast)
-    # f2 = 1.0 / float(seconds_in_time_step)
+    f2 = 1.0 / float(seconds_in_time_step)
 
     ssrd = messages["ssrd"]["values"]
     ssr = messages["ssr"]["values"]
     fdir = messages["fdir"]["values"]
+    dsrp= messages["dsrp"]["values"]
     strd = messages["strd"]["values"]
     strr = messages["str"]["values"]
 
-    mrt = thermofeel.calculate_mean_radiant_temperature(
-        ssrd=ssrd * f1,  # de-accumulate since forecast start
-        ssr=ssr * f1,
-        fdir=fdir * f1,
-        strd=strd * f1,
-        strr=strr * f1,
-        cossza=cossza,
+    mrt = calculate_mean_radiant_temperature_dsrp(ssrd*f1, ssr*f1, dsrp*f1, strd*f1,fdir*f1, strr*f1,cossza*f1)
+
+    #mrt = thermofeel.calculate_mean_radiant_temperature(
+     #   ssrd* f1,  # de-accumulate since forecast start
+     #   ssr*f1,
+     #   fdir*f1,
+     #   strd*f1,
+     #   strr*f1,
+     #   cossza=cossza*f1)
         # cossza=cossza * f2,  # de-accumulate time step integration
-    )
+    
 
     return mrt
 
@@ -279,22 +320,22 @@ def calc_field(name, func, messages):
     return values
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_ws(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
 
-    ws = np.sqrt(u10**2 + v10**2)
+    ws = np.sqrt(u10 ** 2 + v10 ** 2)
 
     return ws
 
 
-@thermofeel.optnumba_jit
+# @thermofeel.optnumba_jit
 def compute_ehPa_(rh_pc, svp):
     return svp * rh_pc * 0.01  # / 100.0
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def compute_ehPa(t2m, t2d):
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
     svp = thermofeel.calculate_saturation_vapour_pressure(t2m)
@@ -304,7 +345,7 @@ def compute_ehPa(t2m, t2d):
 
 # @thermofeel.timer
 def compute_utci_in_kelvin(t2m, ws, mrt, ehPa):
-    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=ws, mrt_k=mrt, ehPa=ehPa)
+    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=ws, mrt_k=mrt, e_hPa=ehPa)
     return thermofeel.celsius_to_kelvin(utci)
 
 
@@ -331,7 +372,7 @@ def filter_utci(t2m, va, mrt, ehPa, utci):
     return misses
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def validate_utci(utci, misses):
 
     utci[misses] = np.nan
@@ -352,7 +393,7 @@ def validate_utci(utci, misses):
     utci[misses] = MISSING_VALUE
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_utci(messages):
     t2m = messages["2t"]["values"]
     t2d = messages["2d"]["values"]
@@ -371,7 +412,7 @@ def calc_utci(messages):
     return utci
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_wbgt(messages):
     t2m = messages["2t"]["values"]  # Kelvin
     t2d = messages["2d"]["values"]
@@ -385,7 +426,7 @@ def calc_wbgt(messages):
     return wbgt
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_bgt(messages):
     t2m = messages["2t"]["values"]  # Kelvin
 
@@ -398,7 +439,7 @@ def calc_bgt(messages):
     return bgt
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_wbt(messages):
     t2m = messages["2t"]["values"]
     t2m = thermofeel.kelvin_to_celcius(t2m)
@@ -410,7 +451,7 @@ def calc_wbt(messages):
     return wbt
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_net(messages):
     t2m = messages["2t"]["values"]  # Kelvin
     t2d = messages["2d"]["values"]
@@ -423,7 +464,7 @@ def calc_net(messages):
     return net
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def calc_windchill(messages):
     t2m = messages["2t"]["values"]
 
@@ -454,7 +495,7 @@ def check_messages(msgs):
         assert ftime == m["forecast_datetime"]
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def output_grib(output, msg, paramid, values, missing=None):
     """Encode field in GRIB2"""
     grib = msg["grib"]
@@ -470,18 +511,21 @@ def output_grib(output, msg, paramid, values, missing=None):
 
 def ifs_step_intervals(step):
     """Computes the time integration interval for the IFS forecasting system given a forecast output step"""
-    assert step != 0 and step is not None
+    # assert step != 0 and step is not None
 
-    assert step > 0
+    # assert step > 0
     assert step <= 360
-
-    if step <= 144:
-        assert step % 3 == 0
+    if step > 0:
         return step - 3
     else:
-        if step <= 360:
-            assert step % 6 == 0
-            return step - 6
+        return step
+    # if step <= 144:
+    #    assert step % 3 == 0
+    #   return step - 3
+    # else:
+    #    if step <= 360:
+    #        assert step % 6 == 0
+    #        return step - 6
 
 
 def timestep_interval(messages):
@@ -495,7 +539,7 @@ def timestep_interval(messages):
     return time, step, step_begin, step_end
 
 
-@thermofeel.timer
+# @thermofeel.timer
 def process_step(args, msgs, output):
 
     check_messages(msgs)
