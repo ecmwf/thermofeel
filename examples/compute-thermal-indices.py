@@ -48,7 +48,7 @@ def calculate_mean_radiant_temperature_dsrp(ssrd, ssr, dsrp, strd,fdir, strr,cos
     returns Mean Radiant Temperature [K]
     https://link.springer.com/article/10.1007/s00484-020-01900-5
     """
-    dsw = ssrd-fdir
+    dsw = ssrd - fdir
     rsw = ssrd - ssr
     lur = strd - strr
 
@@ -303,7 +303,7 @@ def calc_mrt(messages):
      #   strr*f1,
      #   cossza=cossza*f1)
         # cossza=cossza * f2,  # de-accumulate time step integration
-    
+
 
     return mrt
 
