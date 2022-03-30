@@ -44,13 +44,13 @@ class TestThermalCalculator(unittest.TestCase):
         cossza = np.array([0.4])
         dsrp = tmf.approximate_dsrp(fdir, cossza)
         mrt = tmf.calculate_mean_radiant_temperature(
-            ssrd = ssrd / 3600,
-            ssr = ssr / 3600,
-            fdir = fdir / 3600,
-            strd = strd / 3600,
-            strr = strr / 3600,
-            cossza = cossza / 3600,
-            dsrp = dsrp / 3600
+            ssrd=ssrd / 3600,
+            ssr=ssr / 3600,
+            fdir=fdir / 3600,
+            strd=strd / 3600,
+            strr=strr / 3600,
+            cossza=cossza / 3600,
+            dsrp=dsrp / 3600,
         )
         # print(f"mrt {mrt}")
         assert mrt == pytest.approx(257.399, abs=1e-2)

@@ -58,7 +58,7 @@ class TestThermalCalculator(unittest.TestCase):
 
     def assert_equal(self, expected, result, decimal=6):
         self.assertequal = self.assertIsNone(
-            np.testing.assert_array_almost_equal(expected, result, decimal)            
+            np.testing.assert_array_almost_equal(expected, result, decimal)
         )
 
     def test_saturation_vapour_pressure(self):
