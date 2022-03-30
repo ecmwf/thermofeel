@@ -54,9 +54,11 @@ class TestThermalCalculator(unittest.TestCase):
         self.mrtr = np.loadtxt(data_file("mrtr.csv"))
         self.mrtw = np.loadtxt(data_file("mrtw.csv"))
 
+        self.dsrp = tmf.approximate_dsrp(self.fdir, self.cossza)
+
     def assert_equal(self, expected, result, decimal=6):
         self.assertequal = self.assertIsNone(
-            np.testing.assert_array_almost_equal(expected, result, decimal)
+            np.testing.assert_array_almost_equal(expected, result, decimal)            
         )
 
     def test_saturation_vapour_pressure(self):
@@ -76,15 +78,16 @@ class TestThermalCalculator(unittest.TestCase):
 
     def test_mean_radiant_temperature(self):
         mrtr = tmf.calculate_mean_radiant_temperature(
-            self.ssrd / 3600,
-            self.ssr / 3600,
-            self.fdir / 3600,
-            self.strd / 3600,
-            self.strr / 3600,
-            self.cossza / 3600,
+            ssrd=self.ssrd / 3600,
+            ssr=self.ssr / 3600,
+            dsrp=self.dsrp / 3600,
+            strd=self.strd / 3600,
+            fdir=self.fdir / 3600,
+            strr=self.strr / 3600,
+            cossza=self.cossza / 3600,
         )
         # np.savetxt("mrtr.csv", mrtr)
-        self.assert_equal(self.mrtr, mrtr)
+        self.assert_equal(self.mrtr, mrtr, 3)
 
     def test_utci(self):
         rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)

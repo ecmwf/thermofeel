@@ -42,16 +42,18 @@ class TestThermalCalculator(unittest.TestCase):
         strd = np.array([1061213])
         strr = np.array([-182697])
         cossza = np.array([0.4])
+        dsrp = tmf.approximate_dsrp(fdir, cossza)
         mrt = tmf.calculate_mean_radiant_temperature(
-            ssrd / 3600,
-            ssr / 3600,
-            fdir / 3600,
-            strd / 3600,
-            strr / 3600,
-            cossza / 3600,
+            ssrd = ssrd / 3600,
+            ssr = ssr / 3600,
+            fdir = fdir / 3600,
+            strd = strd / 3600,
+            strr = strr / 3600,
+            cossza = cossza / 3600,
+            dsrp = dsrp / 3600
         )
         # print(f"mrt {mrt}")
-        assert mrt == pytest.approx(262.81089323, abs=1e-5)
+        assert mrt == pytest.approx(257.399, abs=1e-2)
 
     def test_utci(self):
         t2mk = np.array([309.0])
