@@ -8,6 +8,8 @@
 
 import numpy as np
 
+import thermofeel as thermofeel
+
 # Lijigren WBGT
 global Pr, rair, diamglobe, emisglobe, diamwick, emiswick, ratio, cp
 
@@ -72,7 +74,7 @@ def emisatm(t2m, rh, ps):
 
     https://www.tandfonline.com/doi/abs/10.1080/15459620802310770
     """
-    esat = calculate_saturation_vapour_pressure(t2m)
+    esat = thermofeel.calculate_saturation_vapour_pressure(t2m)
 
     e = rh * 0.01 * (esat * 0.01)
     emis_atm = 0.575 * (e**0.143)
@@ -218,7 +220,7 @@ def wbt_lijigren(
     tref = t2m
     tsfc = t2m
     sza = np.arccos(cossza)
-    eair = rh * calculate_saturation_vapour_pressure(t2m)
+    eair = rh * thermofeel.calculate_saturation_vapour_pressure(t2m)
     twb_prev = td
     h = h_sphere_and_cylinder_in_air(tref, ps, va, diamglobe, diamwick, Pr, cp, rair)
     h = h[0]
@@ -239,7 +241,7 @@ def wbt_lijigren(
             + fdir * ((np.tan(sza) / np.pi) + 0.25 * dwick / lwick)
             + albsfc
         )
-        ewick = calculate_saturation_vapour_pressure(twb_prev)
+        ewick = thermofeel.calculate_saturation_vapour_pressure(twb_prev)
         density = ps * 100 / (rair * tref)
         Sc = viscosity(tref) / (density * diffusivity(t2m, ps))
         twb = (
@@ -253,4 +255,3 @@ def wbt_lijigren(
         i = i + 1
 
     return twb
-
