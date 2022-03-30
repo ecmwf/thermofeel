@@ -20,7 +20,6 @@ import eccodes
 import numpy as np
 
 import thermofeel as thermofeel
-import math
 
 UTCI_MIN_VALUE = thermofeel.celsius_to_kelvin(-80)
 UTCI_MAX_VALUE = thermofeel.celsius_to_kelvin(90)
@@ -35,43 +34,6 @@ results = {}
 misses = {}
 
 ###########################################################################################################
-to_radians = math.pi / 180
-def calculate_mean_radiant_temperature_dsrp(ssrd, ssr, dsrp, strd,fdir, strr,cossza):
-    """
-    mrt - Mean Radiant Temperature
-    :param ssrd: is surface solar radiation downwards [J/m^-2]
-    :param ssr: is surface net solar radiation [J/m^-2]
-    :param fdir: is Total sky direct solar radiation at surface [J/m^-2]
-    :param strd: is Surface thermal radiation downwards [J/m^-2]
-    :param strr: is Surface net thermal radiation [J/m^-2]
-    :param cossza: is cosine of solar zenith angle [degrees]
-    returns Mean Radiant Temperature [K]
-    https://link.springer.com/article/10.1007/s00484-020-01900-5
-    """
-    dsw = ssrd - fdir
-    rsw = ssrd - ssr
-    lur = strd - strr
-
-    # calculate fp projected factor area
-
-    gamma = np.arcsin(cossza) * 180 / np.pi
-    fp = 0.308 * np.cos(to_radians * gamma * 0.998 - (gamma * gamma / 50000))
-    Istar = dsrp
-
-    # calculate mean radiant temperature
-    mrt = np.power(
-        (
-            (1 / 0.0000000567)
-            * (
-                0.5 * strd
-                + 0.5 * lur
-                + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * Istar)
-            )
-        ),
-        0.25,
-    )
-
-    return mrt
 
 
 def field_stats(name, values):
@@ -213,6 +175,7 @@ def decode_grib(fpath):
 
 # @thermofeel.timer
 def calc_cossza_int(messages):
+
     dt = messages["2t"]["base_datetime"]
     time, step, begin, end = timestep_interval(messages)
 
@@ -229,6 +192,21 @@ def calc_cossza_int(messages):
     )
 
     return cossza
+
+
+# @thermofeel.timer
+def approximate_dsrp(messages):
+    """
+    In the absence of dsrp, approximate it with fdir and cossza.
+    Note this introduces some amoutn of error as cossza approaches zero
+    """
+    fdir = messages["fdir"]["values"]
+    cossza = calc_field("cossza", calc_cossza_int, messages)
+    # filter statement for solar zenith angle
+    csza_filter1 = np.where((cossza > 0.01))
+    dsrp = fdir
+    dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
+    return dsrp
 
 
 # @thermofeel.timer
@@ -278,32 +256,23 @@ def calc_mrt(messages):
 
     assert begin < end
 
+    dsrp = calc_field("dsrp", approximate_dsrp, messages)
     cossza = calc_field("cossza", calc_cossza_int, messages)
 
-    seconds_since_start_forecast = step * 3600
-    seconds_in_time_step = (end - begin) * 3600
+    seconds_in_time_step = (end - begin) * 3600  # steps are in hours
 
-    f1 = 1.0 / float(seconds_since_start_forecast)
-    f2 = 1.0 / float(seconds_in_time_step)
+    f = 1.0 / float(seconds_in_time_step)
 
     ssrd = messages["ssrd"]["values"]
     ssr = messages["ssr"]["values"]
     fdir = messages["fdir"]["values"]
-    dsrp= messages["dsrp"]["values"]
+    dsrp = messages["dsrp"]["values"]
     strd = messages["strd"]["values"]
     strr = messages["str"]["values"]
 
-    mrt = calculate_mean_radiant_temperature_dsrp(ssrd*f1, ssr*f1, dsrp*f1, strd*f1,fdir*f1, strr*f1,cossza*f1)
-
-    #mrt = thermofeel.calculate_mean_radiant_temperature(
-     #   ssrd* f1,  # de-accumulate since forecast start
-     #   ssr*f1,
-     #   fdir*f1,
-     #   strd*f1,
-     #   strr*f1,
-     #   cossza=cossza*f1)
-        # cossza=cossza * f2,  # de-accumulate time step integration
-
+    mrt = thermofeel.calculate_mean_radiant_temperature(
+        ssrd * f, ssr * f, dsrp * f, strd * f, fdir * f, strr * f, cossza * f
+    )
 
     return mrt
 
@@ -325,7 +294,7 @@ def calc_ws(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
 
-    ws = np.sqrt(u10 ** 2 + v10 ** 2)
+    ws = np.sqrt(u10**2 + v10**2)
 
     return ws
 
@@ -564,49 +533,49 @@ def process_step(args, msgs, output):
         ws = calc_field("ws", calc_ws, msgs)
         output_grib(output, template, "10", ws)
 
-    # Cosine of Solar Zenith Angle - shortName uvcossza
+    # Cosine of Solar Zenith Angle - shortName uvcossza - ECMWF product
     # TODO: 214001 only exists for GRIB1 -- but here we use it for GRIB2 (waiting for WMO)
     if args.cossza:
         cossza = calc_field("cossza", calc_cossza_int, msgs)
         output_grib(output, template, "214001", cossza)
 
-    # Mean Radiant Temperature - shortName mrt
+    # Mean Radiant Temperature - shortName mrt - ECMWF product
     if args.mrt:
         mrt = calc_field("mrt", calc_mrt, msgs)
         output_grib(output, template, "261002", mrt)
 
-    # Univeral Thermal Climate Index - shortName utci
+    # Univeral Thermal Climate Index - shortName utci - ECMWF product
     if args.utci:
         utci = calc_field("utci", calc_utci, msgs)
         output_grib(output, template, "261001", utci, missing=MISSING_VALUE)
 
-    # Heat Index (adjusted) - shortName heatx
+    # Heat Index (adjusted) - shortName heatx - ECMWF product
     if args.heatx:
         heatx = calc_field("heatx", calc_heatx, msgs)
         output_grib(output, template, "260004", heatx)
 
-    # Wind Chill factor - shortName wcf
+    # Wind Chill factor - shortName wcf - ECMWF product
     if args.windchill:
         windchill = calc_field("windchill", calc_windchill, msgs)
         output_grib(output, template, "260005", windchill)
 
-    # Apparent Temperature - shortName aptmp
+    # Apparent Temperature - shortName aptmp - ECMWF product
     if args.aptmp:
         aptmp = calc_field("aptmp", calc_aptmp, msgs)
         output_grib(output, template, "260255", aptmp)
 
-    # Relative humidity percent at 2m - shortName 2r
+    # Relative humidity percent at 2m - shortName 2r - ECMWF product
     if args.rhp:
         rhp = calc_field("rhp", calc_rhp, msgs)
         output_grib(output, template, "260242", rhp)
 
-    # Humidex - shortName hx
+    # Humidex - shortName hx - TO BE RELEASED as ECMWF product
     # TODO: 212001 is experimental GRIB code, update once WMO publishes
     if args.humidex:
         humidex = calc_field("humidex", calc_humidex, msgs)
         output_grib(output, template, "212001", humidex)
 
-    # Net Effective Temperature - shortName net
+    # Net Effective Temperature - shortName net - TO BE RELEASED as ECMWF product
     # TODO: 212002 is experimental GRIB code, update once WMO publishes
     if args.net:
         net = calc_field("net", calc_net, msgs)
@@ -618,13 +587,13 @@ def process_step(args, msgs, output):
         bgt = calc_field("bgt", calc_bgt, msgs)
         output_grib(output, template, "212003", bgt)
 
-    # Wet Bulb Temperature - shortName wbt
+    # Wet Bulb Temperature - shortName wbt - TO BE RELEASED as ECMWF product
     # TODO: 212004 is experimental GRIB code, update once WMO publishes
     if args.wbt:
         wbt = calc_field("wbt", calc_wbt, msgs)
         output_grib(output, template, "212004", wbt)
 
-    # Wet Bulb Globe Temperature - shortName wbgt
+    # Wet Bulb Globe Temperature - shortName wbgt - TO BE RELEASED as ECMWF product
     # TODO: 212005 is experimental GRIB code, update once WMO publishes
     if args.wbgt:  #
         wbgt = calc_field("wbgt", calc_wbgt, msgs)
