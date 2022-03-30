@@ -12,15 +12,22 @@ There are two different methods that will return slightly different values. This
 
 **Mean Radiant Temperature**
 
+Requires variables:
+#. ssrd is surface solar radiation downwards [J/m^-2]
+#. ssr is surface net solar radiation [J/m^-2]
+#. dsrp is direct radiation from the Sun [J/m^-2]
+#. strd is Surface thermal radiation downwards [J/m^-2]
+#. fdir is Total sky direct solar radiation at surface [J/m^-2]
+#. strr is Surface net thermal radiation [J/m^-2]
+#. cossza is cosine of solar zenith angle
+
 All the radiation variables are in :math:`J/{m}^{-2}` and the cosine of solar zenit angle in degrees. Please use numpy arrays.
 
 It returns the mean radiant temperature in Kelvin.
 
 .. code-block:: python
 
-    calculate_mean_radiant_temperature(surface_solar_radiation_downwards,surface_net_solar_radiation,
-    Total_sky_direct_solar_radiation_at_surface, Surface_thermal_radiation_downwards,Surface_net_thermal_radiation,
-    cosine_of_solar_zenith_angle)
+  calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza)
 
 **Mean Radiant Temperature from Globe Temperature**
 

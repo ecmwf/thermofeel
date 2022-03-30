@@ -292,17 +292,33 @@ def calculate_cos_solar_zenith_angle_integrated(
     return integral
 
 
+def approximate_dsrp(fdir, cossza):
+    """
+    Helper function to approximate dsrp from fdir and cossza
+    Note that this introduces large errors as cossza approaches zero.
+    Only use this approximation if dsrp is not available in your dataset.
+    :param fdir: is Total sky direct solar radiation at surface [J/m^-2]
+    :param cossza: is cosine of solar zenith angle [dimentionless]
+    returns direct radiation from the Sun [J/m^-2]
+    """
+    # filter statement for solar zenith angle to avoid division by zero.
+    csza_filter1 = np.where((cossza > 0.01))
+    dsrp = fdir  # for cossza <= 0.01, equals to fdir
+    dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
+    return dsrp
+
+
 @optnumba_jit
 def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza):
     """
     mrt - Mean Radiant Temperature
     :param ssrd: is surface solar radiation downwards [J/m^-2]
     :param ssr: is surface net solar radiation [J/m^-2]
-    :param fdir: is Total sky direct solar radiation at surface [J/m^-2]
-    :param strd: is Surface thermal radiation downwards [J/m^-2]
-    :param strr: is Surface net thermal radiation [J/m^-2]
     :param dsrp: is direct radiation from the Sun [J/m^-2]
-    :param cossza: is cosine of solar zenith angle [degrees]
+    :param strd: is Surface thermal radiation downwards [J/m^-2]
+    :param fdir: is Total sky direct solar radiation at surface [J/m^-2]
+    :param strr: is Surface net thermal radiation [J/m^-2]
+    :param cossza: is cosine of solar zenith angle [dimentionless]
     returns Mean Radiant Temperature [K]
     https://link.springer.com/article/10.1007/s00484-020-01900-5
     """

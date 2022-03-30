@@ -34,6 +34,7 @@ from thermofeel import (
     calculate_wind_chill,
     kelvin_to_celsius,
 )
+from thermofeel.thermofeel import approximate_dsrp
 
 # read in two netcdf files containing all the variables
 # to calculate the thermal indexes
@@ -64,8 +65,17 @@ cosszainstant = calculate_cos_solar_zenith_angle(
 cosszaintegrated = calculate_cos_solar_zenith_angle_integrated(
     lat=lat_mg, lon=lon_mg, y=2020, m=6, d=8, h=6, tbegin=0, tend=6
 )
+
+approx_dsrp = approximate_dsrp(fdir=fdir, cossza=cosszainstant)
+
 mrtinstant = calculate_mean_radiant_temperature(
-    ssrd=ssrd, ssr=ssr, fdir=fdir, strd=strd, strr=strr, cossza=cosszainstant
+    ssrd=ssrd,
+    ssr=ssr,
+    dsrp=approx_dsrp,
+    fdir=fdir,
+    strd=strd,
+    strr=strr,
+    cossza=cosszainstant,
 )
 mrtintegrate = calculate_mean_radiant_temperature(
     ssrd=ssrd, ssr=ssr, fdir=fdir, strd=strd, strr=strr, cossza=cosszaintegrated

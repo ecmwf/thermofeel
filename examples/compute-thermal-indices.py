@@ -202,10 +202,9 @@ def approximate_dsrp(messages):
     """
     fdir = messages["fdir"]["values"]
     cossza = calc_field("cossza", calc_cossza_int, messages)
-    # filter statement for solar zenith angle
-    csza_filter1 = np.where((cossza > 0.01))
-    dsrp = fdir
-    dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
+
+    dsrp = thermofeel.approximate_dsrp(fdir, cossza)
+
     return dsrp
 
 
@@ -256,8 +255,10 @@ def calc_mrt(messages):
 
     assert begin < end
 
-    dsrp = calc_field("dsrp", approximate_dsrp, messages)
     cossza = calc_field("cossza", calc_cossza_int, messages)
+
+    # will use dsrp if available, otherwise approximate it
+    dsrp = calc_field("dsrp", approximate_dsrp, messages)
 
     seconds_in_time_step = (end - begin) * 3600  # steps are in hours
 
