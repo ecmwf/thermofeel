@@ -89,7 +89,7 @@ def calculate_saturation_vapour_pressure(tk):
     """
     Calculate saturation vapour pressure over water
     :param tk: (float array) 2m temperature [K]
-     returns relative humidity [hPa]
+    returns relative humidity [hPa] == [mBar]
     http://www.thunderscientific.com/tech_info/reflibrary/its90formulas.pdf
     """
 
@@ -110,6 +110,34 @@ def calculate_saturation_vapour_pressure(tk):
     ess = np.exp(ess) * 0.01  # hPa
 
     return ess
+
+
+def calculate_saturation_vapour_pressure_multiphase(tk, phase):
+    """
+    Calculate saturation vapour pressure over water
+    :param tk: (float array) 2m temperature [K]
+    :param phase: 0 over liquid water and 1 over Ice
+    returns relative humidity [hPa] == [mBar]
+    Reference: Buck's (1981) approximation (eqn 3) of Wexler's (1976) formulae.
+    """
+    # float y, es;
+
+    es = 0
+    if phase == 0:  # over liquid water
+        y = (tk - 273.15) / (tk - 32.18)
+        es = 6.1121 * np.exp(17.502 * y)
+        # es = (1.0007 + (3.46E-6 * pres)) * es # correction for moist air, if pressure is available
+    else:  # over ice
+        y = (tk - 273.15) / (tk - 0.6)
+        es = 6.1115 * np.exp(22.452 * y)
+        # es = (1.0003 + (4.18E-6 * pres)) * es # correction for moist air, if pressure is available
+
+    es = (
+        1.004 * es
+    )  # correction for moist air, if pressure is not available; for pressure > 800 mb
+    # es = 1.0034 * es # correction for moist air, if pressure is not available; for pressure down to 200 mb
+
+    return es
 
 
 @optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
