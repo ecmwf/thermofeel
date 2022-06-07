@@ -326,7 +326,7 @@ def calculate_mean_radiant_temperature(ssrd, ssr, fdir, strd, strr, cossza):
     # calculate fp projected factor area
 
     gamma = np.arcsin(cossza) * 180 / np.pi
-    fp = 0.308 * np.cos(to_radians * gamma * 0.998 - (gamma * gamma / 50000))
+    fp = 0.308 * np.cos(to_radians * gamma * (0.998 - gamma * gamma / 50000))
 
     # filter statement for solar zenith angle
     csza_filter1 = np.where((cossza > 0.01))
