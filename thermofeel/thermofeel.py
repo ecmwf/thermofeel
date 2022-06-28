@@ -644,22 +644,21 @@ def calculate_utci(t2_k, va_ms, mrt_k, ehPa=None, td_k=None):
     return utci
 
 
-def calculate_wbgts(t2m):
+def calculate_wbgts(t2m, vap_pres):
     """
     wgbts - Wet Bulb Globe Temperature Simple
-    :param t2m: 2m temperature [K]
-    :param rh: relative humidity [pa]
+    :param t2m: 2m temperature [°C]
+    :param vap_pres: vapour pressure [hPa]
 
     https://link.springer.com/article/10.1007/s00484-011-0453-2
     http://www.bom.gov.au/info/thermal_stress/#approximation
     https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
+    coefficients from Willet and Sherwood doi:10.1002/joc.2257
 
     returns Wet Bulb Globe Temperature [°C]
     """
-    rh = calculate_saturation_vapour_pressure(t2m)
-    rh = kPa_to_hPa(rh)
     t2m = kelvin_to_celsius(t2m)
-    wbgts = 0.567 * t2m + 0.393 * rh + 3.38
+    wbgts = 0.567 * t2m + 0.393 * vap_pres + 3.94
     return wbgts
 
 
@@ -678,13 +677,13 @@ def calculate_wbt_dj(t2k, p, tdk, ept=False):
     # saturation vapour pressure
     esat = (
         np.exp(
-            -2991.2729 / t2k**2
+            -2991.2729 / t2k ** 2
             - 6017.0128 / t2k
             + 18.87643854
             - 0.028354721 * t2k
-            + 1.7838301 * 10**-5 * t2k**2
-            - 8.4150417 * 10**-10 * t2k**3
-            + 4.4412543 * 10**-13 * t2k**4
+            + 1.7838301 * 10 ** -5 * t2k ** 2
+            - 8.4150417 * 10 ** -10 * t2k ** 3
+            + 4.4412543 * 10 ** -13 * t2k ** 4
             + 2.858487 * np.log(t2k)
         )
         / 100
@@ -703,8 +702,8 @@ def calculate_wbt_dj(t2k, p, tdk, ept=False):
 
     oe = (
         t2k
-        * (1000 / p) ** (0.2854 * (1 - 0.28 * 10**-3 * w))
-        * np.exp((3.376 / tl - 0.00254) * w * (1 + 0.81 * 10**-3 * w))
+        * (1000 / p) ** (0.2854 * (1 - 0.28 * 10 ** -3 * w))
+        * np.exp((3.376 / tl - 0.00254) * w * (1 + 0.81 * 10 ** -3 * w))
     )
 
     if ept is True:
@@ -747,11 +746,11 @@ def calculate_bgt(t_k, mrt, va):
     https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
     """
 
-    f = (1.1e8 * va**0.6) / (0.98 * 0.15**0.4)
+    f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
     a = f / 2
-    b = -f * t_k - mrt**4
+    b = -f * t_k - mrt ** 4
     rt1 = 3 ** (1 / 3)
-    rt2 = np.sqrt(3) * np.sqrt(27 * a**4 - 16 * b**3) + 9 * a**2
+    rt2 = np.sqrt(3) * np.sqrt(27 * a ** 4 - 16 * b ** 3) + 9 * a ** 2
     rt3 = 2 * 2 ** (2 / 3) * b
     a = a.clip(min=0)
     bgt_quartic = -1 / 2 * np.sqrt(
@@ -811,8 +810,8 @@ def calculate_mrt_from_bgt(t2m, bgt, va):
     https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
     """
 
-    f = (1.1e8 * va**0.6) / (0.98 * 0.15**0.4)
-    bgt4 = bgt**4
+    f = (1.1e8 * va ** 0.6) / (0.98 * 0.15 ** 0.4)
+    bgt4 = bgt ** 4
     mrtc = bgt4 + f * (bgt - t2m)
     mrtc2 = np.sqrt(np.sqrt(mrtc))
     return kelvin_to_celsius(mrtc2)
@@ -847,7 +846,7 @@ def calculate_net_effective_temperature(t2m, va, td):
     rh = calculate_relative_humidity_percent(t2m, td)
     t2m = kelvin_to_celsius(t2m)
     rh = kPa_to_hPa(rh)
-    ditermeq = 1 / 1.76 + 1.4 * va**0.75
+    ditermeq = 1 / 1.76 + 1.4 * va ** 0.75
     net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
     return net
 
@@ -884,7 +883,7 @@ def calculate_wind_chill(t2m, va):
     """
     tc = t2m - 273.15  # kelvin_to_celsius(tk)
     va = va * 2.23694  # convert to miles per hour
-    windchill = 13.12 + 0.6215 * tc - 11.37 * va**0.16 + 0.3965 + tc + va**0.16
+    windchill = 13.12 + 0.6215 * tc - 11.37 * va ** 0.16 + 0.3965 + tc + va ** 0.16
     return windchill
 
 
@@ -919,10 +918,10 @@ def calculate_heat_index_simplified(t2m, rh=None):
         + hiarray[1] * t2m
         + hiarray[2] * rh
         - hiarray[3] * t2m * rh
-        - hiarray[4] * rh**2
-        + hiarray[5] * t2m**2 * rh
-        + hiarray[6] * t2m * rh**2
-        - hiarray[7] * t2m**2 * rh**2
+        - hiarray[4] * rh ** 2
+        + hiarray[5] * t2m ** 2 * rh
+        + hiarray[6] * t2m * rh ** 2
+        - hiarray[7] * t2m ** 2 * rh ** 2
     )
 
     return hi
@@ -959,11 +958,11 @@ def calculate_heat_index_adjusted(t2m, td):
         + hiarray[1] * t2m
         + hiarray[2] * rh
         - hiarray[3] * t2m * rh
-        - hiarray[4] * t2m**2
-        - hiarray[5] * rh**2
-        + hiarray[6] * t2m**2 * rh
-        + hiarray[7] * t2m * rh**2
-        - hiarray[8] * t2m**2 * rh**2
+        - hiarray[4] * t2m ** 2
+        - hiarray[5] * rh ** 2
+        + hiarray[6] * t2m ** 2 * rh
+        + hiarray[7] * t2m * rh ** 2
+        - hiarray[8] * t2m ** 2 * rh ** 2
     )
 
     hi_filter1 = np.where(t2m > 80)
