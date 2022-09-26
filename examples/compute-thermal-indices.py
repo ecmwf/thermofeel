@@ -571,10 +571,10 @@ def process_step(args, msgs, output):
         output_grib(output, template, "260242", rhp)
 
     # Humidex - shortName hx - TO BE RELEASED as ECMWF product
-    # TODO: 212001 is experimental GRIB code, update once WMO publishes
+    # TODO: 261016 is experimental GRIB code, update once WMO publishes
     if args.humidex:
-        humidex = calc_field("humidex", calc_humidex, msgs)
-        output_grib(output, template, "212001", humidex)
+        humidex = calc_field("hmdx", calc_humidex, msgs)
+        output_grib(output, template, "261016", humidex)
 
     # Net Effective Temperature - shortName net - TO BE RELEASED as ECMWF product
     # TODO: 212002 is experimental GRIB code, update once WMO publishes
@@ -595,10 +595,9 @@ def process_step(args, msgs, output):
         output_grib(output, template, "212004", wbt)
 
     # Wet Bulb Globe Temperature - shortName wbgt - TO BE RELEASED as ECMWF product
-    # TODO: 212005 is experimental GRIB code, update once WMO publishes
     if args.wbgt:  #
         wbgt = calc_field("wbgt", calc_wbgt, msgs)
-        output_grib(output, template, "212005", wbgt)
+        output_grib(output, template, "261014", wbgt)
 
     return step
 
@@ -636,11 +635,12 @@ def command_line_options():
         "--rhp", help="compute relative humidity percent", action="store_true"
     )
 
-    # TODO: these outputs are not yet in WMO GRIB2 recognised parameters
     parser.add_argument("--humidex", help="compute humidex", action="store_true")
     parser.add_argument(
         "--net", help="compute net effective temperature", action="store_true"
     )
+
+    # TODO: these outputs are not yet in WMO GRIB2 recognised parameters
     parser.add_argument(
         "--wbgt", help="compute Wet Bulb Globe Temperature", action="store_true"
     )
