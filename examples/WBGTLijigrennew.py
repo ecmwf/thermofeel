@@ -238,8 +238,10 @@ def bgt_lijigren(t2m, rh, ps, ssrd, fdir, cossza, va):
     # #     tglobe_prev[tg_filter] = 0.9 * tglobe_prev[tg_filter] + 0.1* tg[tg_filter]
     # #     print(np.average(tg))
     # #     i = i + 1
-    # # tg = np.power(0.5 * (eatm * np.power(t2m, 4)) + esfc * np.power(tsfc, 4) - h/(STEFANB*eglobe)*(tglobe_prev - t2m) + ssrd/(2.*STEFANB*eglobe)*(1.-albglobe) * (fdir*(1./(2.*cossza)-1.)+1.+ albsfc), 0.25)
-    # tg = np.power(0.5 * ((1+eatm) * np.power(t2m, 4)) - h/(STEFANB*eglobe)*(tglobe_prev - t2m) + ssrd/(2.*STEFANB*eglobe)*(1.-albglobe) * (fdir*(1./(2.*cossza)-1.)+1.+ albsfc), 0.25)
+    # # tg = np.power(0.5*(eatm * np.power(t2m, 4)) + esfc * np.power(tsfc, 4) - h/(STEFANB*eglobe)*(tglobe_prev - t2m)
+    #      + ssrd/(2.*STEFANB*eglobe)*(1.-albglobe) * (fdir*(1./(2.*cossza)-1.)+1.+ albsfc), 0.25)
+    # tg = np.power(0.5 * ((1+eatm) * np.power(t2m, 4)) - h/(STEFANB*eglobe)*(tglobe_prev - t2m)
+    #    + ssrd/(2.*STEFANB*eglobe)*(1.-albglobe) * (fdir*(1./(2.*cossza)-1.)+1.+ albsfc), 0.25)
     # tg_filter = np.where(np.abs(tg - tglobe_prev) < tg)
     # tglobe_prev[tg_filter] = 0.9 * tglobe_prev[tg_filter] + 0.1* tg[tg_filter]
     # print(np.average(tg))
