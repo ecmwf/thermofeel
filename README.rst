@@ -95,12 +95,12 @@ does it submit to any jurisdiction.
 Citing
 ======
 
-..
-  In publications, please use our paper in SoftwareX as the main citation for **thermofeel**.
-  to cite **thermofeel** as a publication please use:
-  Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2022
-  *thermofeel: a python thermal comfort indices library* Software X 
-  https://doi.org/10.1016/j.softx.2022.101005
+
+In publications, please use our paper in SoftwareX as the main citation for **thermofeel**.
+to cite **thermofeel** as a publication please use:
+Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2022
+*thermofeel: a python thermal comfort indices library* Software X 
+https://doi.org/10.1016/j.softx.2022.101005
 
 To cite **thermofeel** the code currently please use:
 Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2021
