@@ -841,7 +841,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     if rh is None:
         rh = calculate_saturation_vapour_pressure(t2m)
 
-    va = va * 4.87 / np.log10(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
+    va = va * 4.87 / np.log(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
     at = t2m + 0.33 * rh - 0.7 * va - 4
     at = kelvin_to_celsius(at)
 
