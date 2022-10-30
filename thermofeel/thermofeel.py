@@ -337,7 +337,18 @@ def approximate_dsrp(fdir, cossza):
 
 
 def calculate_dew_point_from_relative_humidity(rh, t2m):
-
+    """
+    The calculation of a dew point temperature at 2m from 
+    relative humidity in percent.
+    :param rh: is relative humidity [%]
+    :param t2m: is 2m temperature [K]
+    returns dew point temperature [K]
+    
+    Alduchov, O. A., and R. E. Eskridge, 1996: 
+    Improved Magnus' form approximation of saturation vapor pressure. 
+    J. Appl. Meteor., 35, 601–609.
+    https://doi.org/10.1175/1520-0450(1996)035<0601:IMFAOS>2.0.CO;2
+    """
     td = (
         243.04
         * (np.log(rh / 100) + ((17.625 * t2m) / (243.04 + t2m)))
@@ -695,57 +706,6 @@ def calculate_wbgts(t2m):
     return wbgts
 
 
-def calculate_wbt_dj(t2k, p, tdk, ept=False):
-    """
-    calculate wet globe temperature, with an approximation to Davis-Jones method
-    :param t2k: 2m temperature [K]
-    :param p: Surface pressure [mbar]
-    :param tdk: 2m  dew point temperature [K]
-    returns wet bulb temperature [°C]
-    https://www.nature.com/articles/nclimate1827#Sec2
-    """
-
-    rh = calculate_relative_humidity_percent(t2k=t2k, tdk=tdk)
-
-    # saturation vapour pressure
-    esat = (
-        np.exp(
-            -2991.2729 / t2k**2
-            - 6017.0128 / t2k
-            + 18.87643854
-            - 0.028354721 * t2k
-            + 1.7838301 * 10**-5 * t2k**2
-            - 8.4150417 * 10**-10 * t2k**3
-            + 4.4412543 * 10**-13 * t2k**4
-            + 2.858487 * np.log(t2k)
-        )
-        / 100
-    )
-
-    # saturation mixing ratio
-    wsat = 621.97 * esat * np.subtract(p, esat)
-
-    # mixing ratio
-    w = rh / 100 * wsat
-
-    # Lifting condensation temperature
-    tl = 1 / (1 / (t2k - 55) - np.log(rh / 100) / 2840) + 55
-
-    # equivilant potential temperature
-
-    oe = (
-        t2k
-        * (1000 / p) ** (0.2854 * (1 - 0.28 * 10**-3 * w))
-        * np.exp((3.376 / tl - 0.00254) * w * (1 + 0.81 * 10**-3 * w))
-    )
-
-    if ept is True:
-        return oe
-    else:
-        # calculate wbt
-        wbt = 45.114 - 51.489 * (oe / 273.15) ** -3.504
-        return wbt
-
 
 def calculate_wbt(tc, rh):
     """
@@ -805,21 +765,17 @@ def calculate_wbgt(t_k, mrt, va, td, p=None):
     :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [°C] ( Davies-Jones [K])
-    optional :param p: surface pressure [mbars] ( Davies-Jones [K])
+    :param td: dew point temperature [°C]
     returns wet bulb globe temperature [°C]
     https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
     """
 
     bgt_c = calculate_bgt(t_k, mrt, va)
 
-    if p is None:
-        rh = calculate_relative_humidity_percent(t_k, td)
-        t_c = kelvin_to_celsius(t_k)
-        tw_c = calculate_wbt(t_c, rh)
-    else:
-        wbt = calculate_wbt_dj(t2k=t_k, p=p, tdk=td)
-        tw_c = kelvin_to_celsius(wbt)
+    rh = calculate_relative_humidity_percent(t_k, td)
+    t_c = kelvin_to_celsius(t_k)
+    tw_c = calculate_wbt(t_c, rh)
+   
 
     wbgt = 0.7 * tw_c + 0.2 * bgt_c + 0.1 * t_c
     return wbgt
