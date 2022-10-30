@@ -336,6 +336,16 @@ def approximate_dsrp(fdir, cossza):
     return dsrp
 
 
+def calculate_dew_point_from_relative_humidity(rh, t2m):
+
+    td = (
+        243.04
+        * (np.log(rh / 100) + ((17.625 * t2m) / (243.04 + t2m)))
+        / (17.625 - np.log(rh / 100) - ((17.625 * t2m) / (243.04 + t2m)))
+    )
+    return td
+
+
 @optnumba_jit
 def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza):
     """
