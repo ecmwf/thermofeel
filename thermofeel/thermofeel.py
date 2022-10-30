@@ -699,10 +699,10 @@ def calculate_wbgts(t2m):
     https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
     returns Wet Bulb Globe Temperature [°C]
     """
-    rh = calculate_saturation_vapour_pressure(t2m)
-    rh = kPa_to_hPa(rh)
+    e = calculate_saturation_vapour_pressure(t2m)
+    e = kPa_to_hPa(e)
     t2m = kelvin_to_celsius(t2m)
-    wbgts = 0.567 * t2m + 0.393 * rh + 3.38
+    wbgts = 0.567 * t2m + 0.393 * e + 3.38
     return wbgts
 
 
