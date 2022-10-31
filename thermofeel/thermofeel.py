@@ -338,14 +338,14 @@ def approximate_dsrp(fdir, cossza):
 
 def calculate_dew_point_from_relative_humidity(rh, t2m):
     """
-    The calculation of a dew point temperature at 2m from 
+    The calculation of a dew point temperature at 2m from
     relative humidity in percent.
     :param rh: is relative humidity [%]
     :param t2m: is 2m temperature [K]
     returns dew point temperature [K]
-    
-    Alduchov, O. A., and R. E. Eskridge, 1996: 
-    Improved Magnus' form approximation of saturation vapor pressure. 
+
+    Alduchov, O. A., and R. E. Eskridge, 1996:
+    Improved Magnus' form approximation of saturation vapor pressure.
     J. Appl. Meteor., 35, 601–609.
     https://doi.org/10.1175/1520-0450(1996)035<0601:IMFAOS>2.0.CO;2
     """
@@ -706,7 +706,6 @@ def calculate_wbgts(t2m):
     return wbgts
 
 
-
 def calculate_wbt(tc, rh):
     """
     calculate wet globe temperature
@@ -775,7 +774,6 @@ def calculate_wbgt(t_k, mrt, va, td, p=None):
     rh = calculate_relative_humidity_percent(t_k, td)
     t_c = kelvin_to_celsius(t_k)
     tw_c = calculate_wbt(t_c, rh)
-   
 
     wbgt = 0.7 * tw_c + 0.2 * bgt_c + 0.1 * t_c
     return wbgt
