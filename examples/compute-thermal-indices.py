@@ -576,28 +576,31 @@ def process_step(args, msgs, output):
         humidex = calc_field("hmdx", calc_humidex, msgs)
         output_grib(output, template, "261016", humidex)
 
-    # Net Effective Temperature - shortName net - TO BE RELEASED as ECMWF product
+    # Normal Effective Temperature - shortName nefft - TO BE RELEASED as ECMWF product
     # TODO: 212002 is experimental GRIB code, update once WMO publishes
     if args.net:
         net = calc_field("net", calc_net, msgs)
-        output_grib(output, template, "212002", net)
+        output_grib(output, template, "261018", net)
 
     # Globe Temperature - shortName gt
     # TODO: 212003 is experimental GRIB code, update once WMO publishes
     if args.bgt:
         bgt = calc_field("bgt", calc_bgt, msgs)
-        output_grib(output, template, "212003", bgt)
+        output_grib(output, template, "261015", bgt)
 
-    # Wet Bulb Temperature - shortName wbt - TO BE RELEASED as ECMWF product
+    # Wet-bulb potential temperature - shortName wbt - TO BE RELEASED as ECMWF product
     # TODO: 212004 is experimental GRIB code, update once WMO publishes
     if args.wbt:
         wbt = calc_field("wbt", calc_wbt, msgs)
-        output_grib(output, template, "212004", wbt)
+        output_grib(output, template, "261022", wbt) 
 
     # Wet Bulb Globe Temperature - shortName wbgt - TO BE RELEASED as ECMWF product
     if args.wbgt:  #
         wbgt = calc_field("wbgt", calc_wbgt, msgs)
         output_grib(output, template, "261014", wbgt)
+
+    # effective temperature 261017
+    # standard effective temperature 261019
 
     return step
 
@@ -658,9 +661,9 @@ def main():
 
     args = command_line_options()
 
-    # print(f"Thermofeel version: {thermofeel.__version__}")
-    # print(f"Python version: {sys.version}")
-    # print(f"Numpy version: {np.version.version}")
+    print(f"Thermofeel version: {thermofeel.__version__}")
+    print(f"Python version: {sys.version}")
+    print(f"Numpy version: {np.version.version}")
     # np.show_config()
 
     output = open(args.output, "wb")
