@@ -592,7 +592,7 @@ def process_step(args, msgs, output):
     # TODO: 212004 is experimental GRIB code, update once WMO publishes
     if args.wbt:
         wbt = calc_field("wbt", calc_wbt, msgs)
-        output_grib(output, template, "261022", wbt) 
+        output_grib(output, template, "261022", wbt)
 
     # Wet Bulb Globe Temperature - shortName wbgt - TO BE RELEASED as ECMWF product
     if args.wbgt:  #
