@@ -764,7 +764,7 @@ def calculate_wbgt(t_k, mrt, va, td, p=None):
     :param t_k: 2m temperature [K]
     :param mrt: mean radiant temperature [K]
     :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [°C]
+    :param td: dew point temperature [K]
     returns wet bulb globe temperature [°C]
     https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
     """
@@ -785,7 +785,7 @@ def calculate_mrt_from_bgt(t2m, bgt, va):
     :param t2m: 2m temperature [K]
     :param bgt: bulb globe temperature in Kelvin [K]
     :param va: wind speed at 10 meters [m/s]
-    returns mean radiant temperature [K]
+    returns mean radiant temperature [C]
     https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
     """
 
@@ -833,7 +833,7 @@ def calculate_apparent_temperature(t2m, va, rh=None):
     :param t2m: 2m Temperature [K]
     :param va: Wind speed at 10 meters [m/s]
     :param rh: Relative Humidity [pa]
-    returns apparent temperature [K]
+    returns apparent temperature [C]
     https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
     """
     if rh is None:
