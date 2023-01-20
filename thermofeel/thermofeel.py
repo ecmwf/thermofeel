@@ -105,7 +105,7 @@ def calculate_saturation_vapour_pressure(tk):
     ]
     ess = g[7] * np.log(tk)
     for i in range(7):
-        ess += g[i] * np.power(tk, (i - 2))
+        ess = ess + g[i] * np.power(tk, (i - 2))
 
     ess = np.exp(ess) * 0.01  # hPa
 
@@ -308,12 +308,12 @@ def calculate_cos_solar_zenith_angle_integrated(
         jacob = deltat / 2.0
 
         w = jacob * W
-        w /= tend - tbegin  # average of integral
+        w = w / (tend - tbegin)  # average of integral
         t = jacob * E
-        t += (tf + ti) / 2.0
+        t = t + (tf + ti) / 2.0
 
         for n in range(len(w)):
-            integral += w[n] * calculate_cos_solar_zenith_angle(
+            integral = integral + w[n] * calculate_cos_solar_zenith_angle(
                 lat=lat, lon=lon, y=y, m=m, d=d, h=(h + t[n])
             )
 
