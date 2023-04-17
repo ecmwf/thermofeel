@@ -804,7 +804,7 @@ def calculate_humidex(t2m, td):
     returns humidex [°C]
     http://www.csgnetwork.com/canhumidexcalc.html
     """
-    e = 6.11 * np.exp(5417.7530 * ((1 / t2m) - (1 / td)))
+    e = 6.11 * np.exp(5417.7530 * ((1 / 273.15) - (1 / td)))
     h = 0.5555 * (e - 10.0)
     humidex = (t2m + h) - 273.15
     return humidex
