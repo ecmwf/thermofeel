@@ -14,3 +14,4 @@ docs/build/*
 *.pyc
 *.egg-info/
 .vscode/
+thermofeel.code-workspace

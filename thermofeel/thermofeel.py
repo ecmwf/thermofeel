@@ -10,23 +10,23 @@
   thermofeel is a library to calculate human thermal comfort indexes.
     Currently calculates the thermal indexes:
     * Universal Thermal Climate Index
-    * Mean Radiant Temperature
-    * Mean Radiant Temperature from Wet Bulb Globe Temperature
-    * Heat Index Simplified
-    * Heat Index Adjusted
-    * Humidex
     * Apparent Temperature
+    * Heat Index Adjusted
+    * Heat Index Simplified
+    * Humidex
+    * Normal Effective Temperature
+    * Wet Bulb Globe Temperature
+    * Wet Bulb Globe Temperature Simple
     * Wind Chill
-    * Normal Effective Temperature (NET)
     In support of the above indexes, it also calculates:
-    * Solar Declination Angle
-    * Solar Zenith Angle
+    * Globe Temperature
+    * Mean Radiant Temperature
+    * Mean Radiant Temperature from Globe Temperature
     * Relative Humidity Percentage
     * Saturation vapour pressure
-    * Wet Bulb Globe Temperature Simple
-    * Wet Bulb Globe Temperature
-    * Theoretical Wet Bulb Temperature
-    * Globe Temperature
+    * Solar Declination Angle
+    * Solar Zenith Angle
+    * Wet Bulb Temperature
   """
 
 import math
@@ -65,32 +65,32 @@ def solar_declination_angle(jd, h):
 
 
 @optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
-def calculate_relative_humidity_percent(t2k, tdk):
+def calculate_relative_humidity_percent(t2_k, td_k):
     """
-    Calculate relative humidity in percent
-    :param t2k: (float array) 2m temperature [K]
-    :param tdk: (float array) dew point temperature [K]
-    returns relative humidity [%]
+    Relative Humidity in percent
+        :param t2_k: (float array) 2m temperature [K]
+        :param td_k: (float array) dew point temperature [K]
+        returns relative humidity [%]
     """
 
-    t2c = t2k - 273.15
-    tdc = tdk - 273.15
-
+    t2_c = kelvin_to_celsius(t2_k)
+    td_c = kelvin_to_celsius(td_k)
     # saturated vapour pressure
-    es = 6.11 * 10.0 ** (7.5 * t2c / (237.3 + t2c))
+    es = 6.11 * 10.0 ** (7.5 * t2_c / (237.3 + t2_c))
     # vapour pressure
-    e = 6.11 * 10.0 ** (7.5 * tdc / (237.3 + tdc))
+    e = 6.11 * 10.0 ** (7.5 * td_c / (237.3 + td_c))
     rh = (e / es) * 100
     return rh
 
 
 @optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
-def calculate_saturation_vapour_pressure(tk):
+def calculate_saturation_vapour_pressure(t2_k):
     """
-    Calculate saturation vapour pressure over water
-    :param tk: (float array) 2m temperature [K]
-    returns relative humidity [hPa] == [mBar]
-    http://www.thunderscientific.com/tech_info/reflibrary/its90formulas.pdf
+    Saturation vapour pressure over water
+        :param t2_k: (float array) 2m temperature [K]
+        returns saturation vapor pressure over water in the pure phase [hPa] == [mBar]
+    Reference: Hardy (1998)
+    https://www.decatur.de/javascript/dew/resources/its90formulas.pdf
     """
 
     g = [
@@ -103,57 +103,78 @@ def calculate_saturation_vapour_pressure(tk):
         -1.8680009e-13,
         2.7150305,
     ]
-    ess = g[7] * np.log(tk)
+    ess = g[7] * np.log(t2_k)
     for i in range(7):
-        ess += g[i] * np.power(tk, (i - 2))
+        ess += g[i] * np.power(t2_k, (i - 2))
 
     ess = np.exp(ess) * 0.01  # hPa
 
     return ess
 
 
-def calculate_saturation_vapour_pressure_multiphase(tk, phase):
+def calculate_saturation_vapour_pressure_multiphase(t2_k, phase):
     """
-    Calculate saturation vapour pressure over water
-    :param tk: (float array) 2m temperature [K]
-    :param phase: 0 over liquid water and 1 over Ice
-    returns relative humidity [hPa] == [mBar]
-    Reference: Buck's (1981) approximation (eqn 3) of Wexler's (1976) formulae.
+    Saturation vapour pressure over liquid water and ice
+        :param t2_k: (float array) 2m temperature [K]
+        :param phase: 0 over liquid water and 1 over ice
+        returns pressure of water vapor over a surface of liquid water or ice [hPa] == [mBar]
+    Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018)
+    https://doi.org/10.21957/4whwo8jw0
     """
-    # float y, es;
 
-    es = 0
-    if phase == 0:  # over liquid water
-        y = (tk - 273.15) / (tk - 32.18)
-        es = 6.1121 * np.exp(17.502 * y)
-        # es = (1.0007 + (3.46E-6 * pres)) * es # correction for moist air, if pressure is available
-    else:  # over ice
-        y = (tk - 273.15) / (tk - 0.6)
-        es = 6.1115 * np.exp(22.452 * y)
-        # es = (1.0003 + (4.18E-6 * pres)) * es # correction for moist air, if pressure is available
-
-    es = (
-        1.004 * es
-    )  # correction for moist air, if pressure is not available; for pressure > 800 mb
-    # es = 1.0034 * es # correction for moist air, if pressure is not available; for pressure down to 200 mb
+    es = np.zeros_like(t2_k)
+    y = (t2_k - 273.16) / (t2_k - 32.19) # over liquid water
+    es[phase == 0] = 6.1121 * np.exp(17.502 * y[phase == 0])
+    y = (t2_k - 273.16) / (t2_k + 0.7)   # over ice
+    es[phase == 1] = 6.1121 * np.exp(22.587 * y[phase == 1])
 
     return es
+
+def calculate_nonsaturation_vapour_pressure(t2_k, rh):
+    """
+    Non saturated vapour pressure
+        :param t2_k: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity percentage [%]
+        returns non saturated vapor pressure [hPa] == [mBar]
+    Reference: Bureau of Meteorology (2010)
+    http://www.bom.gov.au/info/thermal_stress/#approximation
+    """
+
+    t2_c = kelvin_to_celsius(t2_k)
+    ens = rh/100 * 6.105 * np.exp(17.27 * t2_c / (237.7+t2_c))
+
+    return ens
+
+def scale_windspeed(va, h):
+    """
+    Scaling wind speed from 10 metres to height h
+        :param va: (float array) 10m wind speed [m/s]
+        :param h: (float array) height at which wind speed needs to be scaled [m]
+        returns wind speed at height h
+    Reference: Bröde et al. (2012)
+    https://doi.org/10.1007/s00484-011-0454-1
+    """
+    c = 1 / np.log10(10/0.01) #
+    c = 0.333333333333
+    vh = va * np.log10(h/0.01) * c
+
+    return vh
 
 
 @optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
-    calculate solar zenith angle
-    :param h: hour [int]
-    :param lat: (float array) latitude [degrees]
-    :param lon: (float array) longitude [degrees]
-    :param y: year [int]
-    :param m: month [int]
-    :param d: day [int]
-    https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
-    see also:
-    http://answers.google.com/answers/threadview/id/782886.html
-    returns cosine of the solar zenith angle (all values, including negatives)
+    Solar zenith angle
+        :param h: hour [int]
+        :param lat: (float array) latitude [degrees]
+        :param lon: (float array) longitude [degrees]
+        :param y: year [int]
+        :param m: month [int]
+        :param d: day [int]
+        returns cosine of the solar zenith angle (all values, including negatives)
+    Reference: Hogan and Hirahara (2015)
+    https://doi.org/10.1002/2015GL066868
+    see also: http://answers.google.com/answers/threadview/id/782886.html
     """
 
     # convert to julian days counting from the beginning of the year
@@ -195,6 +216,7 @@ def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
         + 0.084798 * math.sin(3 * grad)
     )
     # time correction in [ h.degrees ]
+
     tc = (
         0.004297
         + 0.107029 * math.cos(grad)
@@ -220,17 +242,17 @@ def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
 
 def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
     """
-    calculate solar zenith angle
-    :param h: hour [int]
-    :param lat: (float array) latitude [degrees]
-    :param lon: (float array) longitude [degrees]
-    :param y: year [int]
-    :param m: month [int]
-    :param d: day [int]
-    https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
-    see also:
-    http://answers.google.com/answers/threadview/id/782886.html
-    returns cosine of the solar zenith angle (all values, including negatives)
+    Solar zenith angle
+        :param h: hour [int]
+        :param lat: (float array) latitude [degrees]
+        :param lon: (float array) longitude [degrees]
+        :param y: year [int]
+        :param m: month [int]
+        :param d: day [int]
+        returns cosine of the solar zenith angle (all values, including negatives)
+    Reference: Hogan and Hirahara (2015)
+    https://doi.org/10.1002/2015GL066868
+    see also: http://answers.google.com/answers/threadview/id/782886.html
     """
     # we separate the function for clipping the negative values since numba doesn't support clip (yet)
     csza = calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d)
@@ -241,20 +263,22 @@ def calculate_cos_solar_zenith_angle_integrated(
     lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=1, integration_order=3
 ):
     """
-    calculate average of solar zenith angle based on numerical integration using 3 point gauss integration rule
-    :param lat: (int array) latitude [degrees]
-    :param lon: (int array) longitude [degrees]
-    :param y: year [int]
-    :param m: month [int]
-    :param d: day [int]
-    :param h: hour [int]
-    :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
-    :param tend:  offset in hours from forecast time to end of time interval for integration [int]
-    :param intervals_per_hour:  number of time intregrations per hour [int]
-    :param integration order:  order of gauss integration [int] valid = (1, 2, 3, 4)
-    https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1002/2015GL066868
-    This uses Gaussian numerical integration. See https://en.wikipedia.org/wiki/Gaussian_quadrature
-    returns average of cosine of the solar zenith angle during interval [degrees]
+    Average of solar zenith angle based on numerical integration using the 3 point gauss integration rule
+        :param lat: (int array) latitude [degrees]
+        :param lon: (int array) longitude [degrees]
+        :param y: year [int]
+        :param m: month [int]
+        :param d: day [int]
+        :param h: hour [int]
+        :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
+        :param tend: offset in hours from forecast time to end of time interval for integration [int]
+        :param intervals_per_hour: number of time integrations per hour [int]
+        :param integration order: order of gauss integration [int] valid = (1, 2, 3, 4)
+        returns average of cosine of the solar zenith angle during interval [degrees]
+    Reference: Hogan and Hirahara (2015), Brimicombe et al. (2022)
+    https://doi.org/10.1002/2015GL066868
+    https://doi.org/10.21957/o7pcu1x2b
+    This function uses Gaussian numerical integration: https://en.wikipedia.org/wiki/Gaussian_quadrature
     """
 
     # Gauss-Integration coefficients
@@ -320,55 +344,53 @@ def calculate_cos_solar_zenith_angle_integrated(
     return integral
 
 
-def approximate_dsrp(fdir, cossza):
+def approximate_dsrp(fdir, cossza, threshold=0.01):
     """
     Helper function to approximate dsrp from fdir and cossza
-    Note that this introduces large errors as cossza approaches zero.
-    Only use this approximation if dsrp is not available in your dataset.
-    :param fdir: is Total sky direct solar radiation at surface [W m-2]
-    :param cossza: is cosine of solar zenith angle [dimentionless]
-    returns direct radiation from the Sun [W m-2]
+    Note that the function introduces large errors as cossza approaches zero.
+    Only use if dsrp is not available in your dataset.
+        :param fdir: (float array) total sky direct solar radiation at surface [W m-2]
+        :param cossza: (float array) cosine of solar zenith angle [dimentionless]
+        returns direct radiation from the Sun [W m-2]
     """
     # filter statement for solar zenith angle to avoid division by zero.
-    csza_filter1 = np.where((cossza > 0.01))
-    dsrp = fdir  # for cossza <= 0.01, equals to fdir
+    csza_filter1 = np.where((cossza > threshold))
+    dsrp = np.copy(fdir)     # dsrp = fdir for cossza <= 0.01, equals to fdir
     dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
     return dsrp
 
 
-def calculate_dew_point_from_relative_humidity(rh, t2m):
+def calculate_dew_point_from_relative_humidity(rh, t2_k):
     """
-    The calculation of a dew point temperature at 2m from
-    relative humidity in percent.
-    :param rh: is relative humidity [%]
-    :param t2m: is 2m temperature [K]
-    returns dew point temperature [K]
-
-    Alduchov, O. A., and R. E. Eskridge, 1996:
-    Improved Magnus' form approximation of saturation vapor pressure.
-    J. Appl. Meteor., 35, 601–609.
+    Dew point temperature at 2m from relative humidity in percent
+        :param rh: (float array) relative humidity [%]
+        :param t2_k: (float array) 2m temperature [K]
+        returns dew point temperature [K]
+    Reference: Alduchov and Eskridge (1996)
     https://doi.org/10.1175/1520-0450(1996)035<0601:IMFAOS>2.0.CO;2
     """
-    td = (
+    t2_c = kelvin_to_celsius(t2_k)
+    td_c = (
         243.04
-        * (np.log(rh / 100) + ((17.625 * t2m) / (243.04 + t2m)))
-        / (17.625 - np.log(rh / 100) - ((17.625 * t2m) / (243.04 + t2m)))
+        * (np.log(rh / 100) + ((17.625 * t2_c) / (243.04 + t2_c)))
+        / (17.625 - np.log(rh / 100) - ((17.625 * t2_c) / (243.04 + t2_c)))
     )
-    return td
-
+    td_k = celsius_to_kelvin(td_c)
+    return td_k
 
 @optnumba_jit
 def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza):
     """
-    mrt - Mean Radiant Temperature
-    :param ssrd: is surface solar radiation downwards [W m-2]
-    :param ssr: is surface net solar radiation [W m-2]
-    :param dsrp: is direct radiation from the Sun [W m-2]
-    :param strd: is Surface thermal radiation downwards [W m-2]
-    :param fdir: is Total sky direct solar radiation at surface [W m-2]
-    :param strr: is Surface net thermal radiation [W m-2]
-    :param cossza: is cosine of solar zenith angle [dimentionless]
-    returns Mean Radiant Temperature [K]
+    MRT - Mean Radiant Temperature
+        :param ssrd: (float array) surface solar radiation downwards [W m-2]
+        :param ssr: (float array) surface net solar radiation [W m-2]
+        :param dsrp: (float array) direct solar radiation [W m-2]
+        :param strd: (float array) surface thermal radiation downwards [W m-2]
+        :param fdir: (float array) total sky direct solar radiation at surface [W m-2]
+        :param strr: (float array) surface net thermal radiation [W m-2]
+        :param cossza: (float array) cosine of solar zenith angle [dimentionless]
+        returns mean radiant temperature [K]
+    Reference: Di Napoli et al. (2020)
     https://link.springer.com/article/10.1007/s00484-020-01900-5
     """
 
@@ -659,259 +681,301 @@ def calculate_utci_polynomial(t2m, mrt, va, rh):
     return utci
 
 
-def calculate_utci(t2_k, va_ms, mrt_k, ehPa=None, td_k=None):
+def calculate_utci(t2_k, va, mrt, td_k=None, ehPa=None):
     """
-    UTCI
-    :param t2_k: (float array) is 2m temperature [K]
-    :param va_ms: (float array) is wind speed at 10 meters [m/s]
-    :param mrt_k:(float array) is mean radiant temperature [K]
-    :param ehPa: (float array) is water vapour pressure [hPa]
-    :param td_k: (float array) is 2m dew point temperature [K]
-    Calculate UTCI with a 6th order polynomial approximation according to:
-    Brode, P. et al. Deriving the operational procedure for the
-    Universal Thermal Climate Index (UTCI). Int J Biometeorol (2012) 56: 48.1
-    returns UTCI [°C]
+    UTCI - Universal Thermal Climate Index
+        :param t2_k: (float array) is 2m temperature [K]
+        :param va: (float array) is wind speed at 10 meters [m/s]
+        :param mrt: (float array) is mean radiant temperature [K]
+        :param td_k: (float array) is 2m dew point temperature [K]
+        :param ehPa: (float array) is water vapour pressure [hPa]
+    returns UTCI [K]
+    Reference: Brode et al. (2012)
+    https://doi.org/10.1007/s00484-011-0454-1
     """
 
     if ehPa is not None:
-        rh = ehPa / 10.0  # rh in kPa
+        kPa = ehPa / 10.0  # water vapour pressure in kPa
     else:
         if td_k is not None:
             rh_pc = calculate_relative_humidity_percent(t2_k, td_k)
             ehPa = calculate_saturation_vapour_pressure(t2_k) * rh_pc / 100.0
-            rh = ehPa / 10.0  # rh in kPa
+            kPa = ehPa / 10.0  # water vapour pressure in kPa
         else:
-            raise ValueError("Missing input e_hPa or td_k")
+            raise ValueError("Missing input ehPa or td_k")
 
-    t2c = kelvin_to_celsius(t2_k)  # polynomial approx. is in Celsius
-    mrt = kelvin_to_celsius(mrt_k)  # polynomial approx. is in Celsius
+    t2_c = kelvin_to_celsius(t2_k)  # polynomial approx. is in Celsius
+    mrt_c = kelvin_to_celsius(mrt)  # polynomial approx. is in Celsius
 
-    utci = calculate_utci_polynomial(t2c, mrt, va_ms, rh)
-    return utci
+    utci = calculate_utci_polynomial(t2_c, mrt_c, va, kPa)
+    utci_k = celsius_to_kelvin(utci)
+
+    return utci_k
 
 
-def calculate_wbgts(t2m):
+def calculate_wbgt_simple(t2_k, rh):
     """
-    wgbts - Wet Bulb Globe Temperature Simple
-    :param t2m: 2m temperature [K]
-    https://link.springer.com/article/10.1007/s00484-011-0453-2
-    http://www.bom.gov.au/info/thermal_stress/#approximation
+    WBGT - Wet Bulb Globe Temperature computed by a the simpler algorithm
+        :param t2_k: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity percentage [%]
+        returns Wet Bulb Globe Temperature [K]
+    Reference: ACSM (1984)
+    https://doi.org/10.1080/00913847.1984.11701899
+    See also: http://www.bom.gov.au/info/thermal_stress/#approximation
     https://www.jstage.jst.go.jp/article/indhealth/50/4/50_MS1352/_pdf
-    returns Wet Bulb Globe Temperature [°C]
     """
-    e = calculate_saturation_vapour_pressure(t2m)
-    e = kPa_to_hPa(e)
-    t2m = kelvin_to_celsius(t2m)
-    wbgts = 0.567 * t2m + 0.393 * e + 3.38
-    return wbgts
+    t2_c = kelvin_to_celsius(t2_k)
+    e = calculate_nonsaturation_vapour_pressure(t2_k, rh)
+    wbgt = 0.567 * t2_c + 0.393 * e + 3.94
+    wbgt_k = celsius_to_kelvin(wbgt)
+
+    return wbgt_k
 
 
-def calculate_wbt(tc, rh):
+def calculate_wbt(t2_k, rh):
     """
-    calculate wet globe temperature
-    :param tc: 2m temperature [°C]
-    :param rh: relative humidity percentage[%]
-    returns wet bulb temperature [°C]
-    https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
+    Wet Bulb Temperature
+        :param t2_k: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity percentage [%]
+        returns wet bulb temperature [K]
+    Reference: Stull (2011)
+    https://doi.org/10.1175/JAMC-D-11-0143.1
     """
-
+    t2_c = kelvin_to_celsius(t2_k)
     tw = (
-        tc * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
-        + np.arctan(tc + rh)
+        t2_c * np.arctan(0.151977 * np.sqrt(rh + 8.313659))
+        + np.arctan(t2_c + rh)
         - np.arctan(rh - 1.676331)
         + 0.00391838 * (rh) ** (3 / 2) * np.arctan(0.023101 * rh)
         - 4.686035
     )
-    return tw
+    tw_k = celsius_to_kelvin(tw)
 
+    return tw_k
 
-def calculate_bgt(t_k, mrt, va):
+# @timer
+def calculate_bgt(t2_k, mrt, va):
     """
-    calculate globe temperature
-    :param t_k: 2m temperature [K]
-    :param mrt: mean radiant temperature [K]
-    :param va: wind speed at 10 meters [m/s]
-    returns bulb globe temperature [°C]
-    https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
+    Globe temperature
+        :param t2_k: (float array) 2m temperature [K]
+        :param mrt: (float array) mean radiant temperature [K]
+        :param va: (float array) wind speed at 10 meters [m/s]
+        returns globe temperature [K]
+    Reference: Guo et al. 2018
+    https://doi.org/10.1016/j.enbuild.2018.08.029
     """
+    v = scale_windspeed(va, 1.1) # formula requires wind speed at 1.1m (i.e., at the level of the globe)
 
-    f = (1.1e8 * va**0.6) / (0.98 * 0.15**0.4)
-    a = f / 2
-    b = -f * t_k - mrt**4
-    rt1 = 3 ** (1 / 3)
-    rt2 = np.sqrt(3) * np.sqrt(27 * a**4 - 16 * b**3) + 9 * a**2
-    rt3 = 2 * 2 ** (2 / 3) * b
-    a = a.clip(min=0)
-    bgt_quartic = -1 / 2 * np.sqrt(
-        rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-    ) + 1 / 2 * np.sqrt(
-        (4 * a)
-        / np.sqrt(
-            rt3 / (rt1 * rt2 ** (1 / 3))
-            + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-        )
-        - (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-        - rt3 / (rt1 * rt2 ** (1 / 3))
-    )
+    # a = 1
+    d = (1.1e8 * v**0.6) / (0.95 * 0.15**0.4)
+    e = - (mrt**4) - d*t2_k
 
-    bgt_c = kelvin_to_celsius(bgt_quartic)
-    return bgt_c
+    q = 12*e
+    s = 27*(d**2)
+    delta = ((s + np.sqrt(s**2 - 4 * (q**3))) / 2)**(1/3)
+    Q = 0.5 * np.sqrt((1/3) * (delta + q/delta))
+    
+    bgt = - Q + 0.5 * np.sqrt( - 4 * (Q**2) + d/Q)
 
+    # f = (1.1e8 * va**0.6) / (0.95 * 0.15**0.4)
+    # a = f / 2
+    # b = -f * t2_k - mrt**4
+    # rt1 = 3 ** (1 / 3)
+    # rt2 = np.sqrt(3) * np.sqrt(27 * a**4 - 16 * b**3) + 9 * a**2
+    # rt3 = 2 * 2 ** (2 / 3) * b
+    # a = a.clip(min=0)
+    # bgt = -1 / 2 * np.sqrt(
+    #     rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
+    # ) + 1 / 2 * np.sqrt(
+    #     (4 * a)
+    #     / np.sqrt(
+    #         rt3 / (rt1 * rt2 ** (1 / 3))
+    #         + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
+    #     )
+    #     - (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
+    #     - rt3 / (rt1 * rt2 ** (1 / 3))
+    # )
 
-def calculate_wbgt(t_k, mrt, va, td, p=None):
+    return bgt
+
+def calculate_wbgt(t2_k, mrt, va, td_k):
     """
-    calculate wet bulb globe temperature
-    :param t_k: 2m temperature [K]
-    :param mrt: mean radiant temperature [K]
-    :param va: wind speed at 10 meters [m/s]
-    :param td: dew point temperature [K]
-    returns wet bulb globe temperature [°C]
-    https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
-    """
-
-    bgt_c = calculate_bgt(t_k, mrt, va)
-
-    rh = calculate_relative_humidity_percent(t_k, td)
-    t_c = kelvin_to_celsius(t_k)
-    tw_c = calculate_wbt(t_c, rh)
-
-    wbgt = 0.7 * tw_c + 0.2 * bgt_c + 0.1 * t_c
-    return wbgt
-
-
-def calculate_mrt_from_bgt(t2m, bgt, va):
-    """
-    calculate mean radiant temperature from wet bulb globe temperature
-    :param t2m: 2m temperature [K]
-    :param bgt: bulb globe temperature in Kelvin [K]
-    :param va: wind speed at 10 meters [m/s]
-    returns mean radiant temperature [C]
-    https://www.sciencedirect.com/science/article/abs/pii/S0378778817335971?via%3Dihub
+    WBGT - Wet Bulb Globe Temperature
+        :param t2_k: (float array) 2m temperature [K]
+        :param mrt: (float array) mean radiant temperature [K]
+        :param va: (float array) wind speed at 10 meters [m/s]
+        :param td_k: (float array) dew point temperature [K]
+        returns wet bulb globe temperature [K]
+    Reference: Stull (2011)
+    https://doi.org/10.1175/JAMC-D-11-0143.1
+    See also: http://www.bom.gov.au/info/thermal_stress/
     """
 
-    f = (1.1e8 * va**0.6) / (0.98 * 0.15**0.4)
-    bgt4 = bgt**4
-    mrtc = bgt4 + f * (bgt - t2m)
+    bgt_k = calculate_bgt(t2_k, mrt, va)
+    bgt_c = kelvin_to_celsius(bgt_k)
+
+    rh = calculate_relative_humidity_percent(t2_k, td_k)
+    t2_c = kelvin_to_celsius(t2_k)
+    tw_k = calculate_wbt(t2_k, rh)
+    tw_c = kelvin_to_celsius(tw_k)
+
+    wbgt = 0.7 * tw_c + 0.2 * bgt_c + 0.1 * t2_c
+    wbgt_k = celsius_to_kelvin(wbgt)
+
+    return wbgt_k
+
+
+def calculate_mrt_from_bgt(t2_k, bgt_k, va):
+    """
+    Mean radiant temperature from globe temperature
+        :param t2_k: (float array) 2m temperature [K]
+        :param bgt_k: (float array) globe temperature [K]
+        :param va: (float array) wind speed at 10 meters [m/s]
+        returns mean radiant temperature [K]
+    Reference: Brimicombe et al. (2023)
+    https://doi.org/10.1029/2022GH000701
+    """
+    v = scale_windspeed(va, 1.1)   # formula requires wind speed at 1.1m (i.e., at the level of the globe)
+    f = (1.1e8 * v**0.6) / (0.95 * 0.15**0.4)
+    bgt4 = bgt_k**4
+    mrtc = bgt4 + f * (bgt_k - t2_k)
     mrtc2 = np.sqrt(np.sqrt(mrtc))
-    return kelvin_to_celsius(mrtc2)
+
+    return mrtc2
 
 
-def calculate_humidex(t2m, td):
+def calculate_humidex(t2_k, td_k):
     """
-    humidex - heat index used by the Canadian Meteorological Service
-    :param t2m: 2m temperature [K]
-    :param td: dew point temperature [K]
-    returns humidex [°C]
-    http://www.csgnetwork.com/canhumidexcalc.html
+        Humidex
+        :param t2_k: (float array) 2m temperature [K]
+        :param td_k: (float array) dew point temperature [K]
+        returns humidex [K]
+    Reference: Blazejczyk et al. (2012)
+    https://doi.org/10.1007/s00484-011-0453-2
     """
-    e = 6.11 * np.exp(5417.7530 * ((1 / 273.15) - (1 / td)))
-    h = 0.5555 * (e - 10.0)
-    humidex = (t2m + h) - 273.15
-    return humidex
+    vp = 6.11 * np.exp(5417.7530 * ((1 / 273.16) - (1 / td_k))) # vapour pressure [hPa]
+    h = 0.5555 * (vp - 10.0)
+    humidex = (t2_k + h) - 273.15
+    humidex_k = celsius_to_kelvin(humidex)
+
+    return humidex_k
 
 
-def calculate_net_effective_temperature(t2m, va, td):
+def calculate_normal_effective_temperature(t2_k, va, rh):
     """
-    Net - Normal Effective Temperature used in Hong Kong, Poland and Germany
-    :param t2m: 2m temperature [K]
-    :param va: Wind speed at 10 meters [m/s]
-    :param td: 2m dew point temperature [K]
-    returns normal effective temperature [°C]
-    https://www.sciencedirect.com/topics/engineering/effective-temperature
+    NET - Normal Effective Temperature
+        :param t2_k: (float array) 2m temperature [K]
+        :param va: (float array) wind speed at 10 meters [m/s]
+        :param rh: (float array) relative humidity percentage [%]
+        returns normal effective temperature [K]
+    Reference: Li and Chan (2006)
+    https://doi.org/10.1017/S1350482700001602
     """
-    rh = calculate_relative_humidity_percent(t2m, td)
-    t2m = kelvin_to_celsius(t2m)
-    rh = kPa_to_hPa(rh)
-    ditermeq = 1 / 1.76 + 1.4 * va**0.75
-    net = 37 - (37 - t2m / 0.68 - 0.0014 * rh + ditermeq) - 0.29 * t2m * (1 - 0.01 * rh)
-    return net
+    t2_k = kelvin_to_celsius(t2_k)
+    v = scale_windspeed(va, 1.2)     # formula requires wind speed at 1.2m
+    ditermeq = 1 / (1.76 + 1.4 * v**0.75)
+    net = 37 - (37 - t2_k / (0.68 - 0.0014 * rh + ditermeq)) - 0.29 * t2_k * (1 - 0.01 * rh)
+    net_k = celsius_to_kelvin(net)
+
+    return net_k
 
 
-def calculate_apparent_temperature(t2m, va, rh=None):
+def calculate_apparent_temperature(t2_k, va, rh):
     """
-    Apparent Temperature version without radiation
-    :param t2m: 2m Temperature [K]
-    :param va: Wind speed at 10 meters [m/s]
-    :param rh: Relative Humidity [pa]
-    returns apparent temperature [C]
-    https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
+    Apparent Temperature - version without radiation
+        :param t2_k: (float array) 2m temperature [K]
+        :param va: (float array) wind speed at 10 meters [m/s]
+        :param td_k: (float array) 2m dew point temperature [K]
+        :param rh: (float array) relative humidity percentage [%]
+        returns apparent temperature [K]
+    Reference: Steadman (1984)
+    https://doi.org/10.1175/1520-0450(1984)023%3C1674:AUSOAT%3E2.0.CO;2
+    See also: http://www.bom.gov.au/info/thermal_stress/#atapproximation
     """
-    if rh is None:
-        rh = calculate_saturation_vapour_pressure(t2m)
+    t2_c = kelvin_to_celsius(t2_k)
+    e = calculate_nonsaturation_vapour_pressure(t2_k, rh)
+    at = t2_c + 0.33 * e - 0.7 * va - 4
+    at_k = celsius_to_kelvin(at)
 
-    va = va * 4.87 / np.log(67.8 * 10 - 5.42)  # converting to 2m, ~1.2m wind speed
-    at = t2m + 0.33 * rh - 0.7 * va - 4
-    at = kelvin_to_celsius(at)
-
-    return at
+    return at_k
 
 
 @optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
-def calculate_wind_chill(t2m, va):
+def calculate_wind_chill(t2_k, va):
     """
     Wind Chill
-    :param t2m: 2m Temperature [K]
-    :param va: wind speed at 10 meters [m/s]
-    returns wind chill [°C]
-     http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
+        :param t2_k: (float array) 2m Temperature [K]
+        :param va: (float array) wind speed at 10 meters [m/s]
+        returns wind chill [K]
+        Temperature must be between -50°C and 5°C; wind speed must be between 5km/h and 80km/h
+        Wind chill from input values outside those ranges are not to be considered valid
+    Reference: Blazejczyk et al. (2012)
+    https://doi.org/10.1007/s00484-011-0453-2
+    See also: http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
     """
-    tc = t2m - 273.15  # kelvin_to_celsius(tk)
-    va = va * 2.23694  # convert to miles per hour
-    windchill = 13.12 + 0.6215 * tc - 11.37 * va**0.16 + 0.3965 + tc + va**0.16
-    return windchill
+    t2_c = kelvin_to_celsius(t2_k)  # kelvin_to_celsius(tk)
+    v = va * 3.6  # convert to kilometers per hour
+    windchill = 13.12 + 0.6215 * t2_c - 11.37 * v**0.16 + 0.3965 * t2_c * v**0.16
+    windchill_k = celsius_to_kelvin(windchill)
+
+    return windchill_k
 
 
-def calculate_heat_index_simplified(t2m, rh=None):
+def calculate_heat_index_simplified(t2_k, rh):
     """
     Heat Index
-       :param t2m: np.array 2m temperature [K]
-       :param rh: Relative Humidity [pa]
-       returns heat index [°C]
-       https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
+        :param t2m: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity [%]
+        returns heat index [K]
+    Reference: Blazejczyk et al. (2012)
+    https://doi.org/10.1007/s00484-011-0453-2
     """
 
-    if rh is None:
-        rh = calculate_saturation_vapour_pressure(t2m)
-
-    t2m = kelvin_to_celsius(t2m)
-    rh = kPa_to_hPa(rh)
+    t2_c = kelvin_to_celsius(t2_k)
 
     hiarray = [
-        -8.784695,
+        8.784695,
         1.61139411,
         2.338549,
         0.14611605,
         1.2308094e-2,
+        1.6424828e-2,
         2.211732e-3,
         7.2546e-4,
-        3.58e-6,
+        3.582e-6,
     ]
+    hi = np.copy(t2_c)
 
-    hi = (
-        -hiarray[0]
-        + hiarray[1] * t2m
-        + hiarray[2] * rh
-        - hiarray[3] * t2m * rh
-        - hiarray[4] * rh**2
-        + hiarray[5] * t2m**2 * rh
-        + hiarray[6] * t2m * rh**2
-        - hiarray[7] * t2m**2 * rh**2
-    )
+    hi_filter1 = np.where(t2_c > 20)
 
-    return hi
+    hi[hi_filter1] = (
+            - hiarray[0]
+            + hiarray[1] * t2_c[hi_filter1]
+            + hiarray[2] * rh[hi_filter1]
+            - hiarray[3] * t2_c[hi_filter1] * rh[hi_filter1]
+            - hiarray[4] * t2_c[hi_filter1]**2
+            - hiarray[5] * rh[hi_filter1]**2
+            + hiarray[6] * t2_c[hi_filter1]**2 * rh[hi_filter1]
+            + hiarray[7] * t2_c[hi_filter1] * rh[hi_filter1]**2
+            - hiarray[8] * t2_c[hi_filter1]**2 * rh[hi_filter1]**2
+        )
+
+    hi_k = celsius_to_kelvin(hi)
+
+    return hi_k
 
 
-def calculate_heat_index_adjusted(t2m, td):
+def calculate_heat_index_adjusted(t2_k, td_k):
     """
     Heat Index adjusted
-       :param t2m: np.array 2m temperature [K]
-       :param td: np.array 2m dewpoint temperature  [K]
-       returns heat index [°C]
-       https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
+       :param t2_k: (float array) 2m temperature [K]
+       :param td_k: (float array) 2m dewpoint temperature  [K]
+       returns heat index [K]
+    Reference: https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
     """
 
-    rh = calculate_relative_humidity_percent(t2m, td)
-    t2m = kelvin_to_fahrenheit(t2m)
+    rh = calculate_relative_humidity_percent(t2_k, td_k)
+    t2_f = kelvin_to_fahrenheit(t2_k)
 
     hiarray = [
         42.379,
@@ -925,41 +989,41 @@ def calculate_heat_index_adjusted(t2m, td):
         0.00000199,
     ]
 
-    hi_initial = 0.5 * (t2m + 61 + ((t2m - 68) * 1.2) + (rh * 0.094))
+    hi_initial = 0.5 * (t2_f + 61 + ((t2_f - 68) * 1.2) + (rh * 0.094))
 
     hi = (
-        -hiarray[0]
-        + hiarray[1] * t2m
+        - hiarray[0]
+        + hiarray[1] * t2_f
         + hiarray[2] * rh
-        - hiarray[3] * t2m * rh
-        - hiarray[4] * t2m**2
+        - hiarray[3] * t2_f * rh
+        - hiarray[4] * t2_f**2
         - hiarray[5] * rh**2
-        + hiarray[6] * t2m**2 * rh
-        + hiarray[7] * t2m * rh**2
-        - hiarray[8] * t2m**2 * rh**2
+        + hiarray[6] * t2_f**2 * rh
+        + hiarray[7] * t2_f * rh**2
+        - hiarray[8] * t2_f**2 * rh**2
     )
 
-    hi_filter1 = np.where(t2m > 80)
-    hi_filter2 = np.where(t2m < 112)
+    hi_filter1 = np.where(t2_f > 80)
+    hi_filter2 = np.where(t2_f < 112)
     hi_filter3 = np.where(rh <= 13)
-    hi_filter4 = np.where(t2m < 87)
+    hi_filter4 = np.where(t2_f < 87)
     hi_filter5 = np.where(rh > 85)
-    hi_filter6 = np.where(t2m < 80)
-    hi_filter7 = np.where((hi_initial + t2m) / 2 < 80)
+    hi_filter6 = np.where(t2_f < 80)
+    hi_filter7 = np.where((hi_initial + t2_f) / 2 < 80)
 
     f_adjust1 = hi_filter1 and hi_filter2 and hi_filter3
     f_adjust2 = hi_filter1 and hi_filter4 and hi_filter5
 
     adjustment1 = (
-        (13 - rh[f_adjust1]) / 4 * np.sqrt(17 - np.abs(t2m[f_adjust1] - 95) / 17)
+        (13 - rh[f_adjust1]) / 4 * np.sqrt(17 - np.abs(t2_f[f_adjust1] - 95) / 17)
     )
 
-    adjustment2 = (rh[f_adjust2] - 85) / 10 * ((87 - t2m[f_adjust2]) / 5)
+    adjustment2 = (rh[f_adjust2] - 85) / 10 * ((87 - t2_f[f_adjust2]) / 5)
 
     adjustment3 = 0.5 * (
-        t2m[hi_filter6]
+        t2_f[hi_filter6]
         + 61.0
-        + ((t2m[hi_filter6] - 68.0) * 1.2)
+        + ((t2_f[hi_filter6] - 68.0) * 1.2)
         + (rh[hi_filter6] * 0.094)
     )
 
@@ -971,9 +1035,9 @@ def calculate_heat_index_adjusted(t2m, td):
 
     hi[hi_filter7] = hi_initial[hi_filter7]
 
-    hi_c = fahrenheit_to_celsius(hi)
+    hi_k = fahrenheit_to_kelvin(hi)
 
-    return hi_c
+    return hi_k
 
 
 # Converters
@@ -1004,5 +1068,5 @@ def fahrenheit_to_celsius(tf):
 
 # convert Fahrenheit to Kelvin
 def fahrenheit_to_kelvin(tf):
-    tk = 5 * (tf - 273) / 9 + 32
+    tk = (tf + 459.67) * 5 / 9
     return tk

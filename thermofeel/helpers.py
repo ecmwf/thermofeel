@@ -31,7 +31,7 @@ def timer(func):
         entry["calls"] = entry.get("calls", 0) + 1
         func_timers[func] = entry
 
-        # print(f"{func} elapsed time: {elapsed:0.6f} s")
+        print(f"{func} elapsed time: {elapsed:0.6f} s")
 
         return value
 
