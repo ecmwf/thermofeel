@@ -855,10 +855,9 @@ def calculate_humidex(t2_k, td_k):
     """
     vp = 6.11 * np.exp(5417.7530 * ((1 / 273.16) - (1 / td_k))) # vapour pressure [hPa]
     h = 0.5555 * (vp - 10.0)
-    humidex = (t2_k + h) - 273.15
-    humidex_k = celsius_to_kelvin(humidex)
+    humidex = t2_k + h
 
-    return humidex_k
+    return humidex
 
 
 def calculate_normal_effective_temperature(t2_k, va, rh):
