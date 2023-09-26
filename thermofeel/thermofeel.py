@@ -389,17 +389,10 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
     lur = strd - strr
     # Istar = dsrp
 
-    print(f"dsw min {np.nanmin(dsw)} max {np.nanmax(dsw)} avg {np.nanmean(dsw)} stddev {np.nanstd(dsw, dtype=np.float64)}")
-    print(f"rsw min {np.nanmin(rsw)} max {np.nanmax(rsw)} avg {np.nanmean(rsw)} stddev {np.nanstd(rsw, dtype=np.float64)}")
-    print(f"lur min {np.nanmin(lur)} max {np.nanmax(lur)} avg {np.nanmean(lur)} stddev {np.nanstd(lur, dtype=np.float64)}")
-
     # calculate fp projected factor area
 
     gamma = np.arcsin(cossza) * 180 / np.pi
     fp = 0.308 * np.cos(to_radians * gamma * (0.998 - gamma * gamma / 50000))
-
-    print(f"gamma min {np.nanmin(gamma)} max {np.nanmax(gamma)} avg {np.nanmean(gamma)} stddev {np.nanstd(gamma, dtype=np.float64)}")
-    print(f"fp min {np.nanmin(fp)} max {np.nanmax(fp)} avg {np.nanmean(fp)} stddev {np.nanstd(fp, dtype=np.float64)}")
 
     # calculate mean radiant temperature
     mrt = np.power(
@@ -413,11 +406,6 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
         ),
         0.25,
     )
-
-    inside = (1 / 0.0000000567) * ( 0.5 * strd + 0.5 * lur + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * dsrp) )
-
-    print(f"inside min {np.nanmin(inside)} max {np.nanmax(inside)} avg {np.nanmean(inside)} stddev {np.nanstd(inside, dtype=np.float64)}")
-    print(f"mrt min {np.nanmin(mrt)} max {np.nanmax(mrt)} avg {np.nanmean(mrt)} stddev {np.nanstd(mrt, dtype=np.float64)}")
 
     return mrt
 
