@@ -33,8 +33,7 @@ import math
 
 import numpy as np
 
-from .helpers import to_julian_date  # noqa
-from .helpers import func_timers, kPa_to_hPa, optnumba_jit, timer, to_radians  # noqa
+to_radians = math.pi / 180.0
 
 
 # solar declination angle [degrees] + time correction for solar angle
@@ -64,7 +63,6 @@ def solar_declination_angle(jd, h):
     return d, tc
 
 
-@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_relative_humidity_percent(t2_k, td_k):
     """
     Relative Humidity in percent
@@ -83,7 +81,6 @@ def calculate_relative_humidity_percent(t2_k, td_k):
     return rh
 
 
-@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_saturation_vapour_pressure(t2_k):
     """
     Saturation vapour pressure over water
@@ -161,7 +158,6 @@ def scale_windspeed(va, h):
     return vh
 
 
-@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     """
     Solar zenith angle
@@ -177,24 +173,19 @@ def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
     see also: http://answers.google.com/answers/threadview/id/782886.html
     """
 
-    # convert to julian days counting from the beginning of the year
-    # jd_ = to_julian_date(d, m, y)  # julian date of data
-    jd_ = (
-        d
-        - 32075
-        + 1461 * (y + 4800 + (m - 14) / 12) / 4
-        + 367 * (m - 2 - (m - 14) / 12 * 12) / 12
-        - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4
-    )
+    def to_julian_date(d, m, y):
+        return (
+            d
+            - 32075
+            + 1461 * (y + 4800 + (m - 14) / 12) / 4
+            + 367 * (m - 2 - (m - 14) / 12 * 12) / 12
+            - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4
+        )
 
-    # jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
-    jd11_ = (
-        1
-        - 32075
-        + 1461 * (y + 4800 + (1 - 14) / 12) / 4
-        + 367 * (1 - 2 - (1 - 14) / 12 * 12) / 12
-        - 3 * ((y + 4900 + (1 - 14) / 12) / 100) / 4
-    )
+    # convert to julian days counting from the beginning of the year
+    jd_ = to_julian_date(d, m, y)  # julian date of data
+
+    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
 
     jd = jd_ - jd11_ + 1  # days since start of year
 
@@ -378,7 +369,6 @@ def calculate_dew_point_from_relative_humidity(rh, t2_k):
     td_k = celsius_to_kelvin(td_c)
     return td_k
 
-@optnumba_jit
 def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza):
     """
     MRT - Mean Radiant Temperature
@@ -399,10 +389,17 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
     lur = strd - strr
     # Istar = dsrp
 
+    print(f"dsw min {np.nanmin(dsw)} max {np.nanmax(dsw)} avg {np.nanmean(dsw)} stddev {np.nanstd(dsw, dtype=np.float64)}")
+    print(f"rsw min {np.nanmin(rsw)} max {np.nanmax(rsw)} avg {np.nanmean(rsw)} stddev {np.nanstd(rsw, dtype=np.float64)}")
+    print(f"lur min {np.nanmin(lur)} max {np.nanmax(lur)} avg {np.nanmean(lur)} stddev {np.nanstd(lur, dtype=np.float64)}")
+
     # calculate fp projected factor area
 
     gamma = np.arcsin(cossza) * 180 / np.pi
     fp = 0.308 * np.cos(to_radians * gamma * (0.998 - gamma * gamma / 50000))
+
+    print(f"gamma min {np.nanmin(gamma)} max {np.nanmax(gamma)} avg {np.nanmean(gamma)} stddev {np.nanstd(gamma, dtype=np.float64)}")
+    print(f"fp min {np.nanmin(fp)} max {np.nanmax(fp)} avg {np.nanmean(fp)} stddev {np.nanstd(fp, dtype=np.float64)}")
 
     # calculate mean radiant temperature
     mrt = np.power(
@@ -417,10 +414,14 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
         0.25,
     )
 
+    inside = (1 / 0.0000000567) * ( 0.5 * strd + 0.5 * lur + (0.7 / 0.97) * (0.5 * dsw + 0.5 * rsw + fp * dsrp) )
+
+    print(f"inside min {np.nanmin(inside)} max {np.nanmax(inside)} avg {np.nanmean(inside)} stddev {np.nanstd(inside, dtype=np.float64)}")
+    print(f"mrt min {np.nanmin(mrt)} max {np.nanmax(mrt)} avg {np.nanmean(mrt)} stddev {np.nanstd(mrt, dtype=np.float64)}")
+
     return mrt
 
 
-@optnumba_jit
 def calculate_utci_polynomial(t2m, mrt, va, rh):
 
     e_mrt = np.subtract(mrt, t2m)
@@ -753,7 +754,7 @@ def calculate_wbt(t2_k, rh):
 
     return tw_k
 
-# @timer
+
 def calculate_bgt(t2_k, mrt, va):
     """
     Globe temperature
@@ -899,7 +900,6 @@ def calculate_apparent_temperature(t2_k, va, rh):
     return at_k
 
 
-@optnumba_jit(parallel=False)  # function does not have benefit from parallel execution
 def calculate_wind_chill(t2_k, va):
     """
     Wind Chill

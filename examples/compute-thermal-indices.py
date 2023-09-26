@@ -300,7 +300,6 @@ def calc_ws(messages):
     return ws
 
 
-# @thermofeel.optnumba_jit
 def compute_ehPa_(rh_pc, svp):
     return svp * rh_pc * 0.01  # / 100.0
 

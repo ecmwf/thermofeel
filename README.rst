@@ -50,7 +50,6 @@ thermofeel core functions depend on:
 
 Optionally, thermofeel depends on:
  * pytest - for unit testing
- * numba - automatically detect and use Numba JIT to accelerate function execution
 
 Contributing
 ============
