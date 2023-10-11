@@ -8,6 +8,7 @@
 
 """
   thermofeel is a library to calculate human thermal comfort indexes.
+    
     Currently calculates the thermal indexes:
     * Universal Thermal Climate Index
     * Apparent Temperature
@@ -18,49 +19,24 @@
     * Wet Bulb Globe Temperature
     * Wet Bulb Globe Temperature Simple
     * Wind Chill
+    
     In support of the above indexes, it also calculates:
     * Globe Temperature
     * Mean Radiant Temperature
     * Mean Radiant Temperature from Globe Temperature
     * Relative Humidity Percentage
     * Saturation vapour pressure
-    * Solar Declination Angle
-    * Solar Zenith Angle
     * Wet Bulb Temperature
+  
+    To calculate the cos of the solar zenith angle, we suggest to use the earthkit-meteo library (github.com:ecmwf/earthkit-meteo.git)
   """
 
 import math
 
 import numpy as np
+import datetime
 
 to_radians = math.pi / 180.0
-
-
-# solar declination angle [degrees] + time correction for solar angle
-def solar_declination_angle(jd, h):
-    g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
-    while g > 360:
-        g = g - 360
-    grad = g * to_radians
-    # declination in [degrees]
-    d = (
-        0.396372
-        - 22.91327 * math.cos(grad)
-        + 4.025430 * math.sin(grad)
-        - 0.387205 * math.cos(2 * grad)
-        + 0.051967 * math.sin(2 * grad)
-        - 0.154527 * math.cos(3 * grad)
-        + 0.084798 * math.sin(3 * grad)
-    )
-    # time correction in [ h.degrees ]
-    tc = (
-        0.004297
-        + 0.107029 * math.cos(grad)
-        - 1.837877 * math.sin(grad)
-        - 0.837378 * math.cos(2 * grad)
-        - 2.340475 * math.sin(2 * grad)
-    )
-    return d, tc
 
 
 def calculate_relative_humidity_percent(t2_k, td_k):
@@ -155,185 +131,7 @@ def scale_windspeed(va, h):
     c = 0.333333333333
     vh = va * np.log10(h/0.01) * c
 
-    return vh
-
-
-def calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d):
-    """
-    Solar zenith angle
-        :param h: hour [int]
-        :param lat: (float array) latitude [degrees]
-        :param lon: (float array) longitude [degrees]
-        :param y: year [int]
-        :param m: month [int]
-        :param d: day [int]
-        returns cosine of the solar zenith angle (all values, including negatives)
-    Reference: Hogan and Hirahara (2015)
-    https://doi.org/10.1002/2015GL066868
-    see also: http://answers.google.com/answers/threadview/id/782886.html
-    """
-
-    def to_julian_date(d, m, y):
-        return (
-            d
-            - 32075
-            + 1461 * (y + 4800 + (m - 14) / 12) / 4
-            + 367 * (m - 2 - (m - 14) / 12 * 12) / 12
-            - 3 * ((y + 4900 + (m - 14) / 12) / 100) / 4
-        )
-
-    # convert to julian days counting from the beginning of the year
-    jd_ = to_julian_date(d, m, y)  # julian date of data
-
-    jd11_ = to_julian_date(1, 1, y)  # julian date 1st Jan
-
-    jd = jd_ - jd11_ + 1  # days since start of year
-
-    # declination angle + time correction for solar angle
-    # d, tc = solar_declination_angle(jd, h)
-
-    g = (360 / 365.25) * (jd + (h / 24))  # fractional year g in degrees
-    while g > 360:
-        g = g - 360
-    grad = g * to_radians
-    # declination in [degrees]
-    d = (
-        0.396372
-        - 22.91327 * math.cos(grad)
-        + 4.025430 * math.sin(grad)
-        - 0.387205 * math.cos(2 * grad)
-        + 0.051967 * math.sin(2 * grad)
-        - 0.154527 * math.cos(3 * grad)
-        + 0.084798 * math.sin(3 * grad)
-    )
-    # time correction in [ h.degrees ]
-
-    tc = (
-        0.004297
-        + 0.107029 * math.cos(grad)
-        - 1.837877 * math.sin(grad)
-        - 0.837378 * math.cos(2 * grad)
-        - 2.340475 * math.sin(2 * grad)
-    )
-
-    drad = d * to_radians
-
-    latrad = lat * to_radians
-
-    sindec_sinlat = np.sin(drad) * np.sin(latrad)
-    cosdec_coslat = np.cos(drad) * np.cos(latrad)
-
-    # solar hour angle [h.deg]
-    sharad = ((h - 12) * 15 + lon + tc) * to_radians
-    csza = sindec_sinlat + cosdec_coslat * np.cos(sharad)
-
-    # we dont clip negative values here
-    return csza
-
-
-def calculate_cos_solar_zenith_angle(h, lat, lon, y, m, d):
-    """
-    Solar zenith angle
-        :param h: hour [int]
-        :param lat: (float array) latitude [degrees]
-        :param lon: (float array) longitude [degrees]
-        :param y: year [int]
-        :param m: month [int]
-        :param d: day [int]
-        returns cosine of the solar zenith angle (all values, including negatives)
-    Reference: Hogan and Hirahara (2015)
-    https://doi.org/10.1002/2015GL066868
-    see also: http://answers.google.com/answers/threadview/id/782886.html
-    """
-    # we separate the function for clipping the negative values since numba doesn't support clip (yet)
-    csza = calculate_cos_solar_zenith_angle_allvalues(h, lat, lon, y, m, d)
-    return np.clip(csza, 0, None)
-
-
-def calculate_cos_solar_zenith_angle_integrated(
-    lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=1, integration_order=3
-):
-    """
-    Average of solar zenith angle based on numerical integration using the 3 point gauss integration rule
-        :param lat: (int array) latitude [degrees]
-        :param lon: (int array) longitude [degrees]
-        :param y: year [int]
-        :param m: month [int]
-        :param d: day [int]
-        :param h: hour [int]
-        :param tbegin: offset in hours from forecast time to begin of time interval for integration [int]
-        :param tend: offset in hours from forecast time to end of time interval for integration [int]
-        :param intervals_per_hour: number of time integrations per hour [int]
-        :param integration order: order of gauss integration [int] valid = (1, 2, 3, 4)
-        returns average of cosine of the solar zenith angle during interval [degrees]
-    Reference: Hogan and Hirahara (2015), Brimicombe et al. (2022)
-    https://doi.org/10.1002/2015GL066868
-    https://doi.org/10.21957/o7pcu1x2b
-    This function uses Gaussian numerical integration: https://en.wikipedia.org/wiki/Gaussian_quadrature
-    """
-
-    # Gauss-Integration coefficients
-    if integration_order == 3:  # default, good speed and accuracy (3 points)
-        E = np.array([-math.sqrt(3.0 / 5.0), 0.0, math.sqrt(3.0 / 5.0)])
-        W = np.array([5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0])
-    else:
-        if integration_order == 1:  # fastest, worse accuracy (1 point)
-            E = np.array([0.0])
-            W = np.array([2.0])
-        else:
-            if integration_order == 2:  # faster, less accurate (2 points)
-                E = np.array([-1.0 / math.sqrt(3.0), 1.0 / math.sqrt(3.0)])
-                W = np.array([1.0, 1.0])
-            else:
-                if integration_order == 4:  # slower, more accurate (4 points)
-                    E = np.array(
-                        [
-                            -math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
-                            -math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
-                            math.sqrt(3.0 / 7.0 - 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
-                            math.sqrt(3.0 / 7.0 + 2.0 / 7.0 * math.sqrt(6.0 / 5.0)),
-                        ]
-                    )
-                    W = np.array(
-                        [
-                            (18 - math.sqrt(30)) / 36,
-                            (18 + math.sqrt(30)) / 36,
-                            (18 + math.sqrt(30)) / 36,
-                            (18 - math.sqrt(30)) / 36,
-                        ]
-                    )
-                else:
-                    print("Invalid integration_order %d", integration_order)
-                    raise ValueError
-
-    assert intervals_per_hour > 0
-
-    nsplits = (tend - tbegin) * intervals_per_hour
-
-    assert nsplits > 0
-
-    time_steps = np.linspace(tbegin, tend, num=nsplits + 1)
-
-    integral = np.zeros_like(lat)
-    for s in range(len(time_steps) - 1):
-        ti = time_steps[s]
-        tf = time_steps[s + 1]
-
-        deltat = tf - ti
-        jacob = deltat / 2.0
-
-        w = jacob * W
-        w /= tend - tbegin  # average of integral
-        t = jacob * E
-        t += (tf + ti) / 2.0
-
-        for n in range(len(w)):
-            integral += w[n] * calculate_cos_solar_zenith_angle(
-                lat=lat, lon=lon, y=y, m=m, d=d, h=(h + t[n])
-            )
-
-    return integral
-
+    return vh    
 
 def approximate_dsrp(fdir, cossza, threshold=0.01):
     """

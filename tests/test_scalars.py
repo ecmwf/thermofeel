@@ -7,7 +7,6 @@
 # nor does it submit to any jurisdiction.
 
 import unittest
-from math import cos, radians
 
 import numpy as np
 import pytest
@@ -167,118 +166,7 @@ class TestThermalCalculator(unittest.TestCase):
         td_k = np.array([290])
         hia = np.array([tmf.calculate_heat_index_adjusted(t2_k, td_k)])
         # print(f"hia {hia}")
-        assert hia[0] == pytest.approx(295.15355699, abs=1e-6)
-
-    def test_solar_declination_angle(self):
-        sda, tc = tmf.solar_declination_angle(jd=166, h=0)
-        assert sda == pytest.approx(23.32607701732299, abs=1e-6)
-        assert tc == pytest.approx(-0.054061457069008334, abs=1e-6)
-
-        sda, tc = tmf.solar_declination_angle(jd=4, h=12)
-        assert sda == pytest.approx(-22.64240042915207, abs=1e-6)
-        assert tc == pytest.approx(-1.219397058249299, abs=1e-6)
-
-        sda, tc = tmf.solar_declination_angle(jd=600, h=3)
-        assert sda == pytest.approx(11.471993171760428, abs=1e-6)
-        assert tc == pytest.approx(-0.7161824119549858, abs=1e-6)
-
-    def test_calculate_cos_solar_zenith_angle_allvalues(self):
-        # should return ~ 0.360303587797559
-        cossza = np.array([tmf.calculate_cos_solar_zenith_angle_allvalues(
-            lat=48.81667, lon=2.28972, d=15, m=11, y=2006, h=10.58333
-        )])
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.360303587797559, abs=1e-6)
-
-        # London, ~ 0.8799471697555967
-        cossza = np.array([tmf.calculate_cos_solar_zenith_angle_allvalues(
-            lat=51.0, lon=0.0, d=4, m=6, y=2021, h=1.0
-        )])
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(-0.26157855, abs=1e-6)
-        # # from alternative formula
-        # assert cossza == pytest.approx(cos(radians(90.0 - 61.5)), abs=1e-2)
-
-    def test_calculate_cos_solar_zenith_angle(self):
-        # should return ~ 0.360303587797559
-        cossza = np.array([tmf.calculate_cos_solar_zenith_angle(
-            lat=48.81667, lon=2.28972, d=15, m=11, y=2006, h=10.58333
-        )])
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.360303587797559, abs=1e-6)
-
-        # London, ~ 0.8799471697555967
-        cossza = np.array([tmf.calculate_cos_solar_zenith_angle(
-            lat=51.0, lon=0.0, d=4, m=6, y=2021, h=12.0
-        )])
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.8799471697555967, abs=1e-6)
-        # from alternative formula
-        assert cossza == pytest.approx(cos(radians(90.0 - 61.5)), abs=1e-2)
-
-    def test_calculate_cos_solar_zenith_angle_integrated(self):
-        lat = 48.81667
-        lon = 2.28972
-        d = 15
-        m = 11
-        y = 2006
-        h = 10.58333
-        tbegin = 0
-        tend = 3
-        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend
-        )
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.3612630470539099, abs=1e-6)
-
-        # opposite point in the world should be dark
-        lat = -lat
-        lon = 180 + lon
-        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend
-        )
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.0, abs=1e-6)
-
-        # lons can be > 360
-        lat = -lat
-        lon = 180 + lon
-        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend
-        )
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.3612630470539099, abs=1e-6)
-
-        lat = 48.81667
-        lon = 2.28972
-
-        # integration with splits every 20min (3 per hour)
-        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend, intervals_per_hour=3
-        )
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.3612630469576353, abs=1e-7)
-
-        # gauss integration order 2
-        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend, integration_order=2
-        )
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.3612623904213413, abs=1e-7)
-
-        # gauss integration order 1
-        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend, integration_order=1
-        )
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.36298755581259323, abs=1e-6)
-
-        # gauss integration order 4
-        cossza = tmf.calculate_cos_solar_zenith_angle_integrated(
-            lat, lon, y, m, d, h, tbegin, tend, integration_order=4
-        )
-        # print(f"cossza {cossza}")
-        assert cossza == pytest.approx(0.36126304695749595, abs=1e-7)
+        assert hia[0] == pytest.approx(295.15355699, abs=1e-6)    
 
 
 if __name__ == "__main__":
