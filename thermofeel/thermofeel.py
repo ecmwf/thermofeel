@@ -133,7 +133,7 @@ def scale_windspeed(va, h):
 
     return vh    
 
-def approximate_dsrp(fdir, cossza, threshold=0.01):
+def approximate_dsrp(fdir, cossza, threshold=0.1):
     """
     Helper function to approximate dsrp from fdir and cossza
     Note that the function introduces large errors as cossza approaches zero.
