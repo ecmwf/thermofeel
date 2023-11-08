@@ -62,13 +62,12 @@ Please see the Contributing_ document for the best way to help.
 
 .. _Contributing: https://github.com/ecmwf-projects/thermofeel/blob/master/CONTRIBUTING.rst
 
-Main contributors:
+Current developers:
 
-- Chloe Brimicombe - `ECMWF <https://ecmwf.int>`_
+- Claudia Di Napoli - `ECMWF <https://ecmwf.int>`_
 - Tiago Quintino - `ECMWF <https://ecmwf.int>`_
 
 See also the `contributors <https://github.com/ecmwf-projects/thermofeel/contributors>`_ for a more complete list.
-
 
 License
 =======
