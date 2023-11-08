@@ -29,7 +29,9 @@ class TestThermalCalculator(unittest.TestCase):
     def test_saturation_vapour_pressure_multiphase(self):
         t2_k = np.array([tmf.celsius_to_kelvin(-25.0)])
         phase = np.array([1])
-        es = np.array([tmf.calculate_saturation_vapour_pressure_multiphase(t2_k,phase)])
+        es = np.array(
+            [tmf.calculate_saturation_vapour_pressure_multiphase(t2_k, phase)]
+        )
         # assert es == pytest.approx(0.63555512, abs=1e-6) # old formula
         assert es == pytest.approx(0.63142553, abs=1e-6)
 
@@ -59,15 +61,19 @@ class TestThermalCalculator(unittest.TestCase):
         strr = np.array([-182697])
         cossza = np.array([0.4])
         dsrp = np.array([tmf.approximate_dsrp(fdir, cossza)])
-        mrt = np.array([tmf.calculate_mean_radiant_temperature(
-            ssrd=ssrd / 3600,
-            ssr=ssr / 3600,
-            fdir=fdir / 3600,
-            strd=strd / 3600,
-            strr=strr / 3600,
-            cossza=cossza / 3600,
-            dsrp=dsrp / 3600,
-        )])
+        mrt = np.array(
+            [
+                tmf.calculate_mean_radiant_temperature(
+                    ssrd=ssrd / 3600,
+                    ssr=ssr / 3600,
+                    fdir=fdir / 3600,
+                    strd=strd / 3600,
+                    strr=strr / 3600,
+                    cossza=cossza / 3600,
+                    dsrp=dsrp / 3600,
+                )
+            ]
+        )
         # print(f"mrt {mrt}")
         assert mrt == pytest.approx(270.85099123, abs=1e-6)
 
@@ -99,9 +105,9 @@ class TestThermalCalculator(unittest.TestCase):
         mrt = np.array([278.15, 310, 310])
         bgt = np.array([tmf.calculate_bgt(t2_k, va, mrt)])
         # print(f"bgt {bgt}")
-        assert bgt[0,0] == pytest.approx(277.1238737724192, abs=1e-6)
-        assert bgt[0,1] == pytest.approx(298.70218703427656, abs=1e-6)
-        assert bgt[0,2] == pytest.approx(298.70216299754475, abs=1e-6)
+        assert bgt[0, 0] == pytest.approx(277.1238737724192, abs=1e-6)
+        assert bgt[0, 1] == pytest.approx(298.70218703427656, abs=1e-6)
+        assert bgt[0, 2] == pytest.approx(298.70216299754475, abs=1e-6)
 
     def test_wbgt(self):
         t2_k = np.array([300])
@@ -157,7 +163,7 @@ class TestThermalCalculator(unittest.TestCase):
     def test_heat_index_simplified(self):
         t2_k = np.array([tmf.celsius_to_kelvin(21.0)])
         rh = np.array([80])
-        hi = np.array([tmf.calculate_heat_index_simplified(t2_k,rh)])
+        hi = np.array([tmf.calculate_heat_index_simplified(t2_k, rh)])
         # print(f"hi {hi}")
         assert hi == pytest.approx(294.68866082, abs=1e-6)
 
@@ -166,7 +172,7 @@ class TestThermalCalculator(unittest.TestCase):
         td_k = np.array([290])
         hia = np.array([tmf.calculate_heat_index_adjusted(t2_k, td_k)])
         # print(f"hia {hia}")
-        assert hia[0] == pytest.approx(295.15355699, abs=1e-6)    
+        assert hia[0] == pytest.approx(295.15355699, abs=1e-6)
 
 
 if __name__ == "__main__":

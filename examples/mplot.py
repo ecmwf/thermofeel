@@ -12,7 +12,6 @@ from Magics import macro as magics
 
 
 def main():
-
     data = magics.mgrib(
         grib_input_file_name=sys.argv[1],
     )

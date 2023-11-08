@@ -79,7 +79,9 @@ class TestThermalCalculator(unittest.TestCase):
         self.assert_equal(self.es, es)
 
     def test_saturation_vapour_pressure_multiphase(self):
-        es_multiphase = tmf.calculate_saturation_vapour_pressure_multiphase(self.t2m,self.phase)
+        es_multiphase = tmf.calculate_saturation_vapour_pressure_multiphase(
+            self.t2m, self.phase
+        )
         # np.savetxt("es_multiphase.csv", es_multiphase)
         self.assert_equal(self.es_multiphase, es_multiphase)
 
@@ -90,13 +92,13 @@ class TestThermalCalculator(unittest.TestCase):
         self.assert_equal(self.ens, ens)
 
     def test_scale_windspeed(self):
-        va_scaled = tmf.scale_windspeed(self.va,self.va_height)
+        va_scaled = tmf.scale_windspeed(self.va, self.va_height)
         # np.savetxt("va_scaled.csv", va_scaled)
         self.assert_equal(self.va_scaled, va_scaled)
 
     def test_dew_point_from_relative_humidity(self):
         td = tmf.calculate_dew_point_from_relative_humidity(self.rh, self.t2m)
-        self.assert_equal(self.td, td, decimal = 2)
+        self.assert_equal(self.td, td, decimal=2)
 
     def test_mean_radiant_temperature(self):
         mrtr = tmf.calculate_mean_radiant_temperature(
@@ -109,7 +111,7 @@ class TestThermalCalculator(unittest.TestCase):
             cossza=self.cossza / 3600,
         )
         # np.savetxt("mrtr.csv", mrtr)
-        self.assert_equal(self.mrtr, mrtr)#, decimal = 3)
+        self.assert_equal(self.mrtr, mrtr)  # , decimal = 3)
 
     def test_utci(self):
         rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
@@ -174,11 +176,12 @@ class TestThermalCalculator(unittest.TestCase):
         heatindex = tmf.calculate_heat_index_simplified(self.t2m, rh_pc)
         # np.savetxt("heatindex.csv", heatindex)
         self.assert_equal(self.heatindex, heatindex)
-        
+
     def test_heat_index_adjusted(self):
         hia = tmf.calculate_heat_index_adjusted(self.t2m, self.td)
         # np.savetxt("hia.csv", hia)
         self.assert_equal(self.heatindexadjusted, hia)
+
 
 if __name__ == "__main__":
     unittest.main()  # pragma: no cover

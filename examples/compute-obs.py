@@ -70,7 +70,6 @@ def command_line_options():
 
 
 def read_part_dataset(obsdata, varname, filepath, nmax=0):
-
     with open(filepath, newline="") as f:
         reader = csv.reader(f, delimiter="\t")
         next(reader)  # skip first line
@@ -97,7 +96,6 @@ def read_part_dataset(obsdata, varname, filepath, nmax=0):
 
 
 def station_location(id):
-
     # IZA () * Latitude:  * Longitude:
     # NYA () * Latitude: 78.922700 * Longitude:
     #
@@ -131,7 +129,6 @@ def station_location(id):
 
 
 def main():
-
     args = command_line_options()
 
     print(f"Thermofeel version: {thermofeel.__version__}")
@@ -180,7 +177,6 @@ def main():
 
     completes = []
     for k in obsdata.keys():
-
         entry = obsdata[k]
 
         if (
@@ -194,7 +190,6 @@ def main():
             and "swd" in entry
             and "swu" in entry
         ):
-
             entry.update(station)
             entry.update({"stationid": args.stationid})
             entry.update({"datetime": k})
@@ -249,7 +244,6 @@ def main():
     print(f"complete entries {len(completes)}")
 
     if len(completes):
-
         try:
             outfile = args.output
             columns = [

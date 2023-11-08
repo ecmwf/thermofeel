@@ -339,7 +339,6 @@ def wbt_lijigren(t2m, td, rh, ps, va, ssrd, fdir, cossza):
 
 
 def main():
-
     filename = "March2013LijiCake.nc"
     print("Loading NetCDF file {filename} --  Go and have a coffee ....")
 

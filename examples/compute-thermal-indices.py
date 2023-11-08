@@ -37,7 +37,6 @@ misses = {}
 
 
 def field_stats(name, values):
-
     if name in misses:
         values[misses[name]] = np.nan
 
@@ -55,7 +54,6 @@ def field_stats(name, values):
 
 
 def decode_grib(fpath):
-
     print(f"decoding file {fpath}")
 
     prev_step = None
@@ -65,9 +63,7 @@ def decode_grib(fpath):
     messages = {}
 
     with open(fpath, "rb") as f:
-
         while True:
-
             msg = eccodes.codes_any_new_from_file(f)
 
             if msg is None:  # end of file, stop iterating
@@ -175,7 +171,6 @@ def decode_grib(fpath):
 
 # @thermofeel.timer
 def calc_cossza_int(messages):
-
     dt = messages["2t"]["base_datetime"]
     time, step, begin, end = timestep_interval(messages)
 
@@ -343,7 +338,6 @@ def filter_utci(t2m, va, mrt, ehPa, utci):
 
 # @thermofeel.timer
 def validate_utci(utci, misses):
-
     utci[misses] = np.nan
 
     field_stats("utci", utci)
@@ -510,7 +504,6 @@ def timestep_interval(messages):
 
 # @thermofeel.timer
 def process_step(args, msgs, output):
-
     check_messages(msgs)
 
     # print(f"loaded {len(msgs)} parameters: {list(msgs.keys())}")
@@ -657,7 +650,6 @@ def command_line_options():
 
 
 def main():
-
     args = command_line_options()
 
     print(f"Thermofeel version: {thermofeel.__version__}")

@@ -8,7 +8,7 @@
 
 """
   thermofeel is a library to calculate human thermal comfort indexes.
-    
+
     Currently calculates the thermal indexes:
     * Universal Thermal Climate Index
     * Apparent Temperature
@@ -19,7 +19,7 @@
     * Wet Bulb Globe Temperature
     * Wet Bulb Globe Temperature Simple
     * Wind Chill
-    
+
     In support of the above indexes, it also calculates:
     * Globe Temperature
     * Mean Radiant Temperature
@@ -27,14 +27,21 @@
     * Relative Humidity Percentage
     * Saturation vapour pressure
     * Wet Bulb Temperature
-  
-    To calculate the cos of the solar zenith angle, we suggest to use the earthkit-meteo library (github.com:ecmwf/earthkit-meteo.git)
+
+    To calculate the cos of the solar zenith angle, we suggest to use the
+    earthkit-meteo library (github.com:ecmwf/earthkit-meteo.git)
   """
 
 import math
 
 import numpy as np
-import datetime
+
+from .helpers import (
+    celsius_to_kelvin,
+    fahrenheit_to_kelvin,
+    kelvin_to_celsius,
+    kelvin_to_fahrenheit,
+)
 
 to_radians = math.pi / 180.0
 
@@ -96,12 +103,13 @@ def calculate_saturation_vapour_pressure_multiphase(t2_k, phase):
     """
 
     es = np.zeros_like(t2_k)
-    y = (t2_k - 273.16) / (t2_k - 32.19) # over liquid water
+    y = (t2_k - 273.16) / (t2_k - 32.19)  # over liquid water
     es[phase == 0] = 6.1121 * np.exp(17.502 * y[phase == 0])
-    y = (t2_k - 273.16) / (t2_k + 0.7)   # over ice
+    y = (t2_k - 273.16) / (t2_k + 0.7)  # over ice
     es[phase == 1] = 6.1121 * np.exp(22.587 * y[phase == 1])
 
     return es
+
 
 def calculate_nonsaturation_vapour_pressure(t2_k, rh):
     """
@@ -114,9 +122,10 @@ def calculate_nonsaturation_vapour_pressure(t2_k, rh):
     """
 
     t2_c = kelvin_to_celsius(t2_k)
-    ens = rh/100 * 6.105 * np.exp(17.27 * t2_c / (237.7+t2_c))
+    ens = rh / 100 * 6.105 * np.exp(17.27 * t2_c / (237.7 + t2_c))
 
     return ens
+
 
 def scale_windspeed(va, h):
     """
@@ -127,11 +136,12 @@ def scale_windspeed(va, h):
     Reference: Bröde et al. (2012)
     https://doi.org/10.1007/s00484-011-0454-1
     """
-    c = 1 / np.log10(10/0.01) #
+    c = 1 / np.log10(10 / 0.01)  #
     c = 0.333333333333
-    vh = va * np.log10(h/0.01) * c
+    vh = va * np.log10(h / 0.01) * c
 
-    return vh    
+    return vh
+
 
 def approximate_dsrp(fdir, cossza, threshold=0.1):
     """
@@ -144,7 +154,7 @@ def approximate_dsrp(fdir, cossza, threshold=0.1):
     """
     # filter statement for solar zenith angle to avoid division by zero.
     csza_filter1 = np.where((cossza > threshold))
-    dsrp = np.copy(fdir)     # dsrp = fdir for cossza <= 0.01, equals to fdir
+    dsrp = np.copy(fdir)  # dsrp = fdir for cossza <= 0.01, equals to fdir
     dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
     return dsrp
 
@@ -166,6 +176,7 @@ def calculate_dew_point_from_relative_humidity(rh, t2_k):
     )
     td_k = celsius_to_kelvin(td_c)
     return td_k
+
 
 def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza):
     """
@@ -209,7 +220,6 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
 
 
 def calculate_utci_polynomial(t2m, mrt, va, rh):
-
     e_mrt = np.subtract(mrt, t2m)
 
     t2m2 = t2m * t2m
@@ -551,18 +561,20 @@ def calculate_bgt(t2_k, mrt, va):
     Reference: Guo et al. 2018
     https://doi.org/10.1016/j.enbuild.2018.08.029
     """
-    v = scale_windspeed(va, 1.1) # formula requires wind speed at 1.1m (i.e., at the level of the globe)
+    v = scale_windspeed(
+        va, 1.1
+    )  # formula requires wind speed at 1.1m (i.e., at the level of the globe)
 
     # a = 1
     d = (1.1e8 * v**0.6) / (0.95 * 0.15**0.4)
-    e = - (mrt**4) - d*t2_k
+    e = -(mrt**4) - d * t2_k
 
-    q = 12*e
-    s = 27*(d**2)
-    delta = ((s + np.sqrt(s**2 - 4 * (q**3))) / 2)**(1/3)
-    Q = 0.5 * np.sqrt((1/3) * (delta + q/delta))
-    
-    bgt = - Q + 0.5 * np.sqrt( - 4 * (Q**2) + d/Q)
+    q = 12 * e
+    s = 27 * (d**2)
+    delta = ((s + np.sqrt(s**2 - 4 * (q**3))) / 2) ** (1 / 3)
+    Q = 0.5 * np.sqrt((1 / 3) * (delta + q / delta))
+
+    bgt = -Q + 0.5 * np.sqrt(-4 * (Q**2) + d / Q)
 
     # f = (1.1e8 * va**0.6) / (0.95 * 0.15**0.4)
     # a = f / 2
@@ -584,6 +596,7 @@ def calculate_bgt(t2_k, mrt, va):
     # )
 
     return bgt
+
 
 def calculate_wbgt(t2_k, mrt, va, td_k):
     """
@@ -622,7 +635,9 @@ def calculate_mrt_from_bgt(t2_k, bgt_k, va):
     Reference: Brimicombe et al. (2023)
     https://doi.org/10.1029/2022GH000701
     """
-    v = scale_windspeed(va, 1.1)   # formula requires wind speed at 1.1m (i.e., at the level of the globe)
+    v = scale_windspeed(
+        va, 1.1
+    )  # formula requires wind speed at 1.1m (i.e., at the level of the globe)
     f = (1.1e8 * v**0.6) / (0.95 * 0.15**0.4)
     bgt4 = bgt_k**4
     mrtc = bgt4 + f * (bgt_k - t2_k)
@@ -640,7 +655,7 @@ def calculate_humidex(t2_k, td_k):
     Reference: Blazejczyk et al. (2012)
     https://doi.org/10.1007/s00484-011-0453-2
     """
-    vp = 6.11 * np.exp(5417.7530 * ((1 / 273.16) - (1 / td_k))) # vapour pressure [hPa]
+    vp = 6.11 * np.exp(5417.7530 * ((1 / 273.16) - (1 / td_k)))  # vapour pressure [hPa]
     h = 0.5555 * (vp - 10.0)
     humidex = t2_k + h
 
@@ -658,9 +673,13 @@ def calculate_normal_effective_temperature(t2_k, va, rh):
     https://doi.org/10.1017/S1350482700001602
     """
     t2_k = kelvin_to_celsius(t2_k)
-    v = scale_windspeed(va, 1.2)     # formula requires wind speed at 1.2m
+    v = scale_windspeed(va, 1.2)  # formula requires wind speed at 1.2m
     ditermeq = 1 / (1.76 + 1.4 * v**0.75)
-    net = 37 - (37 - t2_k / (0.68 - 0.0014 * rh + ditermeq)) - 0.29 * t2_k * (1 - 0.01 * rh)
+    net = (
+        37
+        - (37 - t2_k / (0.68 - 0.0014 * rh + ditermeq))
+        - 0.29 * t2_k * (1 - 0.01 * rh)
+    )
     net_k = celsius_to_kelvin(net)
 
     return net_k
@@ -733,16 +752,16 @@ def calculate_heat_index_simplified(t2_k, rh):
     hi_filter1 = np.where(t2_c > 20)
 
     hi[hi_filter1] = (
-            - hiarray[0]
-            + hiarray[1] * t2_c[hi_filter1]
-            + hiarray[2] * rh[hi_filter1]
-            - hiarray[3] * t2_c[hi_filter1] * rh[hi_filter1]
-            - hiarray[4] * t2_c[hi_filter1]**2
-            - hiarray[5] * rh[hi_filter1]**2
-            + hiarray[6] * t2_c[hi_filter1]**2 * rh[hi_filter1]
-            + hiarray[7] * t2_c[hi_filter1] * rh[hi_filter1]**2
-            - hiarray[8] * t2_c[hi_filter1]**2 * rh[hi_filter1]**2
-        )
+        -hiarray[0]
+        + hiarray[1] * t2_c[hi_filter1]
+        + hiarray[2] * rh[hi_filter1]
+        - hiarray[3] * t2_c[hi_filter1] * rh[hi_filter1]
+        - hiarray[4] * t2_c[hi_filter1] ** 2
+        - hiarray[5] * rh[hi_filter1] ** 2
+        + hiarray[6] * t2_c[hi_filter1] ** 2 * rh[hi_filter1]
+        + hiarray[7] * t2_c[hi_filter1] * rh[hi_filter1] ** 2
+        - hiarray[8] * t2_c[hi_filter1] ** 2 * rh[hi_filter1] ** 2
+    )
 
     hi_k = celsius_to_kelvin(hi)
 
@@ -776,7 +795,7 @@ def calculate_heat_index_adjusted(t2_k, td_k):
     hi_initial = 0.5 * (t2_f + 61 + ((t2_f - 68) * 1.2) + (rh * 0.094))
 
     hi = (
-        - hiarray[0]
+        -hiarray[0]
         + hiarray[1] * t2_f
         + hiarray[2] * rh
         - hiarray[3] * t2_f * rh
@@ -822,35 +841,3 @@ def calculate_heat_index_adjusted(t2_k, td_k):
     hi_k = fahrenheit_to_kelvin(hi)
 
     return hi_k
-
-
-# Converters
-
-# convert Celsius to Kelvin
-def celsius_to_kelvin(tc):
-    tk = tc + 273.15
-    return tk
-
-
-# convert Kelvin to Celsius
-def kelvin_to_celsius(tk):
-    tc = tk - 273.15
-    return tc
-
-
-# convert Kelvin to Fahrenheit
-def kelvin_to_fahrenheit(tk):
-    tf = (tk - 273.15) * 9 / 5 + 32
-    return tf
-
-
-# convert Fahrenheit to Celsius
-def fahrenheit_to_celsius(tf):
-    tc = (tf - 32) * 5 / 9
-    return tc
-
-
-# convert Fahrenheit to Kelvin
-def fahrenheit_to_kelvin(tf):
-    tk = (tf + 459.67) * 5 / 9
-    return tk

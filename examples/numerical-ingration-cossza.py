@@ -26,13 +26,11 @@ def forecast_step_interval(step):
 
 
 def main():
-
     msgs = decode_grib(sys.argv[1], True)
 
     output = open(sys.argv[2], "wb")
 
     for m in msgs:
-
         lats = m["lats"]
         lons = m["lons"]
         assert lats.size == lons.size
