@@ -671,7 +671,6 @@ def calculate_apparent_temperature(t2_k, va, rh):
     Apparent Temperature - version without radiation
         :param t2_k: (float array) 2m temperature [K]
         :param va: (float array) wind speed at 10 meters [m/s]
-        :param td_k: (float array) 2m dew point temperature [K]
         :param rh: (float array) relative humidity percentage [%]
         returns apparent temperature [K]
     Reference: Steadman (1984)
