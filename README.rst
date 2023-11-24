@@ -97,9 +97,7 @@ The main changes are:
 Contributing
 ============
 
-The main repository is hosted on GitHub. Testing, bug reports and contributions are highly welcomed and appreciated:
-
-https://github.com/ecmwf-projects/thermofeel
+The main repository is hosted on `GitHub <https://github.com/ecmwf-projects/thermofeel>`_. Testing, bug reports and contributions are highly welcomed and appreciated.
 
 Please see the Contributing_ document for the best way to help.
 
