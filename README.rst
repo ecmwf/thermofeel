@@ -2,7 +2,7 @@
   :width: 600
   :alt: thermofeel logo
 
-|license| |tag_release| |commits_since_release| |last_commit| |docs|
+|license| |tag_release| |docs|
 
 **thermofeel** (pronounced *thermo-feel*)
 

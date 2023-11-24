@@ -1,3 +1,4 @@
+setuptools
 numpy
 earthkit-meteo>=0.0.1
 pytest[tests]
