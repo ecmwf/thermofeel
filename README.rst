@@ -116,7 +116,7 @@ In publications, please use our paper in SoftwareX as the main citation for **th
 
 Brimicombe, C., Di Napoli, C., Quintino, T., Pappenberger, F., Cornforth, R., & Cloke, H. L. (2022). 
 Thermofeel: A python thermal comfort indices library. SoftwareX, 18, 101005. 
-https://doi.org/10.1016/j.softx.2022.101005
+https://doi.org/10.1016/j.softx.2022.101005 `[cite] <https://github.com/ecmwf-projects/thermofeel/CITATION.bib>`_
 
 
 To cite **thermofeel** the code currently please use:

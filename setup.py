@@ -37,10 +37,6 @@ for line in read("thermofeel/__init__.py").split("\n"):
 
 assert version
 
-# requirements
-with open("requirements.txt") as f:
-    required = f.read().splitlines()
-
 
 setuptools.setup(
     name="thermofeel",
@@ -53,7 +49,7 @@ setuptools.setup(
     url="https://github.com/ecmwf-projects/thermofeel",
     packages=setuptools.find_packages(),
     include_package_data=True,
-    install_requires=required,
+    install_requires=["numpy", "earthkit-meteo>=0.0.1"],
     zip_safe=True,
     keywords="tool",
     classifiers=[
