@@ -76,7 +76,7 @@ The main changes are:
 
 **Improvements**
  * thermofeel library docstring lists computed variables in alphabetical order
- * the cosine of the solar zenith angle now computed via the `earthkit-meteo <https://github.com/ecmwf/earthkit-meteo>` library
+ * the cosine of the solar zenith angle now computed via the `earthkit-meteo <https://github.com/ecmwf/earthkit-meteo>`_ library
  * ``calculate_bgt`` function is calculated via a 4x faster formula
  * ``calculate_saturation_vapour_pressure_multiphase`` formulas replaced with those used in the IFS
  * changeable threshold in ``approximate_dsrp`` function (set to 0.1 by default)
