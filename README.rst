@@ -56,6 +56,7 @@ Release notes
 =============
 
 Thermofeel 2.0 brings a number of changes to the underlying code but most importantly to the API.
+
 Consequently, downstream packages using thermofeel 1.* will require code changes to migrate to version 2.0 and beyond.
 
 The main changes are:
@@ -77,26 +78,26 @@ The main changes are:
  * thermofeel library docstring lists computed variables in alphabetical order
  * the cosine of the solar zenith angle now computed via the earthkit-meteo library
  * ``calculate_bgt`` function is calculated via a 4x faster formula
- * ``calculate_saturation_vapour_pressure_multiphase`` formulas replaced with those used in the IFS; es = 1.004*es removed
+ * ``calculate_saturation_vapour_pressure_multiphase`` formulas replaced with those used in the IFS
  * changeable threshold in ``approximate_dsrp`` function (set to 0.1 by default)
  * invalidity outside input variables range specified in ``calculate_wind_chill`` function docstring
 
 **Bug Fixes**
- * ``approximate_dsrp`` function: to avoid fdir being overwritten with dsrp when calculating MRT
- * ``calculate_wbgt_simple`` function: constant value; vapour pressure calculated from non-saturated formula
- * ``calculate_bgt`` function: wind speed at 1.1m in input
- * ``calculate_mrt_from_bgt`` function: wind speed at 1.1m in input
- * ``calculate_normal_effective_temperature`` function: wind speed at 1.2m in input
- * ``calculate_apparent_temperature`` function: wind speed at 10m in input; vapour pressure calculated from non-saturated formula
- * ``calculate_wind_chill`` function: wind speed in km/h and operation symbols in main formula
- * ``calculate_heat_index_simplified`` function: wrong sign and missing constant value in hiarray; hi set to 2m air temperature when the latter is below 20°C
- * ``fahrenheit_to_kelvin`` converter function 
+ * fixed ``approximate_dsrp`` to avoid fdir being overwritten with dsrp when calculating MRT
+ * fixed ``calculate_wbgt_simple`` constant value and vapour pressure calculated from non-saturated formula
+ * fixed ``calculate_bgt`` wind speed at 1.1m in input
+ * fixed ``calculate_mrt_from_bgt`` wind speed at 1.1m in input
+ * fixed ``calculate_normal_effective_temperature`` wind speed at 1.2m in input
+ * fixed ``calculate_apparent_temperature`` wind speed at 10m in input; vapour pressure calculated from non-saturated formula
+ * fixed ``calculate_wind_chill`` wind speed in km/h and operation symbols in main formula
+ * fixed ``calculate_heat_index_simplified`` a wrong sign and missing constant value in hiarray; hi set to 2m air temperature when the latter is below 20°C
+ * fixed ``fahrenheit_to_kelvin`` converter function 
 
 
 Contributing
 ============
 
-The main repository is hosted on GitHub, testing, bug reports and contributions are highly welcomed and appreciated:
+The main repository is hosted on GitHub. Testing, bug reports and contributions are highly welcomed and appreciated:
 
 https://github.com/ecmwf-projects/thermofeel
 
@@ -145,7 +146,7 @@ https://doi.org/10.1016/j.softx.2022.101005
 
 To cite **thermofeel** the code currently please use:
 
-Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2021
+Brimicombe, C., Di Napoli, C., Quintino, T., Pappenberger, F., Cornforth, R., & Cloke, H. L. (2021).
 *thermofeel: a python thermal comfort indices library* https://doi.org/10.21957/mp6v-fd16
 
 
