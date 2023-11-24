@@ -38,7 +38,7 @@ for line in read("thermofeel/__init__.py").split("\n"):
 assert version
 
 # requirements
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 
@@ -53,7 +53,7 @@ setuptools.setup(
     url="https://github.com/ecmwf-projects/thermofeel",
     packages=setuptools.find_packages(),
     include_package_data=True,
-    install_requires=required,   
+    install_requires=required,
     zip_safe=True,
     keywords="tool",
     classifiers=[
