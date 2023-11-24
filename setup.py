@@ -37,6 +37,10 @@ for line in read("thermofeel/__init__.py").split("\n"):
 
 assert version
 
+# requirements
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 
 setuptools.setup(
     name="thermofeel",
@@ -44,16 +48,16 @@ setuptools.setup(
     description="A library to calculate human thermal comfort indexes",
     long_description=read("README.rst"),
     author="European Centre for Medium-Range Weather Forecasts (ECMWF)",
-    author_email="software.support@ecmwf.int",
+    author_email="software@ecmwf.int",
     license="Apache License Version 2.0",
     url="https://github.com/ecmwf-projects/thermofeel",
     packages=setuptools.find_packages(),
     include_package_data=True,
-    install_requires=["numpy"],
+    install_requires=required,   
     zip_safe=True,
     keywords="tool",
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
@@ -62,6 +66,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent",

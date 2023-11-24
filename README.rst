@@ -46,7 +46,7 @@ System dependencies
 
 thermofeel core functions depend on:
  * numpy
- * earthkit-meteo - for solar zenith angle calculation
+ * earthkit-meteo > 0.0.1 - for solar zenith angle calculation
 
 Optionally, thermofeel depends on:
  * pytest - for unit testing
@@ -76,7 +76,7 @@ The main changes are:
 
 **Improvements**
  * thermofeel library docstring lists computed variables in alphabetical order
- * the cosine of the solar zenith angle now computed via the earthkit-meteo library
+ * the cosine of the solar zenith angle now computed via the `earthkit-meteo <https://github.com/ecmwf/earthkit-meteo>` library
  * ``calculate_bgt`` function is calculated via a 4x faster formula
  * ``calculate_saturation_vapour_pressure_multiphase`` formulas replaced with those used in the IFS
  * changeable threshold in ``approximate_dsrp`` function (set to 0.1 by default)
