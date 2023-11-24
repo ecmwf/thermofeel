@@ -9,24 +9,23 @@
 A library to calculate human thermal comfort indexes.
 
 Currently calculates the thermal indexes:
- * Universal Thermal Climate Index
- * Mean Radiant Temperature
- * Mean Radiant Temperature from Wet Bulb Globe Temperature
- * Heat Index Simplified
- * Heat Index Adjusted
- * Humidex
- * Apparent Temperature
- * Wind Chill
- * Net Effective Temperature
- * Wet Bulb Globe Temperature Simple
- * Wet Bulb Globe Temperature
+  * Universal Thermal Climate Index
+  * Apparent Temperature
+  * Heat Index Adjusted
+  * Heat Index Simplified
+  * Humidex
+  * Normal Effective Temperature
+  * Wet Bulb Globe Temperature
+  * Wet Bulb Globe Temperature Simple
+  * Wind Chill
 
 In support of the above indexes, it also calculates:
- * Solar Declination Angle
- * Solar Zenith Angle
- * Relative Humidity Percentage
- * Saturation vapour pressure
-
+  * Globe Temperature
+  * Mean Radiant Temperature
+  * Mean Radiant Temperature from Globe Temperature
+  * Relative Humidity Percentage
+  * Saturation vapour pressure
+  * Wet Bulb Temperature
 
 PyPi
 ====
@@ -47,9 +46,52 @@ System dependencies
 
 thermofeel core functions depend on:
  * numpy
+ * earthkit-meteo - for solar zenith angle calculation
 
 Optionally, thermofeel depends on:
  * pytest - for unit testing
+
+
+Release notes
+=============
+
+Thermofeel 2.0 brings a number of changes to the underlying code but most importantly to the API.
+Consequently, downstream packages using thermofeel 1.* will require code changes to migrate to version 2.0 and beyond.
+
+The main changes are:
+
+**Standardisation**
+ * I/O variables converted into International System of Units (SI) (e.g., K)
+ * Docstrings standardised in their descriptions (e.g., inputs as float arrays) and references
+ * Variable names standardised across function declarations (i.e., t2m vs t2k vs t_k → now t2_k)
+ * Use of temperature converter functions (to be checked for speed)
+ * Input variables are limited to those explicitly needed in the function formula (see e.g., ``calculate_normal_effective_temperature`` function)
+
+**New Functions**
+ * ``scale_windspeed`` function to scale 10m wind speed to height h with h < 10m
+ * ``calculate_nonsaturation_vapour_pressure`` to calculate vapour pressure at a given relative humidity and air temperature
+ * ``calculate_wbgt_simple`` function renamed
+ * ``calculate_normal_effective_temperature`` function renamed
+
+**Improvements**
+ * thermofeel library docstring lists computed variables in alphabetical order
+ * the cosine of the solar zenith angle now computed via the earthkit-meteo library
+ * ``calculate_bgt`` function is calculated via a 4x faster formula
+ * ``calculate_saturation_vapour_pressure_multiphase`` formulas replaced with those used in the IFS; es = 1.004*es removed
+ * changeable threshold in ``approximate_dsrp`` function (set to 0.1 by default)
+ * invalidity outside input variables range specified in ``calculate_wind_chill`` function docstring
+
+**Bug Fixes**
+ * ``approximate_dsrp`` function: to avoid fdir being overwritten with dsrp when calculating MRT
+ * ``calculate_wbgt_simple`` function: constant value; vapour pressure calculated from non-saturated formula
+ * ``calculate_bgt`` function: wind speed at 1.1m in input
+ * ``calculate_mrt_from_bgt`` function: wind speed at 1.1m in input
+ * ``calculate_normal_effective_temperature`` function: wind speed at 1.2m in input
+ * ``calculate_apparent_temperature`` function: wind speed at 10m in input; vapour pressure calculated from non-saturated formula
+ * ``calculate_wind_chill`` function: wind speed in km/h and operation symbols in main formula
+ * ``calculate_heat_index_simplified`` function: wrong sign and missing constant value in hiarray; hi set to 2m air temperature when the latter is below 20°C
+ * ``fahrenheit_to_kelvin`` converter function 
+
 
 Contributing
 ============
@@ -94,19 +136,17 @@ Citing
 ======
 
 
-In publications, please use our paper in SoftwareX as the main citation for **thermofeel**.
-to cite **thermofeel** as a publication please use:
-Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2022
-*thermofeel: a python thermal comfort indices library* Software X 
+In publications, please use our paper in SoftwareX as the main citation for **thermofeel**:
+
+Brimicombe, C., Di Napoli, C., Quintino, T., Pappenberger, F., Cornforth, R., & Cloke, H. L. (2022). 
+Thermofeel: A python thermal comfort indices library. SoftwareX, 18, 101005. 
 https://doi.org/10.1016/j.softx.2022.101005
 
+
 To cite **thermofeel** the code currently please use:
+
 Brimicombe C,Di Napoli C, Quintino T,Pappenberger F, Cornforth R and Cloke H,2021
 *thermofeel: a python thermal comfort indices library* https://doi.org/10.21957/mp6v-fd16
-
-
-For referring to the latest release of **thermofeel** please use this DOI: https://doi.org/10.21957/mp6v-fd16
-
 
 
 Acknowledgements
