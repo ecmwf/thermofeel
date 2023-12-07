@@ -1,43 +1,40 @@
 name: ci
 
-# Controls when the workflow will run
 on:
-
-  # Trigger the workflow on all pushes
+  # Trigger the workflow on push to master or develop, except tag creation
   push:
     branches:
-    - '**'
-    tags:
-    - '**'
+      - 'master'
+      - 'develop'
+    tags-ignore:
+      - '**'
 
-  # Trigger the workflow on all pull requests
+  # Trigger the workflow on pull request
   pull_request: ~
 
-  # Trigger the workflow on release creation
-  release:
-    types:
-    - created
-
-  # Allow workflow to be dispatched on demand
+  # Trigger the workflow manually
   workflow_dispatch: ~
 
-jobs:
+  # Trigger after public PR approved for CI
+  pull_request_target:
+    types: [labeled]
 
-  # Calls a reusable CI workflow to qa, test & deploy the current repository.
-  #   We skip jobs that will result in duplicate jobs, since the code does not depend on the compiler.
-  #   It will produce a code coverage report on success and upload it to the codecov service.
-  #   If all checks were successful and a new release tag created, the package will be published on PyPI.
-  ci:
-    name: ci
-    uses: ecmwf-actions/reusable-workflows/.github/workflows/ci-python.yml@v1
+jobs:
+  # Run CI including downstream packages on self-hosted runners
+  downstream-ci:
+    name: downstream-ci
+    if: ${{ !github.event.pull_request.head.repo.fork && github.event.action != 'labeled' || github.event.label.name == 'approved-for-ci' }}
+    uses: ecmwf-actions/downstream-ci/.github/workflows/downstream-ci.yml@thermofeel
     with:
-      codecov_upload: true
-      skip_matrix_jobs: |
-        clang-12@ubuntu-20.04
-        clang-9@ubuntu-18.04
-        clang-12@macos-10.15
-      build_package_inputs: |
-        self_build: false
-    secrets:
-      pypi_username: ${{ secrets.PYPI_USERNAME }}
-      pypi_password: ${{ secrets.PYPI_PASSWORD }}
+      thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
+      python_qa: true
+    secrets: inherit
+
+  # Build downstream packages on HPC
+  downstream-ci-hpc:
+    name: downstream-ci-hpc
+    if: ${{ !github.event.pull_request.head.repo.fork && github.event.action != 'labeled' || github.event.label.name == 'approved-for-ci' }}
+    uses: ecmwf-actions/downstream-ci/.github/workflows/downstream-ci-hpc.yml@thermofeel
+    with:
+      thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
+    secrets: inherit
