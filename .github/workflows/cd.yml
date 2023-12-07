@@ -1,0 +1,11 @@
+name: cd
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+' # only tags with the form x.y.z
+      
+jobs:
+  pypi:
+    uses: ecmwf-actions/reusable-workflows/.github/workflows/cd-pypi.yml@v2
+    secrets: inherit
