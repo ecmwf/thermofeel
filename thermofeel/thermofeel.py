@@ -85,7 +85,7 @@ def calculate_saturation_vapour_pressure(t2_k):
     ]
     ess = g[7] * np.log(t2_k)
     for i in range(7):
-        ess += g[i] * np.power(t2_k, (i - 2))
+        ess = ess + g[i] * np.power(t2_k, (i - 2))
 
     ess = np.exp(ess) * 0.01  # hPa
 
