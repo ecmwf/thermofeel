@@ -98,14 +98,15 @@ def calculate_saturation_vapour_pressure_multiphase(t2_k, phase):
         :param t2_k: (float array) 2m temperature [K]
         :param phase: 0 over liquid water and 1 over ice
         returns pressure of water vapor over a surface of liquid water or ice [hPa] == [mBar]
-    Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018)
+    Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018) pp. 116
     https://doi.org/10.21957/4whwo8jw0
+    https://metview.readthedocs.io/en/latest/api/functions/saturation_vapour_pressure.html
     """
-
+    T0 = 273.16  # triple point of water 273.16 K (0.01 °C) at 611.73 Pa
     es = np.zeros_like(t2_k)
-    y = (t2_k - 273.16) / (t2_k - 32.19)  # over liquid water
+    y = (t2_k - T0) / (t2_k - 32.19)  # over liquid water
     es[phase == 0] = 6.1121 * np.exp(17.502 * y[phase == 0])
-    y = (t2_k - 273.16) / (t2_k + 0.7)  # over ice
+    y = (t2_k - T0) / (t2_k + 0.7)  # over ice
     es[phase == 1] = 6.1121 * np.exp(22.587 * y[phase == 1])
 
     return es
