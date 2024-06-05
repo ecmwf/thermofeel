@@ -2,7 +2,7 @@
   :width: 600
   :alt: thermofeel logo
 
-|license| |tag_release| |docs|
+|license| |tag_release| |docs| |ci|
 
 **thermofeel** (pronounced *thermo-feel*)
 
@@ -35,11 +35,6 @@ PyPi
 Install with::
 
     $ pip install thermofeel
-
-Testing
-=======
-
-|ci| |codecov|
 
 System dependencies
 ===================
