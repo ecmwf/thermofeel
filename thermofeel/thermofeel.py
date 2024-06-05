@@ -98,7 +98,7 @@ def calculate_saturation_vapour_pressure_multiphase(t2_k, phase):
         :param t2_k: (float array) 2m temperature [K]
         :param phase: 0 over liquid water and 1 over ice
         returns pressure of water vapor over a surface of liquid water or ice [hPa] == [mBar]
-    Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018)
+    Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018) pp. 116
     https://doi.org/10.21957/4whwo8jw0
     https://metview.readthedocs.io/en/latest/api/functions/saturation_vapour_pressure.html
     """
