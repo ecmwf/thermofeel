@@ -144,7 +144,7 @@ class TestThermalCalculator(unittest.TestCase):
         rh = np.array([80])
         net = np.array([tmf.calculate_normal_effective_temperature(t2_k, va, rh)])
         # print(f"net {net}")
-        assert net == pytest.approx(314.7102642987715, abs=1e-6)
+        assert net == pytest.approx(304.13650125, abs=1e-6)
 
     def test_apparent_temperature(self):
         t2_k = np.array([tmf.celsius_to_kelvin(25.0)])

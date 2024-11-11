@@ -678,7 +678,7 @@ def calculate_normal_effective_temperature(t2_k, va, rh):
     ditermeq = 1 / (1.76 + 1.4 * v**0.75)
     net = (
         37
-        - (37 - t2_k / (0.68 - 0.0014 * rh + ditermeq))
+        - ((37 - t2_k) / (0.68 - 0.0014 * rh + ditermeq))
         - 0.29 * t2_k * (1 - 0.01 * rh)
     )
     net_k = celsius_to_kelvin(net)
