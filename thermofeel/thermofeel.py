@@ -85,7 +85,7 @@ def calculate_saturation_vapour_pressure(t2_k):
     ]
     ess = g[7] * np.log(t2_k)
     for i in range(7):
-        ess += g[i] * np.power(t2_k, (i - 2))
+        ess = ess + g[i] * np.power(t2_k, (i - 2))
 
     ess = np.exp(ess) * 0.01  # hPa
 
@@ -98,14 +98,15 @@ def calculate_saturation_vapour_pressure_multiphase(t2_k, phase):
         :param t2_k: (float array) 2m temperature [K]
         :param phase: 0 over liquid water and 1 over ice
         returns pressure of water vapor over a surface of liquid water or ice [hPa] == [mBar]
-    Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018)
+    Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018) pp. 116
     https://doi.org/10.21957/4whwo8jw0
+    https://metview.readthedocs.io/en/latest/api/functions/saturation_vapour_pressure.html
     """
-
+    T0 = 273.16  # triple point of water 273.16 K (0.01 °C) at 611.73 Pa
     es = np.zeros_like(t2_k)
-    y = (t2_k - 273.16) / (t2_k - 32.19)  # over liquid water
+    y = (t2_k - T0) / (t2_k - 32.19)  # over liquid water
     es[phase == 0] = 6.1121 * np.exp(17.502 * y[phase == 0])
-    y = (t2_k - 273.16) / (t2_k + 0.7)  # over ice
+    y = (t2_k - T0) / (t2_k + 0.7)  # over ice
     es[phase == 1] = 6.1121 * np.exp(22.587 * y[phase == 1])
 
     return es
@@ -677,7 +678,7 @@ def calculate_normal_effective_temperature(t2_k, va, rh):
     ditermeq = 1 / (1.76 + 1.4 * v**0.75)
     net = (
         37
-        - (37 - t2_k / (0.68 - 0.0014 * rh + ditermeq))
+        - ((37 - t2_k) / (0.68 - 0.0014 * rh + ditermeq))
         - 0.29 * t2_k * (1 - 0.01 * rh)
     )
     net_k = celsius_to_kelvin(net)
@@ -710,11 +711,11 @@ def calculate_wind_chill(t2_k, va):
         :param t2_k: (float array) 2m Temperature [K]
         :param va: (float array) wind speed at 10 meters [m/s]
         returns wind chill [K]
-        Temperature must be between -50°C and 5°C; wind speed must be between 5km/h and 80km/h
-        Wind chill from input values outside those ranges are not to be considered valid
+        Computation is only valid for temperatures between -50°C and 5°C and wind speeds between 5km/h and 80km/h.
+        For input values outside those ranges, computed results not be considered valid.
     Reference: Blazejczyk et al. (2012)
     https://doi.org/10.1007/s00484-011-0453-2
-    See also: http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
+    See also: https://web.archive.org/web/20130627223738/http://climate.weatheroffice.gc.ca/prods_servs/normals_documentation_e.html  # noqa
     """
     t2_c = kelvin_to_celsius(t2_k)  # kelvin_to_celsius(tk)
     v = va * 3.6  # convert to kilometers per hour

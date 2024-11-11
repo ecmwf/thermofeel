@@ -1,8 +1,8 @@
-.. image:: https://raw.githubusercontent.com/ecmwf-projects/thermofeel/master/thermofeel.png
+.. image:: https://raw.githubusercontent.com/ecmwf/thermofeel/master/thermofeel.png
   :width: 600
   :alt: thermofeel logo
 
-|license| |tag_release| |docs|
+|license| |tag_release| |docs| |ci|
 
 **thermofeel** (pronounced *thermo-feel*)
 
@@ -36,11 +36,6 @@ Install with::
 
     $ pip install thermofeel
 
-Testing
-=======
-
-|ci| |codecov|
-
 System dependencies
 ===================
 
@@ -68,24 +63,24 @@ The main changes are:
 
 Please consult ChangeLog_ for more details.
 
-.. _ChangeLog: https://github.com/ecmwf-projects/thermofeel/blob/master/ChangeLog.rst
+.. _ChangeLog: https://github.com/ecmwf/thermofeel/blob/master/ChangeLog.rst
 
 
 Contributing
 ============
 
-The main repository is hosted on `GitHub <https://github.com/ecmwf-projects/thermofeel>`_. Testing, bug reports and contributions are highly welcomed and appreciated.
+The main repository is hosted on `GitHub <https://github.com/ecmwf/thermofeel>`_. Testing, bug reports and contributions are highly welcomed and appreciated.
 
 Please see the Contributing_ document for the best way to help.
 
-.. _Contributing: https://github.com/ecmwf-projects/thermofeel/blob/master/CONTRIBUTING.rst
+.. _Contributing: https://github.com/ecmwf/thermofeel/blob/master/CONTRIBUTING.rst
 
 Current developers:
 
 - Claudia Di Napoli - `ECMWF <https://ecmwf.int>`_
 - Tiago Quintino - `ECMWF <https://ecmwf.int>`_
 
-See also the `contributors <https://github.com/ecmwf-projects/thermofeel/contributors>`_ for a more complete list.
+See also the `contributors <https://github.com/ecmwf/thermofeel/contributors>`_ for a more complete list.
 
 License
 =======
@@ -130,16 +125,16 @@ Acknowledgements
 Past and current funding and support for **thermofeel** is listed in the adjoning Acknowledgements_
 
 
-.. _Acknowledgements: https://github.com/ecmwf-projects/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
+.. _Acknowledgements: https://github.com/ecmwf/thermofeel/blob/master/ACKNOWLEDGEMENTS.rst
 
 
-.. |last_commit| image:: https://img.shields.io/github/last-commit/ecmwf-projects/thermofeel
-    :target: https://github.com/ecmwf-projects/thermofeel
+.. |last_commit| image:: https://img.shields.io/github/last-commit/ecmwf/thermofeel
+    :target: https://github.com/ecmwf/thermofeel
 
-.. |commits_since_release| image:: https://img.shields.io/github/commits-since/ecmwf-projects/thermofeel/latest?sort=semver
-    :target: https://github.com/ecmwf-projects/thermofeel
+.. |commits_since_release| image:: https://img.shields.io/github/commits-since/ecmwf/thermofeel/latest?sort=semver
+    :target: https://github.com/ecmwf/thermofeel
 
-.. |license| image:: https://img.shields.io/github/license/ecmwf-projects/thermofeel
+.. |license| image:: https://img.shields.io/github/license/ecmwf/thermofeel
     :target: https://www.apache.org/licenses/LICENSE-2.0.html
 
 .. |pypi_release| image:: https://img.shields.io/pypi/v/thermofeel?color=green
@@ -148,20 +143,20 @@ Past and current funding and support for **thermofeel** is listed in the adjonin
 .. |pypi_status| image:: https://img.shields.io/pypi/status/thermofeel
     :target: https://pypi.org/project/thermofeel
 
-.. |tag_release| image:: https://img.shields.io/github/v/release/ecmwf-projects/thermofeel?sort=semver
-    :target: https://github.com/ecmwf-projects/thermofeel
+.. |tag_release| image:: https://img.shields.io/github/v/release/ecmwf/thermofeel?sort=semver
+    :target: https://github.com/ecmwf/thermofeel
 
-.. |codecov| image:: https://codecov.io/gh/ecmwf-projects/thermofeel/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/ecmwf-projects/thermofeel
+.. |codecov| image:: https://codecov.io/gh/ecmwf/thermofeel/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/ecmwf/thermofeel
 
-.. |ci| image:: https://img.shields.io/github/workflow/status/ecmwf-projects/thermofeel/ci
-  :target: https://github.com/ecmwf-projects/thermofeel/actions
+.. |ci| image:: https://img.shields.io/github/actions/workflow/status/ecmwf/thermofeel/ci.yml
+  :target: https://github.com/ecmwf/thermofeel/actions
 
 .. |pypi_downloads| image:: https://img.shields.io/pypi/dm/thermofeel
   :target: https://pypi.org/project/thermofeel
 
-.. |code_size| image:: https://img.shields.io/github/languages/code-size/ecmwf-projects/thermofeel?color=green
-  :target: https://github.com/ecmwf-projects/thermofeel
+.. |code_size| image:: https://img.shields.io/github/languages/code-size/ecmwf/thermofeel?color=green
+  :target: https://github.com/ecmwf/thermofeel
   
 .. |docs| image:: https://readthedocs.org/projects/thermofeel/badge/?version=latest
   :target: https://thermofeel.readthedocs.io/en/latest/?badge=latest
