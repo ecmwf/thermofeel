@@ -154,11 +154,26 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"at {at}")
         assert at == pytest.approx(299.86678322384626, abs=1e-6)
 
-    def test_windchill(self):
+    def test_wind_chill(self):
         t2_k = np.array([270])
         va = np.array([10])
-        wc = np.array([tmf.calculate_wind_chill(t2_k, va)])
-        assert wc == pytest.approx(261.92338925380074, abs=1e-6)
+        wc_k = np.array([tmf.calculate_wind_chill(t2_k, va)])
+        assert wc_k == pytest.approx(261.92338925380074, abs=1e-6)
+        # reference result from from wikipedia article https://en.wikipedia.org/wiki/Wind_chill
+        t2_k = np.array([tmf.celsius_to_kelvin(-20)])  # -20C to K
+        va = np.array([5 / 3.6])  # 5 km/h to m/s
+        wc_k = np.array([tmf.calculate_wind_chill(t2_k, va)])
+        wc_c = tmf.kelvin_to_celsius(wc_k)
+        assert wc_c == pytest.approx(
+            -24.27850328, abs=1e-6
+        )  # around ~ -24C for wind chill (not exact)
+        va = np.array([30 / 3.6])  # 30 km/h to m/s
+        wc_k = np.array([tmf.calculate_wind_chill(t2_k, va)])
+        wc_c = tmf.kelvin_to_celsius(wc_k)
+        print(f"wc_c {wc_c}")
+        assert wc_c == pytest.approx(
+            -32.56804448, abs=1e-6
+        )  # around ~ -33C for wind chill (not exact)
 
     def test_heat_index_simplified(self):
         t2_k = np.array([tmf.celsius_to_kelvin(21.0)])

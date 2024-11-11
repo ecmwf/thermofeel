@@ -711,11 +711,11 @@ def calculate_wind_chill(t2_k, va):
         :param t2_k: (float array) 2m Temperature [K]
         :param va: (float array) wind speed at 10 meters [m/s]
         returns wind chill [K]
-        Temperature must be between -50°C and 5°C; wind speed must be between 5km/h and 80km/h
-        Wind chill from input values outside those ranges are not to be considered valid
+        Computation is only valid for temperatures between -50°C and 5°C and wind speeds between 5km/h and 80km/h.
+        For input values outside those ranges, computed results not be considered valid.
     Reference: Blazejczyk et al. (2012)
     https://doi.org/10.1007/s00484-011-0453-2
-    See also: http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
+    See also: https://web.archive.org/web/20130627223738/http://climate.weatheroffice.gc.ca/prods_servs/normals_documentation_e.html  # noqa
     """
     t2_c = kelvin_to_celsius(t2_k)  # kelvin_to_celsius(tk)
     v = va * 3.6  # convert to kilometers per hour
