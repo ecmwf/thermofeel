@@ -251,20 +251,20 @@ def calculate_utci_polynomial(t2m, mrt, va, wvp):
     e_mrt5 = e_mrt4 * e_mrt
     e_mrt6 = e_mrt5 * e_mrt
 
-    rh2 = wvp * wvp
-    rh3 = rh2 * wvp
-    rh4 = rh3 * wvp
-    rh5 = rh4 * wvp
-    rh6 = rh5 * wvp
+    wvp2 = wvp * wvp
+    wvp3 = wvp2 * wvp
+    wvp4 = wvp3 * wvp
+    wvp5 = wvp4 * wvp
+    wvp6 = wvp5 * wvp
 
-    varh2 = va * rh2
+    varh2 = va * wvp2
     va2_rh = va2 * wvp
     va2_e_mrt = va2 * e_mrt
     e_mrt_rh = e_mrt * wvp
-    e_mrt_rh2 = e_mrt * rh2
+    e_mrt_rh2 = e_mrt * wvp2
     e_mrt2_rh = e_mrt2 * wvp
-    e_mrt2_rh2 = e_mrt2 * rh2
-    e_mrt_rh3 = e_mrt * rh3
+    e_mrt2_rh2 = e_mrt2 * wvp2
+    e_mrt_rh3 = e_mrt * wvp3
     va_e_mrt = va * e_mrt
     va_e_mrt2 = va * e_mrt2
     va_rh = va * wvp
@@ -414,21 +414,21 @@ def calculate_utci_polynomial(t2m, mrt, va, wvp):
         + -1.18566247e-09 * t2m * e_mrt4_rh
         + 3.34678041e-10 * va * e_mrt4_rh
         + -1.15606447e-10 * e_mrt5 * wvp
-        + -2.80626406e00 * rh2
-        + 5.48712484e-01 * t2m * rh2
-        + -3.99428410e-03 * t2m2 * rh2
-        + -9.54009191e-04 * t2m3 * rh2
-        + 1.93090978e-05 * t2m4 * rh2
+        + -2.80626406e00 * wvp2
+        + 5.48712484e-01 * t2m * wvp2
+        + -3.99428410e-03 * t2m2 * wvp2
+        + -9.54009191e-04 * t2m3 * wvp2
+        + 1.93090978e-05 * t2m4 * wvp2
         + -3.08806365e-01 * varh2
         + 1.16952364e-02 * t2m * varh2
         + 4.95271903e-04 * t2m2 * varh2
         + -1.90710882e-05 * t2m3 * varh2
-        + 2.10787756e-03 * va2 * rh2
-        + -6.98445738e-04 * t2m * va2 * rh2
-        + 2.30109073e-05 * t2m2 * va2 * rh2
-        + 4.17856590e-04 * va3 * rh2
-        + -1.27043871e-05 * t2m * va3 * rh2
-        + -3.04620472e-06 * va4 * rh2
+        + 2.10787756e-03 * va2 * wvp2
+        + -6.98445738e-04 * t2m * va2 * wvp2
+        + 2.30109073e-05 * t2m2 * va2 * wvp2
+        + 4.17856590e-04 * va3 * wvp2
+        + -1.27043871e-05 * t2m * va3 * wvp2
+        + -3.04620472e-06 * va4 * wvp2
         + 5.14507424e-02 * e_mrt_rh2
         + -4.32510997e-03 * t2m * e_mrt_rh2
         + 8.99281156e-05 * t2m2 * e_mrt_rh2
@@ -445,45 +445,45 @@ def calculate_utci_polynomial(t2m, mrt, va, wvp):
         + 7.68023384e-06 * va * e_mrt2_rh2
         + -5.47446896e-07 * t2m_va * e_mrt2_rh2
         + -3.59937910e-08 * va2 * e_mrt2_rh2
-        + -4.36497725e-06 * e_mrt3 * rh2
-        + 1.68737969e-07 * t2m * e_mrt3 * rh2
-        + 2.67489271e-08 * va * e_mrt3 * rh2
-        + 3.23926897e-09 * e_mrt4 * rh2
-        + -3.53874123e-02 * rh3
-        + -2.21201190e-01 * t2m * rh3
-        + 1.55126038e-02 * t2m2 * rh3
-        + -2.63917279e-04 * t2m3 * rh3
-        + 4.53433455e-02 * va * rh3
-        + -4.32943862e-03 * t2m_va * rh3
-        + 1.45389826e-04 * t2m2 * va * rh3
-        + 2.17508610e-04 * va2 * rh3
-        + -6.66724702e-05 * t2m * va2 * rh3
-        + 3.33217140e-05 * va3 * rh3
+        + -4.36497725e-06 * e_mrt3 * wvp2
+        + 1.68737969e-07 * t2m * e_mrt3 * wvp2
+        + 2.67489271e-08 * va * e_mrt3 * wvp2
+        + 3.23926897e-09 * e_mrt4 * wvp2
+        + -3.53874123e-02 * wvp3
+        + -2.21201190e-01 * t2m * wvp3
+        + 1.55126038e-02 * t2m2 * wvp3
+        + -2.63917279e-04 * t2m3 * wvp3
+        + 4.53433455e-02 * va * wvp3
+        + -4.32943862e-03 * t2m_va * wvp3
+        + 1.45389826e-04 * t2m2 * va * wvp3
+        + 2.17508610e-04 * va2 * wvp3
+        + -6.66724702e-05 * t2m * va2 * wvp3
+        + 3.33217140e-05 * va3 * wvp3
         + -2.26921615e-03 * e_mrt_rh3
         + 3.80261982e-04 * t2m * e_mrt_rh3
         + -5.45314314e-09 * t2m2 * e_mrt_rh3
         + -7.96355448e-04 * va * e_mrt_rh3
         + 2.53458034e-05 * t2m_va * e_mrt_rh3
         + -6.31223658e-06 * va2 * e_mrt_rh3
-        + 3.02122035e-04 * e_mrt2 * rh3
-        + -4.77403547e-06 * t2m * e_mrt2 * rh3
-        + 1.73825715e-06 * va * e_mrt2 * rh3
-        + -4.09087898e-07 * e_mrt3 * rh3
-        + 6.14155345e-01 * rh4
-        + -6.16755931e-02 * t2m * rh4
-        + 1.33374846e-03 * t2m2 * rh4
-        + 3.55375387e-03 * va * rh4
-        + -5.13027851e-04 * t2m_va * rh4
-        + 1.02449757e-04 * va2 * rh4
-        + -1.48526421e-03 * e_mrt * rh4
-        + -4.11469183e-05 * t2m * e_mrt * rh4
-        + -6.80434415e-06 * va * e_mrt * rh4
-        + -9.77675906e-06 * e_mrt2 * rh4
-        + 8.82773108e-02 * rh5
-        + -3.01859306e-03 * t2m * rh5
-        + 1.04452989e-03 * va * rh5
-        + 2.47090539e-04 * e_mrt * rh5
-        + 1.48348065e-03 * rh6
+        + 3.02122035e-04 * e_mrt2 * wvp3
+        + -4.77403547e-06 * t2m * e_mrt2 * wvp3
+        + 1.73825715e-06 * va * e_mrt2 * wvp3
+        + -4.09087898e-07 * e_mrt3 * wvp3
+        + 6.14155345e-01 * wvp4
+        + -6.16755931e-02 * t2m * wvp4
+        + 1.33374846e-03 * t2m2 * wvp4
+        + 3.55375387e-03 * va * wvp4
+        + -5.13027851e-04 * t2m_va * wvp4
+        + 1.02449757e-04 * va2 * wvp4
+        + -1.48526421e-03 * e_mrt * wvp4
+        + -4.11469183e-05 * t2m * e_mrt * wvp4
+        + -6.80434415e-06 * va * e_mrt * wvp4
+        + -9.77675906e-06 * e_mrt2 * wvp4
+        + 8.82773108e-02 * wvp5
+        + -3.01859306e-03 * t2m * wvp5
+        + 1.04452989e-03 * va * wvp5
+        + 2.47090539e-04 * e_mrt * wvp5
+        + 1.48348065e-03 * wvp6
     )
 
     return utci
