@@ -78,12 +78,20 @@ class TestThermalCalculator(unittest.TestCase):
         assert mrt == pytest.approx(270.85099123, abs=1e-6)
 
     def test_utci(self):
+        # case 1
         t2_k = np.array([309.0])
         va = np.array([3])
         mrt = np.array([310.0])
         e_hPa = np.array([12])
         utci = np.array([tmf.calculate_utci(t2_k, va, mrt, td_k=None, ehPa=e_hPa)])
-        assert utci == pytest.approx(307.7653007813098, abs=1e-5)
+        assert utci == pytest.approx(307.76473586, abs=1e-5)
+        # case 2
+        t2_k = np.array([tmf.celsius_to_kelvin(27.0)])
+        va = np.array([4])
+        mrt = np.array([tmf.celsius_to_kelvin(9.2)])
+        e_hPa = np.array([16.5])
+        utci = np.array([tmf.calculate_utci(t2_k, va, mrt, td_k=None, ehPa=e_hPa)])
+        assert tmf.kelvin_to_celsius(utci) == pytest.approx(18.93148565062157, abs=1e-5)
 
     def test_wbgt_simple(self):
         t2_k = np.array([tmf.celsius_to_kelvin(30.0)])

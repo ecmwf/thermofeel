@@ -325,7 +325,7 @@ def calculate_utci_polynomial(t2m, mrt, va, wvp):
         + 8.15300114e-08 * va5 * e_mrt
         + 7.55043090e-04 * e_mrt2
         + -5.65095215e-05 * t2m * e_mrt2
-        + -4.52166564e-07 * t2m * e_mrt2
+        + -4.52166564e-07 * t2m2 * e_mrt2
         + 2.46688878e-08 * t2m3 * e_mrt2
         + 2.42674348e-10 * t2m4 * e_mrt2
         + 1.54547250e-04 * va_e_mrt2
