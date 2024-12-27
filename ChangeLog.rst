@@ -1,10 +1,15 @@
 ChangeLog
 =========
 
+Version 2.1.1
+-------------
+
+ * Small bug fix in the UTCI computaiton
+ 
 Version 2.1.0
 -------------
 
- * Fix computaiton of normal effective temperature
+ * Fix computation of normal effective temperature
  * Fix documentation links to new repository URL
  
 Version 2.0.0
