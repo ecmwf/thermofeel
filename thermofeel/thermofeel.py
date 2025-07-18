@@ -35,6 +35,7 @@
 import math
 
 import numpy as np
+import numpy.ma as ma
 
 from .helpers import (
     celsius_to_kelvin,
@@ -778,7 +779,6 @@ def calculate_heat_index_simplified(t2_k, rh):
 
     return hi_k
 
-
 def calculate_heat_index_adjusted(t2_k, td_k):
     """
     Heat Index adjusted
@@ -805,18 +805,27 @@ def calculate_heat_index_adjusted(t2_k, td_k):
 
     hi_initial = 0.5 * (t2_f + 61 + ((t2_f - 68) * 1.2) + (rh * 0.094))
 
+    # hi = (
+    #     -hiarray[0]
+    #     + hiarray[1] * t2_f
+    #     + hiarray[2] * rh
+    #     - hiarray[3] * t2_f * rh
+    #     - hiarray[4] * t2_f**2
+    #     - hiarray[5] * rh**2
+    #     + hiarray[6] * t2_f**2 * rh
+    #     + hiarray[7] * t2_f * rh**2
+    #     - hiarray[8] * t2_f**2 * rh**2
+    # )
     hi = (
-        -hiarray[0]
-        + hiarray[1] * t2_f
-        + hiarray[2] * rh
-        - hiarray[3] * t2_f * rh
-        - hiarray[4] * t2_f**2
-        - hiarray[5] * rh**2
-        + hiarray[6] * t2_f**2 * rh
-        + hiarray[7] * t2_f * rh**2
-        - hiarray[8] * t2_f**2 * rh**2
+        -42.379 + 2.04901523 * t2_f + \
+        10.14333127 * rh - \
+        0.22475541 * t2_f * rh - \
+        6.83783e-3 * t2_f ** 2 - \
+        5.481717e-2 * rh ** 2 + \
+        1.22874e-3 * t2_f ** 2 * rh + \
+        8.5282e-4 * t2_f * rh ** 2 - \
+        1.99e-6 * t2_f ** 2 * rh ** 2
     )
-
     hi_filter1 = np.where(t2_f > 80)
     hi_filter2 = np.where(t2_f < 112)
     hi_filter3 = np.where(rh <= 13)
@@ -825,7 +834,8 @@ def calculate_heat_index_adjusted(t2_k, td_k):
     hi_filter6 = np.where(t2_f < 80)
     hi_filter7 = np.where((hi_initial + t2_f) / 2 < 80)
 
-    f_adjust1 = hi_filter1 and hi_filter2 and hi_filter3
+    f_adjust1 = hi_filter1 and hi_filter2 and hi_filter3                                               
+                                                           
     f_adjust2 = hi_filter1 and hi_filter4 and hi_filter5
 
     adjustment1 = (
@@ -851,4 +861,62 @@ def calculate_heat_index_adjusted(t2_k, td_k):
 
     hi_k = fahrenheit_to_kelvin(hi)
 
+    return hi_k
+
+def calculate_heat_index_adjusted_v2(t2_k, td_k):
+    """
+    Heat Index adjusted
+       :param t2_k: (float array) 2m temperature [K]
+       :param td_k: (float array) 2m dewpoint temperature  [K]
+       returns heat index [K]
+    Reference: https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
+    """
+
+    rh      = calculate_relative_humidity_percent(t2_k, td_k)
+    t2_f    = kelvin_to_fahrenheit(t2_k)
+
+    hi_r = (
+            -42.379 + 2.04901523 * t2_f + \
+            10.14333127 * rh - \
+            0.22475541 * t2_f * rh - \
+            6.83783e-3 * t2_f ** 2 - \
+            5.481717e-2 * rh ** 2 + \
+            1.22874e-3 * t2_f ** 2 * rh + \
+            8.5282e-4 * t2_f * rh ** 2 - \
+            1.99e-6 * t2_f ** 2 * rh ** 2
+        )
+
+    hi_initial=0.5*(t2_f+ 61 + 1.2*(t2_f - 68) + (0.094 * rh))
+
+    hi = hi_r.copy(deep=True)
+
+    t_avg = (t2_f + hi_initial)/2.0
+
+    cond1   = t_avg < 80.0
+    any_num = t_avg.notnull()
+    mask    = cond1 & any_num
+    
+    hi      =  hi.where(cond=~cond1,other=hi_initial.where(cond1))
+
+    cond1   = t2_f >=80.0
+    cond2   = t2_f <=112.0
+    cond3   = rh < 13.0
+    any_num = t2_f.notnull()
+    mask    = cond1 & cond2 & cond3 & any_num
+
+    hi      = hi.where(hi.notnull(),
+                    other=(hi_r - ( ((13-rh.where(cond3))/4.0) * np.sqrt((17.0-np.abs(t2_f.where(mask) - 95))/17.0))))
+
+    cond1   = t2_f >=80.0
+    cond2   = t2_f <=87.0
+    cond3   = rh < 85.0
+    any_num = t2_f.notnull()
+
+    mask    = cond1 & cond2 & cond3 & any_num
+    hi      = hi.where(hi.notnull(),
+                    other=(hi_r -  (rh.where(cond3) - 85.0)/10.0) * ((87.0 - t2_f.where(mask))/5.0))
+    
+    
+    hi_k = fahrenheit_to_kelvin(hi)
+    
     return hi_k
