@@ -7,30 +7,30 @@
 # nor does it submit to any jurisdiction.
 
 """
-  thermofeel is a library to calculate human thermal comfort indexes.
+thermofeel is a library to calculate human thermal comfort indexes.
 
-    Currently calculates the thermal indexes:
-    * Universal Thermal Climate Index
-    * Apparent Temperature
-    * Heat Index Adjusted
-    * Heat Index Simplified
-    * Humidex
-    * Normal Effective Temperature
-    * Wet Bulb Globe Temperature
-    * Wet Bulb Globe Temperature Simple
-    * Wind Chill
+  Currently calculates the thermal indexes:
+  * Universal Thermal Climate Index
+  * Apparent Temperature
+  * Heat Index Adjusted
+  * Heat Index Simplified
+  * Humidex
+  * Normal Effective Temperature
+  * Wet Bulb Globe Temperature
+  * Wet Bulb Globe Temperature Simple
+  * Wind Chill
 
-    In support of the above indexes, it also calculates:
-    * Globe Temperature
-    * Mean Radiant Temperature
-    * Mean Radiant Temperature from Globe Temperature
-    * Relative Humidity Percentage
-    * Saturation vapour pressure
-    * Wet Bulb Temperature
+  In support of the above indexes, it also calculates:
+  * Globe Temperature
+  * Mean Radiant Temperature
+  * Mean Radiant Temperature from Globe Temperature
+  * Relative Humidity Percentage
+  * Saturation vapour pressure
+  * Wet Bulb Temperature
 
-    To calculate the cos of the solar zenith angle, we suggest to use the
-    earthkit-meteo library (github.com:ecmwf/earthkit-meteo.git)
-  """
+  To calculate the cos of the solar zenith angle, we suggest to use the
+  earthkit-meteo library (github.com:ecmwf/earthkit-meteo.git)
+"""
 
 import math
 
@@ -782,73 +782,60 @@ def calculate_heat_index_simplified(t2_k, rh):
 def calculate_heat_index_adjusted(t2_k, td_k):
     """
     Heat Index adjusted
-       :param t2_k: (float array) 2m temperature [K]
-       :param td_k: (float array) 2m dewpoint temperature  [K]
-       returns heat index [K]
+      :param t2_k: (float array) 2m temperature [K]
+      :param td_k: (float array) 2m dewpoint temperature  [K]
+      returns heat index [K]
     Reference: https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
     """
 
     rh = calculate_relative_humidity_percent(t2_k, td_k)
     t2_f = kelvin_to_fahrenheit(t2_k)
 
-    hiarray = [
-        42.379,
-        2.04901523,
-        10.1433312,
-        0.22475541,
-        0.00683783,
-        0.05481717,
-        0.00122874,
-        0.00085282,
-        0.00000199,
-    ]
+    # Simple formula
+    A = 0.5 * (t2_f + 61.0 + ((t2_f - 68.0) * 1.2) + (rh * 0.094))
 
-    hi_initial = 0.5 * (t2_f + 61 + ((t2_f - 68) * 1.2) + (rh * 0.094))
+    # Use regression only when the average between A and air temperature is or exceeds 80°F
+    warm_mask = ((A + t2_f) / 2) >= 80
 
-    hi = (
-        -hiarray[0]
-        + hiarray[1] * t2_f
-        + hiarray[2] * rh
-        - hiarray[3] * t2_f * rh
-        - hiarray[4] * t2_f**2
-        - hiarray[5] * rh**2
-        + hiarray[6] * t2_f**2 * rh
-        + hiarray[7] * t2_f * rh**2
-        - hiarray[8] * t2_f**2 * rh**2
+    hi = A  # (T+A)/2 < 80F (reverse of warm_mask)
+
+    # Regression formula
+    rh2 = rh**2
+    t2f2 = t2_f**2
+    B = (
+        -42.379
+        + 2.04901523 * t2_f
+        + 10.14333127 * rh
+        - 0.22475541 * t2_f * rh
+        - 6.83783e-3 * t2f2
+        - 5.481717e-2 * rh2
+        + 1.22874e-3 * t2f2 * rh
+        + 8.5282e-4 * t2_f * rh2
+        - 1.99e-6 * t2f2 * rh2
     )
 
-    hi_filter1 = np.where(t2_f > 80)
-    hi_filter2 = np.where(t2_f < 112)
-    hi_filter3 = np.where(rh <= 13)
-    hi_filter4 = np.where(t2_f < 87)
-    hi_filter5 = np.where(rh > 85)
-    hi_filter6 = np.where(t2_f < 80)
-    hi_filter7 = np.where((hi_initial + t2_f) / 2 < 80)
+    # Replace with regression where applicable
+    hi[warm_mask] = B[warm_mask]
 
-    f_adjust1 = hi_filter1 and hi_filter2 and hi_filter3
-    f_adjust2 = hi_filter1 and hi_filter4 and hi_filter5
-
-    adjustment1 = (
-        (13 - rh[f_adjust1]) / 4 * np.sqrt(17 - np.abs(t2_f[f_adjust1] - 95) / 17)
+    # Adjustments — only for warm_mask points
+    # 1) low humidity and high temperatures
+    mask = warm_mask & (t2_f >= 80.0) & (t2_f <= 112.0) & (rh < 13.0)
+    lowH_highT = ((13.0 - rh) / 4.0) * np.sqrt(
+        np.maximum((17.0 - np.abs(t2_f - 95.0)), 0.0) / 17.0
     )
+    hi[mask] -= lowH_highT[mask]
 
-    adjustment2 = (rh[f_adjust2] - 85) / 10 * ((87 - t2_f[f_adjust2]) / 5)
+    # 2) High humidity and moderate temperatures
+    mask = warm_mask & (t2_f >= 80.0) & (t2_f <= 87.0) & (rh > 85.0)
+    # highH_modT = ((rh - 85.0) / 10.0) * ((87.0 - t2_f) / 5.0)
+    highH_modT = 0.02 * (rh - 85.0) * (87.0 - t2_f)
+    hi[mask] += highH_modT[mask]
 
-    adjustment3 = 0.5 * (
-        t2_f[hi_filter6]
-        + 61.0
-        + ((t2_f[hi_filter6] - 68.0) * 1.2)
-        + (rh[hi_filter6] * 0.094)
-    )
+    # Cold case (t ≤ 40°F)
+    cold_mask = t2_f <= 40.0
+    hi[cold_mask] = t2_f[cold_mask]
 
-    hi[f_adjust1] = hi[f_adjust1] - adjustment1
-
-    hi[f_adjust2] = hi[f_adjust2] + adjustment2
-
-    hi[hi_filter6] = adjustment3
-
-    hi[hi_filter7] = hi_initial[hi_filter7]
-
+    # Convert to Kelvin
     hi_k = fahrenheit_to_kelvin(hi)
 
     return hi_k
