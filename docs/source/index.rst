@@ -10,7 +10,7 @@ into our internal systems and then ongoing maintenance.
 
 It allows users to:
 
-* integrate our methods into their Numerical Weather Prediction (NWP) services.
+* integrate our methods into their Numerical Weather Prediction (NWP) services
 * calculate thermal indices from their own data.
 
 This allows for transparency and reproducibility, and allows users to expand \
