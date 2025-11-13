@@ -1,21 +1,18 @@
 Wind Chill
 ======================================
-Wind Chill is an indication of cold thermal conditions.
-Originally developed by Siple and Passel (1945)
-And updated by the Canadian Meteorological Service in 2001.
+The Wind Chill is defined as the air temperature of an equivalent environment that, under calm wind conditions, 
+would entail the same skin surface heat loss to the environment as in the actual, windy, environment.  
+It takes into account the assumptions of convective and radiative heat loss described in modern heat transfer theory, 
+and assumes no impact from the sun.
 
-More information: 
-
-- https://www.jstor.org/stable/985324 
-
-- http://www.ec.gc.ca/meteo-weather/default.asp?lang=n&n=5FBF816A-1#wc6
+More information: Blazejczyk, K., Epstein, Y., Jendritzky, G. et al. Comparison of UTCI to selected thermal indices. Int J Biometeorol 56, 515–535 (2012). https://doi.org/10.1007/s00484-011-0453-2
 
 How To Use 
 ---------------
 
-You will need 2m temperature in Kelvin and 10 m wind speed in m/s.
+You will need 2m air temperature in Kelvin and 10 m wind speed in meters per second.
 
-It returns the wind chill temperature in Celsius. 
+It returns the wind chill in Kelvin.
 
 .. code-block:: python
 
@@ -24,6 +21,8 @@ It returns the wind chill temperature in Celsius.
 
 Interpret the Output
 ---------------------
+The wind chill is described in terms of the risk incurred by human skin, based on the rate of heat loss caused by exposure to wind and low temperatures.
+
 .. csv-table:: Wind Chill Thresholds
     :file: windchillthresholds.csv
     :header-rows: 1

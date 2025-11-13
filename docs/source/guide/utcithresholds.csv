@@ -1,11 +1,11 @@
 ﻿Universal Thermal Climate Index (°C),Thermal Stress
-> 46,Extreme heat stress
-38 to 46,Very strong heat stress
-32 to 38,Strong heat stress
-26 to 32,Moderate heat stress
-9 to 26,no thermal stress
-0 to 9,slight cold stress
- -13 to 0,moderate cold stress
- -13 to -27,strong cold stress
- -27 to -40,vey strong cold stress
-< - 40,extreme cold stress
+> 46, Extreme heat stress
+38 to 46, Very strong heat stress
+32 to 38, Strong heat stress
+26 to 32, Moderate heat stress
+9 to 26, No thermal stress
+0 to 9, Slight cold stress
+ -13 to 0, Moderate cold stress
+ -13 to -27, Strong cold stress
+ -27 to -40, Very strong cold stress
+< - 40, Extreme cold stress

@@ -1,29 +1,17 @@
 Normal Effective Temperature (NET)
 ======================================
 
-Normal effective temperature (NET) links effective temperature, which indicates \
-the effects on comfort through air temperature and relative humidity, \
-and an organism’s thermoregulatory capacity.
+The Normal Effective Temperature (NET) is defined as the temperature felt by a human body and 
+can indicate thermal exchange between the human body and the environment.
 
-More Information: https://www.sciencedirect.com/topics/engineering/effective-temperature
+More information: Li, P. W., & Chan, S. T. Application of a weather stress index for alerting the public to stressful weather in Hong Kong. Meteorol Appl 7(4), 369-375 (2000). https://doi.org/10.1017/S1350482700001602
 
 How To Use
 -----------------
-You need 2m temperature  and 2m dew point temperature in Kelvin and 10 m wind speed in m/s.
-The wind speed in this method is converted to 2m wind speed as an approximation of 1.2m wind speed.
+You need 2m air temperature in Kelvin, 10 m wind speed in meters per second and relative humidity as a percentage.
 
-It returns the normal effective temperature in Celsius.
+It returns the NET in Kelvin.
 
 .. code-block:: python
 
-    calculate_net_effective_temperature(2m_temperature, 10m_wind_speed, 2m_dew_point_temperature)
-
-Interpret the Output
-------------------------
-Here is a suggested way for you to interpret Net Effective Temperature outputs. However, it is by no means the only way to go about defining thermal stress.
-
-.. csv-table:: NET Thresholds
-    :file: netthresholds.csv
-    :header-rows: 1
-    :class: longtable
-    :widths: 1 1
+    calculate_net_effective_temperature(2m_temperature, 10m_wind_speed, relative_humidity_percent)
