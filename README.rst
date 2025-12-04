@@ -41,7 +41,6 @@ System dependencies
 
 thermofeel core functions depend on:
  * numpy
- * earthkit-meteo > 0.0.1 - for solar zenith angle calculation
 
 Optionally, thermofeel depends on:
  * pytest - for unit testing

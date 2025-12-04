@@ -149,6 +149,7 @@ def approximate_dsrp(fdir, cossza, threshold=0.1):
     Helper function to approximate dsrp from fdir and cossza
     Note that the function introduces large errors as cossza approaches zero.
     Only use if dsrp is not available in your dataset.
+    To compute cossza consider using earhkit-meteo.solar.calculate_cos_solar_zenith_angle
         :param fdir: (float array) total sky direct solar radiation at surface [W m-2]
         :param cossza: (float array) cosine of solar zenith angle [dimentionless]
         returns direct radiation from the Sun [W m-2]
@@ -182,6 +183,7 @@ def calculate_dew_point_from_relative_humidity(rh, t2_k):
 def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza):
     """
     MRT - Mean Radiant Temperature
+    To compute cossza consider using earhkit-meteo.solar.calculate_cos_solar_zenith_angle
         :param ssrd: (float array) surface solar radiation downwards [W m-2]
         :param ssr: (float array) surface net solar radiation [W m-2]
         :param dsrp: (float array) direct solar radiation [W m-2]
