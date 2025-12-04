@@ -1,31 +1,32 @@
-Universal Thermal Climate Index (UTCI)
+Universal Thermal Climate Index
 ======================================
-The universal thermal climate index (UTCI), is a bioclimatological model of an average human body’s response
-to different thermal conditions, where the subject is
-not acclimatised to the climate and is outdoors, doing minimal work.
+The Universal Thermal Climate Index (UTCI) is a measure of the thermal stress on the human body from outdoor conditions,
+defined as the equivalent air temperature of a reference environment that would cause the same physiological response
+as the actual conditions. 
 
-More Information: https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/gdj3.102
+More information: Jendritzky, G., de Dear, R. & Havenith, G. UTCI—Why another thermal index?. Int J Biometeorol 56, 421–428 (2012). https://doi.org/10.1007/s00484-011-0513-7
 
 
 How To Use
 ----------------
 
-You will need 2m temperature and mean radiant temperature in Kelvin,
-relative humidity (calculated as shown below,using 2m dew point temperature in Kelvin) and 10 meter height wind speed in m/s.
+You need 2m air temperature and mean radiant temperature in Kelvin, 2m dew point temperature in Kelvin or 
+water vapour pressure in hPa, and 10m wind speed in m/s.
 Please use with numpy arrays.
 
-It returns the universal thermal climate index in Celsius. 
+The UTCI is returned in Kelvin.
 
 .. code-block:: python
 
-    rh_pc = tfc.calculate_relative_humidity_percent(self.t2m, self.td)
-    ehPa = tfc.calculate_saturation_vapour_pressure(self.t2m) * rh_pc / 100.0
-    utci = calculate_utci(2m_temperature,mean_radiant_temperature, 10m_wind_speed,
-    2m_dew_point_temperature=None, ehPa=None)
+    rh_pc = calculate_relative_humidity_percent(2m_temperature, 2m_dew_point_temperature)
+    ehPa = calculate_saturation_vapour_pressure(2m_temperature) * rh_pc / 100.0
+    utci = calculate_utci(2m_temperature, 10m_wind_speed, mean_radiant_temperature, 2m_dew_point_temperature=None, ehPa=None)
 
 
 Interpret the Output
 -------------------------
+The UTCI is classified into a 10-category scale. Each category, defined by a specific range of UTCI values, corresponds 
+to a well-defined set of human physiological responses to the outdoor environment.
 
 .. csv-table:: UTCI Thresholds
     :file: utcithresholds.csv

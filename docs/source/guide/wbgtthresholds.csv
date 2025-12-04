@@ -1,6 +1,4 @@
-﻿Wet Bulb Globe Temperature Range (°C),Recommended Maximum Workload
-23 - 25,Very Heavy
-25 - 28,Heavy
-28 -30,Moderate
-30 -33,Light
-33 <,Very Light
+﻿Wet Bulb Globe Temperature (°C),Risk
+20 to 25, Low risk
+25 to 31, Moderate risk
+≥ 31, High risk

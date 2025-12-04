@@ -1,51 +1,47 @@
 Heat Index
 ======================================
 
-The Heat index, takes into account air temperature and relative humidity, \
-to be an indication of how hot it feels.
+The Heat Index (HI) is defined as the temperature the human body perceives in shady conditions when perspiration is limited 
+due to increased relative humidity. 
 
-The method of this index uses a multiple regression and Apparent Temperature's
-calculation of relative humidity.
+*thermofeel* computes the HI with two methods: Heat Index Simplified and Heat Index Adjusted.
 
-Here we have two methods: Heat Index Simplified and Heat Index Adjusted.
-As is set out by https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml \
-
-We carry out the calculation in Fahrenheit and then convert to Celsius in keeping \
-with the other thermal indices in this library.
+More information:
+* Blazejczyk, K., Epstein, Y., Jendritzky, G. et al. Comparison of UTCI to selected thermal indices. Int J Biometeorol 56, 515–535 (2012). https://doi.org/10.1007/s00484-011-0453-2
+* NOAA/National Weather Service, Weather Prediction Center. The Heat Index Equation. https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
 
 How To Use
 ------------------
 
 **Simplified Heat Index**
 
-You need 2m temperature in Kelvin and, optionally, relative humidity
-such as saturation vapour pressure (because this can be directly calculated from 2m temperature).
+You need 2m air temperature in Kelvin and relative humidity as a percentage.
 Please use numpy arrays.
 
-It returns the heat index in Celsius. 
+It returns the HI in Kelvin. 
 
 .. code-block:: python
 
-    calculate_heat_index_simplified(2m_temperature,relative_humidity)
+    calculate_heat_index_simplified(2m_temperature, relative_humidity_percent)
 
 **Adjusted Heat Index**
 
-You need 2m temperature and 2m dew point temperature in Kelvin. 
+You need 2m air temperature and 2m dew point temperature in Kelvin.
+Please use numpy arrays.
 
-It returns the heat index in Celsius. 
+It returns the HI in Kelvin. 
 
 .. code-block:: python
 
-    calculate_heat_index_adjusted(2m_temperature,2m_dew_point_temperature)
+    calculate_heat_index_adjusted(2m_temperature, 2m_dew_point_temperature)
 
 
 Interpret the Output
 ----------------------
-Here is a suggested way for you to interpret heat index outputs. However, it is by no means the only way to go about defining thermal stress.
-Heat Index and Apparent Temperature have the same thresholds.
+The HI is described in terms of danger of heat-related illnesses.
 
 .. csv-table:: Heat Index Thresholds
-    :file: atthresholds.csv
+    :file: heatindexthresholds.csv
     :header-rows: 1
     :class: longtable
-    :widths: 1 1
+    :widths: 1 1 1

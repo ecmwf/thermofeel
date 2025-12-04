@@ -5,18 +5,16 @@
 
 Welcome to thermofeel's documentation!
 ======================================
-thermofeel is a python library developed by ECMWF to integrate heat and thermal indexes \
+thermofeel is a python library developed by the European Centre for Medium-Range Weather Forecasts (ECMWF) to integrate thermal (heat and cold) indexes \
 into our internal systems and then ongoing maintenance.
 
 It allows users to:
 
-* Integrate our methods into their Numerical Weather Prediction Services.
-* Calculate Heat and Thermal Indices from their own data.
+* integrate our methods into their Numerical Weather Prediction (NWP) services, and
+* calculate thermal indices from their own data.
 
-This allows for transparency and reproducibility and allows users to expand \
+This allows for transparency and reproducibility, and allows users to expand \
 the scope of these methods.
-
-
 
 
 Indices and tables
@@ -27,16 +25,15 @@ Indices and tables
    :caption: Contents:
 
    guide/overview
-   guide/relativehumidity
+   guide/apparenttemperature
    guide/heatindex
-   guide/solarzenithangle
-   guide/mrt
-   guide/wbgt
-   guide/utci
    guide/humidex
    guide/net
-   guide/apparenttemperature
+   guide/utci
+   guide/wbgt
    guide/windchill
+   guide/relativehumidity
+   guide/mrt
 
 License
 -------

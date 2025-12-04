@@ -1,42 +1,25 @@
 Apparent Temperature
 ======================================
-Was developed by *Steadman,(1984)* to describe the thermal comfort/resistance of an average adult walking
-when they are exposed to certain combination of temperatures, relative humidity's and wind speed.
+The Apparent Temperature (AT) is defined as the temperature giving the same discomfort as under the current ambient 
+temperature and humidity.  
 
-The method used here follows the Apparent Temperature method used by the *Australian Bureau of Meteorology*
-and *Blazejczyk et al. (2011)*
+the AT is based on a mathematical model of human body heat balance for an adult, walking outdoors in the shade.   
 
-Apparent temperature is similar to the Heat Index methods also available to calculate in *thermofeel*
+Absolute humidity conforming with a dew point of 14°C is chosen as a reference.  If ambient humidity is:
+* higher than the reference humidity level, the apparent temperature will be higher than the ambient temperature.
+* lower than the reference humidity level, the apparent temperature will be lower than the ambient temperature.
 
-More Information: 
-
-- https://journals.ametsoc.org/view/journals/apme/23/12/1520-0450_1984_023_1674_ausoat_2_0_co_2.xml
-
-- https://link.springer.com/article/10.1007/s00484-011-0453-2 
-
+More information:
+* Steadman, R. G. A universal scale of apparent temperature.  J Appl Meteorol Climatol 23(12), 1674-1687 (1984). https://doi.org/10.1175/1520-0450(1984)023%3C1674:AUSOAT%3E2.0.CO;2
+* Australian Government Bureau of Meteorology. Thermal Comfort observations - About the formula for the apparent temperature. https://www.bom.gov.au/info/thermal_stress/#atapproximation
 
 How To Use
 -----------
-You need 2m temperature in Kelvin, 10m wind speed in m/s and, optionally, relative humidity such as water vapour pressure 
-(because this can be calculated from 2m temperature). The wind speed in this method is converted to 
-2 meters as an approximation of 1.2 meter wind speed.
+You need 2m air temperature in Kelvin, 10m wind speed in meters per second and relative humidity as a percentage.
 
 It returns the apparent temperature in Kelvin
 
 .. code-block:: python
 
-   calculate_apparent_temperature(2m_temperature, 10m_wind_speed, relative_humidity)
+   calculate_apparent_temperature(2m_temperature, 10m_wind_speed, relative_humidity_percent)
     
-
-Interpret the Output
---------------------
-
-Here is a suggested way for you to interpret apparent temperature outputs, it is by no means the only way to go about defining thermal stress.
-
-.. csv-table:: Apparent Temperature
-    :file: atthresholds.csv
-    :header-rows: 1
-    :class: longtable
-    :widths: 1 1
-
-
