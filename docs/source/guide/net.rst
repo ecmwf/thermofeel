@@ -1,4 +1,4 @@
-Normal Effective Temperature (NET)
+Normal Effective Temperature
 ======================================
 
 The Normal Effective Temperature (NET) is defined as the temperature felt by a human body and 

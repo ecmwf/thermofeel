@@ -1,4 +1,4 @@
-Universal Thermal Climate Index (UTCI)
+Universal Thermal Climate Index
 ======================================
 The Universal Thermal Climate Index (UTCI) is a measure of the thermal stress on the human body from outdoor conditions,
 defined as the equivalent air temperature of a reference environment that would cause the same physiological response
