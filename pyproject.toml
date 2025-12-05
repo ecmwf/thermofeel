@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thermofeel"
+description = "A library to calculate human thermal comfort indexes"
+readme = "README.rst"
+authors = [
+    { name = "European Centre for Medium-Range Weather Forecasts (ECMWF)", email = "software@ecmwf.int" }
+]
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Operating System :: OS Independent",
+]
+keywords = ["tool"]
+dependencies = [
+    "numpy",
+]
+requires-python = ">=3.6"
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/ecmwf/thermofeel"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = true
+
+[tool.setuptools.dynamic]
+version = { attr = "thermofeel.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["."]

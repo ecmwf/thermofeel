@@ -1,6 +1,16 @@
 ChangeLog
 =========
 
+Version 2.1.3
+-------------
+
+ * fix documentation
+ 
+Version 2.1.2
+-------------
+
+ * fix calculation of adjusted Heat Index (function ``calculate_heat_index_adjusted``)
+ 
 Version 2.1.1
 -------------
 
@@ -30,7 +40,7 @@ Version 2.0.0
 
 **Improvements**
  * thermofeel library docstring lists computed variables in alphabetical order
- * the cosine of the solar zenith angle now computed via the `earthkit-meteo <https://github.com/ecmwf/earthkit-meteo>`_ library
+ * the cosine of the solar zenith angle now computed via the `earthkit-meteo <https://github.com/ecmwf/earthkit-meteo>`_ library and must be provided as input
  * ``calculate_bgt`` function is calculated via a 4x faster formula
  * ``calculate_saturation_vapour_pressure_multiphase`` formulas replaced with those used in the IFS
  * changeable threshold in ``approximate_dsrp`` function (set to 0.1 by default)
