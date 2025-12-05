@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+Version 2.1.4
+-------------
+
+ * fix setup of project
+ * removed unused dependency on earthkit-meteo
+ 
 Version 2.1.3
 -------------
 
