@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+Version 2.1.6
+-------------
+
+ * Updated humidex unit tests
+
 Version 2.1.5
 -------------
 
