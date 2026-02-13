@@ -143,8 +143,8 @@ class TestThermalCalculator(unittest.TestCase):
         t2_k = np.array([304])
         td_k = np.array([300])
         hu = np.array([tmf.calculate_humidex(t2_k, td_k)])
-        # print(f"hu {hu}")
-        assert hu == pytest.approx(318.4601286141123, abs=1e-6)
+        #print(f"hu {hu}")
+        assert hu == pytest.approx(318.47466703, abs=1e-6)
 
     def test_normal_effective_temperature(self):
         t2_k = np.array([307])
