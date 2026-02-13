@@ -225,8 +225,8 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
 def calculate_utci_polynomial(t2m, mrt, va, wvp):
     """
     Helper function to calculate the UTCI polynomial approximation
-        :param t2_k: (float array) is 2m temperature [K]
-        :param mrt: (float array) is mean radiant temperature [K]
+        :param t2m: (float array) is 2m temperature [C]
+        :param mrt: (float array) is mean radiant temperature [C]
         :param va: (float array) is wind speed at 10 meters [m/s]
         :param wvp: (float array) is water vapour pressure [kPa]
     returns UTCI [K]
