@@ -1,26 +1,33 @@
 ChangeLog
 =========
 
+Version 2.1.5
+-------------
+
+ * Fix descriptions
+ * Fix variable names
+ * Updated humidex calculation and reference
+
 Version 2.1.4
 -------------
 
- * fix setup of project
- * removed unused dependency on earthkit-meteo
+ * Fix setup of project
+ * Removed unused dependency on earthkit-meteo
  
 Version 2.1.3
 -------------
 
- * fix documentation
+ * Fix documentation
  
 Version 2.1.2
 -------------
 
- * fix calculation of adjusted Heat Index (function ``calculate_heat_index_adjusted``)
+ * Fix calculation of adjusted Heat Index (function ``calculate_heat_index_adjusted``)
  
 Version 2.1.1
 -------------
 
- * Small bug fix in the UTCI computaiton
+ * Small bug fix in the UTCI computation
  
 Version 2.1.0
 -------------
