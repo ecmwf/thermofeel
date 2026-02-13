@@ -202,7 +202,6 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
     # Istar = dsrp
 
     # calculate fp projected factor area
-
     gamma = np.arcsin(cossza) * 180 / np.pi
     fp = 0.308 * np.cos(to_radians * gamma * (0.998 - gamma * gamma / 50000))
 
@@ -225,8 +224,8 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
 def calculate_utci_polynomial(t2m, mrt, va, wvp):
     """
     Helper function to calculate the UTCI polynomial approximation
-        :param t2_k: (float array) is 2m temperature [K]
-        :param mrt: (float array) is mean radiant temperature [K]
+        :param t2m: (float array) is 2m temperature [C]
+        :param mrt: (float array) is mean radiant temperature [C]
         :param va: (float array) is wind speed at 10 meters [m/s]
         :param wvp: (float array) is water vapour pressure [kPa]
     returns UTCI [K]
@@ -665,10 +664,10 @@ def calculate_humidex(t2_k, td_k):
         :param t2_k: (float array) 2m temperature [K]
         :param td_k: (float array) dew point temperature [K]
         returns humidex [K]
-    Reference: Blazejczyk et al. (2012)
-    https://doi.org/10.1007/s00484-011-0453-2
+    Reference: Environment Canada
+    https://climate.weather.gc.ca/glossary_e.html#humidex
     """
-    vp = 6.11 * np.exp(5417.7530 * ((1 / 273.16) - (1 / td_k)))  # vapour pressure [hPa]
+    vp = 6.11 * np.exp(5417.7530 * ((1 / 273.15) - (1 / td_k)))  # vapour pressure [hPa]
     h = 0.5555 * (vp - 10.0)
     humidex = t2_k + h
 
@@ -685,13 +684,13 @@ def calculate_normal_effective_temperature(t2_k, va, rh):
     Reference: Li and Chan (2006)
     https://doi.org/10.1017/S1350482700001602
     """
-    t2_k = kelvin_to_celsius(t2_k)
+    t2_c = kelvin_to_celsius(t2_k)
     v = scale_windspeed(va, 1.2)  # formula requires wind speed at 1.2m
     ditermeq = 1 / (1.76 + 1.4 * v**0.75)
     net = (
         37
-        - ((37 - t2_k) / (0.68 - 0.0014 * rh + ditermeq))
-        - 0.29 * t2_k * (1 - 0.01 * rh)
+        - ((37 - t2_c) / (0.68 - 0.0014 * rh + ditermeq))
+        - 0.29 * t2_c * (1 - 0.01 * rh)
     )
     net_k = celsius_to_kelvin(net)
 
@@ -729,7 +728,7 @@ def calculate_wind_chill(t2_k, va):
     https://doi.org/10.1007/s00484-011-0453-2
     See also: https://web.archive.org/web/20130627223738/http://climate.weatheroffice.gc.ca/prods_servs/normals_documentation_e.html  # noqa
     """
-    t2_c = kelvin_to_celsius(t2_k)  # kelvin_to_celsius(tk)
+    t2_c = kelvin_to_celsius(t2_k)
     v = va * 3.6  # convert to kilometers per hour
     windchill = 13.12 + 0.6215 * t2_c - 11.37 * v**0.16 + 0.3965 * t2_c * v**0.16
     windchill_k = celsius_to_kelvin(windchill)
