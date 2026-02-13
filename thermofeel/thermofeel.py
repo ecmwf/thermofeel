@@ -202,7 +202,6 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
     # Istar = dsrp
 
     # calculate fp projected factor area
-
     gamma = np.arcsin(cossza) * 180 / np.pi
     fp = 0.308 * np.cos(to_radians * gamma * (0.998 - gamma * gamma / 50000))
 
@@ -729,7 +728,7 @@ def calculate_wind_chill(t2_k, va):
     https://doi.org/10.1007/s00484-011-0453-2
     See also: https://web.archive.org/web/20130627223738/http://climate.weatheroffice.gc.ca/prods_servs/normals_documentation_e.html  # noqa
     """
-    t2_c = kelvin_to_celsius(t2_k)  # kelvin_to_celsius(tk)
+    t2_c = kelvin_to_celsius(t2_k)
     v = va * 3.6  # convert to kilometers per hour
     windchill = 13.12 + 0.6215 * t2_c - 11.37 * v**0.16 + 0.3965 * t2_c * v**0.16
     windchill_k = celsius_to_kelvin(windchill)
