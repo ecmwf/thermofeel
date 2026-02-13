@@ -685,13 +685,13 @@ def calculate_normal_effective_temperature(t2_k, va, rh):
     Reference: Li and Chan (2006)
     https://doi.org/10.1017/S1350482700001602
     """
-    t2_k = kelvin_to_celsius(t2_k)
+    t2_c = kelvin_to_celsius(t2_k)
     v = scale_windspeed(va, 1.2)  # formula requires wind speed at 1.2m
     ditermeq = 1 / (1.76 + 1.4 * v**0.75)
     net = (
         37
-        - ((37 - t2_k) / (0.68 - 0.0014 * rh + ditermeq))
-        - 0.29 * t2_k * (1 - 0.01 * rh)
+        - ((37 - t2_c) / (0.68 - 0.0014 * rh + ditermeq))
+        - 0.29 * t2_c * (1 - 0.01 * rh)
     )
     net_k = celsius_to_kelvin(net)
 
