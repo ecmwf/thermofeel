@@ -664,10 +664,10 @@ def calculate_humidex(t2_k, td_k):
         :param t2_k: (float array) 2m temperature [K]
         :param td_k: (float array) dew point temperature [K]
         returns humidex [K]
-    Reference: Blazejczyk et al. (2012)
-    https://doi.org/10.1007/s00484-011-0453-2
+    Reference: Environment Canada
+    https://climate.weather.gc.ca/glossary_e.html#humidex
     """
-    vp = 6.11 * np.exp(5417.7530 * ((1 / 273.16) - (1 / td_k)))  # vapour pressure [hPa]
+    vp = 6.11 * np.exp(5417.7530 * ((1 / 273.15) - (1 / td_k)))  # vapour pressure [hPa]
     h = 0.5555 * (vp - 10.0)
     humidex = t2_k + h
 
