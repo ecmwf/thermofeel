@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+Version 2.1.7
+-------------
+
+ * Change project to single branch main
+
 Version 2.1.6
 -------------
 
