@@ -34,6 +34,7 @@ Indices and tables
    guide/windchill
    guide/relativehumidity
    guide/mrt
+   guide/excess_heat
 
 License
 -------

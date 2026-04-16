@@ -7,5 +7,6 @@
 # nor does it submit to any jurisdiction.
 
 from .thermofeel import *  # noqa
+from . import excess_heat
 
 __version__ = "2.1.7"
