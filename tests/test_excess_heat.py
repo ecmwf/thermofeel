@@ -13,24 +13,24 @@ import thermofeel as tmf
 
 
 def test_daily_mean_temperature():
-    t2_min = np.asarray([1., 2., 3., 4., 5.])
-    t2_max = np.asarray([5., 2., 5., 4., 7.])
+    t2_min = np.asarray([1.0, 2.0, 3.0, 4.0, 5.0])
+    t2_max = np.asarray([5.0, 2.0, 5.0, 4.0, 7.0])
     dmt = tmf.excess_heat.daily_mean_temperature(t2_min, t2_max)
-    np.testing.assert_allclose(dmt, [3., 2., 4., 4., 6.])
+    np.testing.assert_allclose(dmt, [3.0, 2.0, 4.0, 4.0, 6.0])
 
 
 def test_significance_index():
-    dmt = np.asarray([3., 4., 5., 6., 7., 8., 9.])
-    threshold = 5.
+    dmt = np.asarray([3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
+    threshold = 5.0
     ehi_sig = tmf.excess_heat.significance_index(dmt, threshold)
-    np.testing.assert_allclose(ehi_sig, [-2., -1., 0., 1., 2., 3., 4.])
+    np.testing.assert_allclose(ehi_sig, [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0])
 
 
 def test_acclimatisation_index():
-    dmt = np.asarray([3., 4., 5., 6., 7., 8., 9.])
-    threshold = np.asarray([2., 2., 3., 3., 4., 4., 3.])
+    dmt = np.asarray([3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
+    threshold = np.asarray([2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 3.0])
     ehi_accl = tmf.excess_heat.acclimatisation_index(dmt, threshold)
-    np.testing.assert_allclose(ehi_accl, [1., 2., 2., 3., 3., 4., 6.])
+    np.testing.assert_allclose(ehi_accl, [1.0, 2.0, 2.0, 3.0, 3.0, 4.0, 6.0])
 
 
 class TestExcessHeatAndColdFactors:
@@ -45,19 +45,25 @@ class TestExcessHeatAndColdFactors:
 
     def test_excess_heat_factor_with_clip_false(self, ehi_sig, ehi_accl):
         exhf = tmf.excess_heat.excess_heat_factor(ehi_sig, ehi_accl, clip=False)
-        np.testing.assert_allclose(exhf, [15.0, 5.0, 5.0, 0.0, 0.0, 0.0, -6.0, -2.0, -2.0])
+        np.testing.assert_allclose(
+            exhf, [15.0, 5.0, 5.0, 0.0, 0.0, 0.0, -6.0, -2.0, -2.0]
+        )
 
     def test_excess_heat_factor_with_clip_true(self, ehi_sig, ehi_accl):
         exhf = tmf.excess_heat.excess_heat_factor(ehi_sig, ehi_accl, clip=True)
         np.testing.assert_allclose(exhf, [15.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
-    def test_excess_heat_factor_with_clip_false(self, ehi_sig, ehi_accl):
+    def test_excess_cold_factor_with_clip_false(self, ehi_sig, ehi_accl):
         excf = tmf.excess_heat.excess_cold_factor(ehi_sig, ehi_accl, clip=False)
-        np.testing.assert_allclose(excf, [5.0, 5.0, 20.0, 0.0, 0.0, 0.0, -2.0, -2.0, -8.0])
+        np.testing.assert_allclose(
+            excf, [5.0, 5.0, 20.0, 0.0, 0.0, 0.0, -2.0, -2.0, -8.0]
+        )
 
-    def test_excess_heat_factor_with_clip_true(self, ehi_sig, ehi_accl):
+    def test_excess_cold_factor_with_clip_true(self, ehi_sig, ehi_accl):
         excf = tmf.excess_heat.excess_cold_factor(ehi_sig, ehi_accl, clip=True)
-        np.testing.assert_allclose(excf, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -2.0, -2.0, -8.0])
+        np.testing.assert_allclose(
+            excf, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -2.0, -2.0, -8.0]
+        )
 
 
 def test_heatwave_severity():
