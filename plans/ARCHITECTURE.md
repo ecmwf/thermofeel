@@ -31,8 +31,9 @@ history, see [../ChangeLog.rst](../ChangeLog.rst).
               │  humidex           mean_radiant_temperature       │
               │  normal_eff_temp   bgt / mrt_from_bgt             │
               │  wbgt / wbgt_simple wbt                           │
-              │  wind_chill        dew_point / scale_windspeed    │
-              │                    approximate_dsrp               │
+              │  wbgt_liljegren    dew_point / scale_windspeed    │
+              │  heat_force        approximate_dsrp               │
+              │  wind_chill                                       │
               └───────────────────────┬───────────────────────┘
                                       │  uses
                         ┌─────────────▼─────────────┐
@@ -44,9 +45,6 @@ history, see [../ChangeLog.rst](../ChangeLog.rst).
                               ┌───────▼───────┐
                               │     numpy      │
                               └───────────────┘
-
-   thermofeel/experimental_wbgt.py — iterative Liljegren WBGT (NOT exported,
-   not part of the public API; depends on the public functions above)
 ```
 
 ## Package Layout
@@ -56,7 +54,6 @@ history, see [../ChangeLog.rst](../ChangeLog.rst).
 | `thermofeel/__init__.py` | Public surface: `from .thermofeel import *` and the canonical `__version__` (single source of truth; `pyproject.toml` reads it dynamically) |
 | `thermofeel/thermofeel.py` | All index and supporting-quantity functions. The substance of the library |
 | `thermofeel/helpers.py` | Pure SI unit converters used by the index functions |
-| `thermofeel/experimental_wbgt.py` | Iterative Liljegren WBGT/globe/wet-bulb solver — experimental, unexported, not covered by the public test suite |
 | `tests/` | pytest suites + stored CSV reference outputs |
 | `examples/` | Runnable usage examples (incl. ECMWF GRIB/eccodes pipeline examples) |
 | `docs/` | Sphinx documentation (Read the Docs), one guide page per index |
@@ -76,6 +73,9 @@ UTCI            ← t2_k, va, mrt, (td_k or ehPa)
 
 WBGT            ← bgt(t2_k, mrt, va) + wbt(t2_k, rh) + t2_k
 WBGT (simple)   ← t2_k + nonsaturation_vapour_pressure
+WBGT (Liljegren)← t2_k, rh, pressure, scale_windspeed(va, 2), ssrd, fdir, cossza
+                  └ iterative globe + natural-wet-bulb energy-balance solvers
+Heat Force      ← WBGT [K]  (0-10 scale, fixed 2 °C bands; KNMI TR-26-04)
 BGT             ← t2_k, mrt, scale_windspeed(va, 1.1)
 MRT             ← ssrd, ssr, dsrp, strd, fdir, strr, cossza
 MRT from BGT    ← t2_k, bgt_k, scale_windspeed(va, 1.1)
@@ -90,7 +90,7 @@ Humidex         ← t2_k, td_k
 
 The two cross-cutting helpers that almost everything routes through:
 - **`scale_windspeed(va, h)`** — converts the public 10 m wind to the height a
-  given formula assumes (1.1 m globe, 1.2 m NET).
+  given formula assumes (1.1 m globe, 1.2 m NET, 2 m Liljegren sensor).
 - **the unit converters in `helpers.py`** — every formula that is published in
   °C/°F/km/h converts at entry and exit so the public boundary stays SI.
 

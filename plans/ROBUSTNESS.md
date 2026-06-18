@@ -21,8 +21,7 @@ not part of the distributed library surface.)
 
 - **In scope:** `thermofeel/thermofeel.py`, `thermofeel/helpers.py`,
   `thermofeel/__init__.py`.
-- **Out of scope:** `examples/`, `docs/`, `tests/`. `thermofeel/experimental_wbgt.py`
-  is experimental and unexported — see `TODO.md`.
+- **Out of scope:** `examples/`, `docs/`, `tests/`.
 
 ## 2. Failure modes
 

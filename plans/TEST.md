@@ -41,7 +41,15 @@ against the literature / known answers* and is where edge-case reasoning lives.
 - Composition paths: `bgt` → `wbgt`, `mrt` → `utci`, `bgt` → `mrt_from_bgt`,
   `saturation_vapour_pressure` → UTCI water-vapour-pressure path.
 - `scale_windspeed` produces the right height adjustment used inside `bgt`
-  (1.1 m), `mrt_from_bgt` (1.1 m), and `normal_effective_temperature` (1.2 m).
+  (1.1 m), `mrt_from_bgt` (1.1 m), `normal_effective_temperature` (1.2 m), and
+  `wbgt_liljegren` (2 m).
+- **Liljegren WBGT** (`calculate_wbgt_liljegren`): validated bit-for-bit (to
+  < 1e-4 K) against Liljegren's reference C implementation
+  (github.com/mdljts/wbgt) in `test_scalars.py`, with cases spanning heat force
+  2-10 and exercising both the 0.62 m/s wind floor and the fdir clamp. The C
+  reference is *not* a runtime dependency — expected values are pinned literals.
+- **Heat Force** (`calculate_heat_force`): the lower-closed 2 °C band boundaries
+  (< 14 → 0, [14,16) → 1, …, [30,32) → 9, ≥ 32 → 10) are tested exactly.
 - Saturated vs. non-saturated vapour-pressure selection per index (a wrong choice
   is silently plausible — assert the actual value).
 - UTCI accepts either `ehPa` or `td_k`, and raises `ValueError` when neither is
@@ -64,13 +72,11 @@ against the literature / known answers* and is where edge-case reasoning lives.
   large-error regime) and that `fdir` is not overwritten.
 - **Negative / zero wind speed** into `bgt`/`wbgt` (numerical behaviour of the
   closed-form root).
-
-## What is intentionally NOT covered here
-
-- `thermofeel/experimental_wbgt.py` (Liljegren iterative solver) is experimental,
-  unexported, and not part of the regression suite. If it is promoted to the
-  public API, it must come with its own round-trip + reference-value tests and a
-  citation-backed expected output before merging (see `TODO.md`).
+- **Liljegren non-convergence**: returns `NaN` (the C reference's −9999 sentinel
+  maps to `NaN`), so the band logic in `calculate_heat_force` propagates `NaN`
+  rather than producing a spurious class.
+- **Liljegren low-sun guard**: `fdir` forced to 0 below 89.5° zenith so the
+  globe `1/(2·cza)` and wet-bulb `tan(sza)` terms cannot blow up.
 
 ## Running
 

@@ -1,6 +1,18 @@
 ChangeLog
 =========
 
+Version 2.2.0
+-------------
+
+ * Added ``calculate_wbgt_liljegren``: physically based Wet Bulb Globe
+   Temperature using the Liljegren et al. (2008) method, validated against
+   Liljegren's reference implementation (github.com/mdljts/wbgt)
+ * Added ``calculate_heat_force``: the KNMI 0-10 heat-force (hittekracht) scale
+   derived from WBGT (KNMI Technical Report TR-26-04)
+ * Removed the broken, unexported ``experimental_wbgt`` module, now superseded
+   by ``calculate_wbgt_liljegren``
+ * Fixed the ``calculate_bgt`` argument order in the scalar test suite
+
 Version 2.1.7
 -------------
 

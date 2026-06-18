@@ -31,6 +31,7 @@ Indices and tables
    guide/net
    guide/utci
    guide/wbgt
+   guide/heatforce
    guide/windchill
    guide/relativehumidity
    guide/mrt

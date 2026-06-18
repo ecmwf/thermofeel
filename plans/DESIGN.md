@@ -53,7 +53,8 @@ Three families:
 - **Comfort indices** — `calculate_utci`, `calculate_apparent_temperature`,
   `calculate_heat_index_simplified`, `calculate_heat_index_adjusted`,
   `calculate_humidex`, `calculate_normal_effective_temperature`,
-  `calculate_wbgt`, `calculate_wbgt_simple`, `calculate_wind_chill`.
+  `calculate_wbgt`, `calculate_wbgt_simple`, `calculate_wbgt_liljegren`,
+  `calculate_heat_force`, `calculate_wind_chill`.
 - **Supporting physical quantities** — `calculate_mean_radiant_temperature`,
   `calculate_bgt`, `calculate_mrt_from_bgt`, `calculate_relative_humidity_percent`,
   `calculate_saturation_vapour_pressure`,
@@ -89,8 +90,21 @@ the formula's specification and is covered by tests.
 `calculate_bgt` solves the globe-temperature energy balance with a closed-form
 quartic root rather than iteration (faster and deterministic over large grids).
 The previous iterative version is retained as a commented reference in the
-source for traceability. An iterative, more physically complete variant lives in
-`experimental_wbgt.py` (Liljegren) and is **not** part of the public API.
+source for traceability.
+
+### Two WBGT implementations
+
+The library offers three WBGT routines for different needs:
+- `calculate_wbgt_simple` — single empirical regression (ACSM), temperature + RH.
+- `calculate_wbgt` — globe temperature from the closed-form `calculate_bgt` plus
+  the Stull wet bulb; needs `mrt` and `td`.
+- `calculate_wbgt_liljegren` — the physically based Liljegren (2008) method that
+  solves the globe and natural-wet-bulb energy balances by fixed-point
+  iteration. This is the "gold standard" used operationally by KNMI and is the
+  basis of `calculate_heat_force`. The private `_liljegren_*` helpers (property
+  functions and the two solvers) are transcribed from Liljegren's reference C
+  code and validated bit-for-bit against it; they are not part of the public
+  surface. NaN is returned where the iteration does not converge.
 
 ### Output stays in SI even when the formula is empirical
 

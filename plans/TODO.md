@@ -37,12 +37,6 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
     Bring it in line with the current API or clearly mark it legacy. An example
     that calls a removed function is a bug, not documentation (see `AGENTS.md`).
 
-- [ ] **Fix the `calculate_bgt` argument order in `tests/test_scalars.py::test_bgt`.**
-    It is called as `calculate_bgt(t2_k, va, mrt)` but the signature is
-    `calculate_bgt(t2_k, mrt, va)`. The test passes only because the chosen
-    values are near-symmetric; the "negative va treated as 0" comment does not
-    reflect the actual call. Correct the order and make the comment match.
-
 ## Code cleanliness
 
 - [ ] **Remove dead code in `scale_windspeed`** (`thermofeel/thermofeel.py`).
@@ -59,18 +53,6 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
     it from the package version (single source of truth) or add a check. Also
     review the Python-version trove classifiers in `pyproject.toml` (claim
     3.6–3.13; the library runs on 3.14).
-
-## Experimental code
-
-- [ ] **Decide the fate of `thermofeel/experimental_wbgt.py` (Liljegren).**
-    Its iterative solvers use `np.where(np.abs(...))` as a convergence mask;
-    `np.abs(x)` returns values, not a boolean condition, so `np.where` selects
-    all non-zero elements every iteration — almost certainly not the intended
-    convergence test. Either:
-    - finish it properly (correct the convergence loop, add reference-value tests
-      and a citation, then export it through the public API), or
-    - keep it clearly marked experimental and out of the public surface.
-    Do not leave it in a half-working, untested middle state.
 
 ## Robustness
 

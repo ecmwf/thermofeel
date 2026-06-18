@@ -17,6 +17,8 @@ Currently calculates the thermal indexes:
   * Normal Effective Temperature
   * Wet Bulb Globe Temperature
   * Wet Bulb Globe Temperature Simple
+  * Wet Bulb Globe Temperature (Liljegren method)
+  * Heat Force (KNMI 0-10 heat-stress scale)
   * Wind Chill
 
 In support of the above indexes, it also calculates:
