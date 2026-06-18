@@ -98,8 +98,8 @@ and refer to it by that name.
 - `plans/TODO.md` — features and fixes decided to implement (accepted backlog)
 - `plans/IDEAS.md` — speculative ideas not yet decided
 - `plans/TEST.md` — test plan and coverage shape
-- `plans/SECURITY_ANALYSIS.md` — threat model (intentionally light for a pure
-  numerical library) and the input-robustness checklist
+- `plans/ROBUSTNESS.md` — numerical failure modes and the input-robustness
+  checklist (the risk surface for a pure numerical library)
 - `CONTRIBUTING.rst` — contributor setup and workflow
 - `ChangeLog.rst` — release history (the single backward-looking record)
 

@@ -72,6 +72,14 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
     - keep it clearly marked experimental and out of the public surface.
     Do not leave it in a half-working, untested middle state.
 
+## Robustness
+
+- [ ] **Work through the numerical-robustness checklist in `ROBUSTNESS.md`.**
+    The first hardening pass: audit `np.log`/`np.sqrt`/`np.power`/division for
+    `NaN`/`Inf`-producing domains, confirm the `approximate_dsrp` divide-by-zero
+    guard, confirm the `calculate_bgt` root stays real-valued, and add explicit
+    `NaN`/`Inf` propagation tests. Record findings in `ROBUSTNESS.md`.
+
 ## Notes
 
 - This file (`plans/TODO.md`) is the single canonical accepted backlog. It
