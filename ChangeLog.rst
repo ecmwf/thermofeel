@@ -7,6 +7,9 @@ Version 2.2.0
  * Added ``calculate_wbgt_liljegren``: physically based Wet Bulb Globe
    Temperature using the Liljegren et al. (2008) method, validated against
    Liljegren's reference implementation (github.com/mdljts/wbgt)
+ * Added ``calculate_wind_speed_2m_liljegren``: the KNMI/Liljegren
+   stability-dependent 10m-to-2m wind-speed profile, used by default in
+   ``calculate_wbgt_liljegren`` (selectable via its ``wind_scaling`` argument)
  * Added ``calculate_heat_force``: the KNMI 0-10 heat-force (hittekracht) scale
    derived from WBGT (KNMI Technical Report TR-26-04)
  * Removed the broken, unexported ``experimental_wbgt`` module, now superseded

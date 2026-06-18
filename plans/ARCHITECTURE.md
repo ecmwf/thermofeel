@@ -73,7 +73,10 @@ UTCI            ← t2_k, va, mrt, (td_k or ehPa)
 
 WBGT            ← bgt(t2_k, mrt, va) + wbt(t2_k, rh) + t2_k
 WBGT (simple)   ← t2_k + nonsaturation_vapour_pressure
-WBGT (Liljegren)← t2_k, rh, pressure, scale_windspeed(va, 2), ssrd, fdir, cossza
+WBGT (Liljegren)← t2_k, rh, pressure, wind_2m, ssrd, fdir, cossza
+                  └ wind_2m ← calculate_wind_speed_2m_liljegren (default; KNMI
+                    stability profile) or scale_windspeed(va, 2) (wind_scaling=
+                    "brode")
                   └ iterative globe + natural-wet-bulb energy-balance solvers
 Heat Force      ← WBGT [K]  (0-10 scale, fixed 2 °C bands; KNMI TR-26-04)
 BGT             ← t2_k, mrt, scale_windspeed(va, 1.1)

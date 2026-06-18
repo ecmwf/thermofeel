@@ -44,6 +44,15 @@ degrees zenith. The cosine of the solar zenith angle can be obtained from the
 `earthkit-meteo <https://github.com/ecmwf/earthkit-meteo>`_ library. ``NaN`` is
 returned where the iteration does not converge.
 
+By default the 10 m wind is converted to 2 m with the KNMI/Liljegren
+stability-dependent profile (``wind_scaling="liljegren"``); pass
+``wind_scaling="brode"`` to use the generic :func:`scale_windspeed` log profile
+instead. The Liljegren conversion is also available on its own:
+
+.. code-block:: python
+
+   calculate_wind_speed_2m_liljegren(10m_wind_speed, cos_solar_zenith_angle, ssrd)
+
 **Heat Force**
 
 You need the WBGT in Kelvin (for example from ``calculate_wbgt_liljegren``).

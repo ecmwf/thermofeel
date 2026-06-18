@@ -674,6 +674,22 @@ _LJ_CONVERGENCE = 0.02  # iteration tolerance [K]
 _LJ_MAX_ITER = 500  # iteration cap
 _LJ_MIN_WIND_10M = 0.62  # KNMI minimum 10 m wind (~0.5 m/s at 2 m) [m/s]
 
+# Pasquill-Gifford stability lookup for the Liljegren 10 m -> 2 m wind profile
+# (Liljegren et al. 2008; Kong & Huber 2022 PyWBGT). Rows are wind-speed bins,
+# columns are solar-radiation / night bins; the value is the stability class.
+_LJ_LSRDT = np.array(
+    [
+        [1, 1, 2, 4, 0, 5, 6, 0],
+        [1, 2, 3, 4, 0, 5, 6, 0],
+        [2, 2, 3, 4, 0, 4, 4, 0],
+        [3, 3, 4, 4, 0, 0, 0, 0],
+        [3, 4, 4, 4, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+    ]
+)
+# Wind-profile power-law exponent per stability class (urban terrain).
+_LJ_URBAN_EXP = np.array([0.15, 0.15, 0.20, 0.25, 0.30, 0.30])
+
 
 def _liljegren_esat(tk):
     """Saturation vapour pressure over liquid water [hPa], Buck (1981)."""
@@ -840,7 +856,56 @@ def _liljegren_solve_wetbulb(ta, rh, pair, speed, solar, fdir, cza, rad):
     return result
 
 
-def calculate_wbgt_liljegren(t2_k, rh, pressure, va, ssrd, fdir, cossza):
+def calculate_wind_speed_2m_liljegren(va, cossza, ssrd):
+    """
+    Scale 10m wind speed to 2m using the Liljegren stability-dependent profile
+        :param va: (float array) wind speed at 10 metres [m/s]
+        :param cossza: (float array) cosine of the solar zenith angle
+            [dimensionless]
+        :param ssrd: (float array) instantaneous downward shortwave
+            radiation at the surface (SSRD) [W/m2]
+        returns wind speed at 2 metres [m/s]
+
+    This is the 10m -> 2m conversion used operationally by KNMI within the
+    Liljegren WBGT (``va * (2/10)**p``), where the power-law exponent ``p`` comes
+    from a Pasquill-Gifford stability class derived from the solar elevation,
+    incoming radiation and wind speed. The result is floored at 0.13 m/s.
+
+    Reference: Liljegren et al. (2008)
+    https://doi.org/10.1080/15459620802310770
+    See also: Kong and Huber (2022) https://doi.org/10.1029/2021EF002334
+    """
+    va = np.asarray(va, dtype=float)
+    cossza = np.asarray(cossza, dtype=float)
+    ssrd = np.asarray(ssrd, dtype=float)
+
+    daytime = cossza > 0.0
+
+    # radiation / night column index of the stability table
+    col = np.where(
+        ssrd >= 925.0,
+        0,
+        np.where(ssrd >= 675.0, 1, np.where(ssrd >= 175.0, 2, 3)),
+    )
+    col = np.where(daytime, col, 5)
+
+    # wind-speed row index of the stability table (day and night thresholds)
+    row_day = np.where(
+        va >= 6.0,
+        4,
+        np.where(va >= 5.0, 3, np.where(va >= 3.0, 2, np.where(va >= 2.0, 1, 0))),
+    )
+    row_night = np.where(va >= 2.5, 2, np.where(va >= 2.0, 1, 0))
+    row = np.where(daytime, row_day, row_night)
+
+    stability_class = _LJ_LSRDT[row, col]
+    exponent = _LJ_URBAN_EXP[stability_class - 1]
+    return np.maximum(va * (2.0 / 10.0) ** exponent, _LJ_MIN_SPEED)
+
+
+def calculate_wbgt_liljegren(
+    t2_k, rh, pressure, va, ssrd, fdir, cossza, wind_scaling="liljegren"
+):
     """
     WBGT - Wet Bulb Globe Temperature, Liljegren method
         :param t2_k: (float array) 2m temperature [K]
@@ -853,6 +918,10 @@ def calculate_wbgt_liljegren(t2_k, rh, pressure, va, ssrd, fdir, cossza):
             [dimensionless, 0-1]
         :param cossza: (float array) cosine of the solar zenith angle
             [dimensionless]
+        :param wind_scaling: (str) how to convert the 10m wind to the 2m sensor
+            height: "liljegren" (default, the KNMI stability-dependent profile,
+            see calculate_wind_speed_2m_liljegren) or "brode" (the generic
+            scale_windspeed log profile)
         returns wet bulb globe temperature [K]
 
     Physically based WBGT after Liljegren et al. (2008), the method used
@@ -881,7 +950,14 @@ def calculate_wbgt_liljegren(t2_k, rh, pressure, va, ssrd, fdir, cossza):
 
     # KNMI minimum wind floor at 10 m, then scale to the 2 m sensor height.
     va = np.maximum(va, _LJ_MIN_WIND_10M)
-    speed = scale_windspeed(va, 2.0)
+    if wind_scaling == "liljegren":
+        speed = calculate_wind_speed_2m_liljegren(va, cossza, ssrd)
+    elif wind_scaling == "brode":
+        speed = scale_windspeed(va, 2.0)
+    else:
+        raise ValueError(
+            f"wind_scaling must be 'liljegren' or 'brode', got {wind_scaling!r}"
+        )
 
     rh_frac = rh / 100.0
 

@@ -61,7 +61,7 @@ Three families:
   `calculate_saturation_vapour_pressure_multiphase`,
   `calculate_nonsaturation_vapour_pressure`, `calculate_wbt`,
   `calculate_dew_point_from_relative_humidity`, `scale_windspeed`,
-  `approximate_dsrp`.
+  `calculate_wind_speed_2m_liljegren`, `approximate_dsrp`.
 - **Unit converters** (`helpers.py`) — `celsius_to_kelvin`, `kelvin_to_celsius`,
   `kelvin_to_fahrenheit`, `fahrenheit_to_celsius`, `fahrenheit_to_kelvin`.
 
@@ -73,6 +73,13 @@ The public contract takes 10 m wind speed (`va`). Formulas that need wind at a
 different height (1.1 m for the globe thermometer, 1.2 m for NET) call
 `scale_windspeed(va, h)` internally. Callers never pre-scale. This was a
 recurring source of bugs before 2.0 and is now centralised.
+
+The Liljegren WBGT needs the 2 m wind. It defaults to the KNMI/Liljegren
+stability-dependent power-law profile (`calculate_wind_speed_2m_liljegren`,
+which derives a Pasquill-Gifford stability class from sun, radiation and wind),
+matching KNMI's operational pipeline; `calculate_wbgt_liljegren(...,
+wind_scaling="brode")` selects the generic `scale_windspeed` log profile
+instead.
 
 ### Vapour pressure: saturated vs. non-saturated
 
