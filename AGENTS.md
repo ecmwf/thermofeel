@@ -35,10 +35,10 @@ and refer to it by that name.
   - Treat the public function signatures in `thermofeel/thermofeel.py` and the
     converters in `thermofeel/helpers.py` as a contract.
   - Follow Semantic Versioning (see *Version control*). A breaking API change is
-    a MAJOR bump and must be called out in `ChangeLog.rst` with a migration note
+    a MAJOR bump and must be called out in `CHANGELOG.md` with a migration note
     (as was done for the 1.x → 2.0 standardisation).
   - When a thermal-index formula changes, the change is observable to every user
-    — document the reference and the rationale in the docstring and `ChangeLog.rst`.
+    — document the reference and the rationale in the docstring and `CHANGELOG.md`.
 
 - IMPORTANT: Scientific correctness is the whole point of this library.
   - Every index function cites a peer-reviewed reference in its docstring. When
@@ -58,7 +58,7 @@ and refer to it by that name.
   - ALWAYS provide a summary of the Design and implementation Plan
 
 - IMPORTANT: when you build code and new features:
-  - ALWAYS document those features in `docs/` (Sphinx)
+  - ALWAYS document those features in `docs/` (MkDocs)
   - Remember to add examples (see below)
 
 - IMPORTANT:
@@ -72,7 +72,7 @@ and refer to it by that name.
   - The package version lives ONLY in `thermofeel/__init__.py` (`__version__`).
     `pyproject.toml` reads it dynamically (`version = { attr = ... }`) — never
     hard-code a version into `pyproject.toml`.
-  - The list of computed indices appears in `README.rst`, the
+  - The list of computed indices appears in `README.md`, the
     `thermofeel/thermofeel.py` module docstring, and `docs/`. Keep them in step.
 
 - IMPORTANT: NEVER use process-ephemeral references in code, comments,
@@ -91,7 +91,7 @@ and refer to it by that name.
 
 # Design & Purpose
 
-- `README.rst` — short entry-level overview (also the GitHub landing page)
+- `README.md` — short entry-level overview (also the GitHub landing page)
 - `plans/MOTIVATION.md` — why thermofeel exists and what we're building (long form)
 - `plans/DESIGN.md` — design rationale, the SI-unit I/O contract, key decisions
 - `plans/ARCHITECTURE.md` — package/module map and the data-flow between indices
@@ -100,8 +100,8 @@ and refer to it by that name.
 - `plans/TEST.md` — test plan and coverage shape
 - `plans/ROBUSTNESS.md` — numerical failure modes and the input-robustness
   checklist (the risk surface for a pure numerical library)
-- `CONTRIBUTING.rst` — contributor setup and workflow
-- `ChangeLog.rst` — release history (the single backward-looking record)
+- `CONTRIBUTING.md` — contributor setup and workflow
+- `CHANGELOG.md` — release history (the single backward-looking record)
 
 Follow `plans/DESIGN.md` principles in all code.
 
@@ -124,7 +124,7 @@ Useful focused targets (run `make help` for the complete list):
 | `make test` | Run the pytest suite (array regression + scalar pointwise tests) |
 | `make lint` | `flake8` + `isort --check` + `black --check` |
 | `make fmt` | Apply `isort` + `black` formatting in place |
-| `make docs` | Build the Sphinx documentation in `docs/` |
+| `make docs` | Build the MkDocs documentation site (`mkdocs build --strict`) |
 | `make version` | Print the canonical version from `thermofeel/__init__.py` |
 | `make clean` | Remove `.venv`, build artefacts, caches |
 
@@ -133,7 +133,7 @@ Useful focused targets (run `make help` for the complete list):
   `make lint` to auto-fix formatting.
 - The Makefile uses `uv` to manage the virtual environment. The targets wrap the
   raw tool commands so there is one source of truth — see the *Building* and
-  *Testing* sections of `CONTRIBUTING.rst`.
+  *Testing* sections of `CONTRIBUTING.md`.
 
 # Version control
 
@@ -146,27 +146,29 @@ Useful focused targets (run `make help` for the complete list):
   matching `[0-9]+.[0-9]+.[0-9]+`).
 - NOTE: SINGLE SOURCE OF TRUTH FOR VERSION — `thermofeel/__init__.py`
   `__version__` is canonical. `pyproject.toml` derives it dynamically. On a
-  release: update `__version__`, add the `ChangeLog.rst` entry, commit, then tag.
+  release: update `__version__`, add the `CHANGELOG.md` entry, commit, then tag.
 - REMEMBER on releases:
   - check all is committed and pushed upstream, otherwise STOP and warn the user
   - bump `__version__` in `thermofeel/__init__.py`
-  - add the release section to `ChangeLog.rst`
+  - add the release section to `CHANGELOG.md`
   - git tag with the bare version (no `v`) and push; the `cd` workflow publishes
     to PyPI
 
 # Tracking Work Done
 
-Record every user-facing change in `ChangeLog.rst` as it merges — this is the
+Record every user-facing change in `CHANGELOG.md` as it merges — this is the
 single backward-looking record. Keep entries concise and reference-bearing for
 formula changes. Durable design decisions go in `plans/DESIGN.md`; behaviour and
 usage go in `docs/`.
 
 # Documentation
 
-Create and maintain documentation under `docs/` (Sphinx, published on Read the
-Docs).
+Create and maintain documentation under `docs/` (MkDocs + Material with
+mkdocstrings, published on Read the Docs).
 - Easy to follow by an average technical person, with well-separated topics
-- One guide page per index under `docs/source/guide/`
+- One guide page per index under `docs/guide/`; the API reference (`docs/api.md`)
+  is generated from the source docstrings via mkdocstrings, so keep docstrings
+  accurate and well-formed
 - Always state the input/output units and cite the scientific reference
 - Add worked examples when a formula is hard to follow, especially edge cases
   (e.g. the validity range of Wind Chill, the temperature gating in Heat Index)

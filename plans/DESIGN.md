@@ -4,7 +4,7 @@ Repo: ecmwf/thermofeel
 
 > For **why** thermofeel exists and what problem it solves, see `MOTIVATION.md`.
 > For the **package/module layout**, see `ARCHITECTURE.md`.
-> For **release history**, see `../ChangeLog.rst`.
+> For **release history**, see `../CHANGELOG.md`.
 
 ## Design Premises
 
@@ -125,7 +125,7 @@ caller is responsible for masking, and the docstring states this.
 
 Stored CSV reference outputs (`tests/*.csv`) pin the numerical results. A change
 that moves these values is either a deliberate formula correction (update the
-reference, document in `ChangeLog.rst`, cite the reason) or a bug. The test
+reference, document in `CHANGELOG.md`, cite the reason) or a bug. The test
 suite is the guard; see `TEST.md`.
 
 ## Dependencies

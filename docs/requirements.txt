@@ -1,5 +1,6 @@
-# These are the requirements for readthedoc
-sphinx
-ipykernel
-nbsphinx
-sphinx_rtd_theme
+# Requirements for building the documentation (MkDocs + Material)
+mkdocs
+mkdocs-material
+mkdocstrings[python]
+# used by mkdocstrings to format rendered function signatures
+black

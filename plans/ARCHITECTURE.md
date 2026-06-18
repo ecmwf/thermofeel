@@ -5,7 +5,7 @@ built on NumPy. This document explains how the pieces fit together.
 
 For the design rationale and the SI-unit contract, see [DESIGN.md](DESIGN.md).
 For why the library exists, see [MOTIVATION.md](MOTIVATION.md). For release
-history, see [../ChangeLog.rst](../ChangeLog.rst).
+history, see [../CHANGELOG.md](../CHANGELOG.md).
 
 ## High-Level Structure
 
@@ -56,7 +56,7 @@ history, see [../ChangeLog.rst](../ChangeLog.rst).
 | `thermofeel/helpers.py` | Pure SI unit converters used by the index functions |
 | `tests/` | pytest suites + stored CSV reference outputs |
 | `examples/` | Runnable usage examples (incl. ECMWF GRIB/eccodes pipeline examples) |
-| `docs/` | Sphinx documentation (Read the Docs), one guide page per index |
+| `docs/` | MkDocs (Material) documentation + `mkdocs.yml`; one guide page per index, API reference auto-generated from docstrings (Read the Docs) |
 
 ## Data Flow Between Functions
 
@@ -111,7 +111,7 @@ dataset lacks it — explicitly documented as approximate near low sun angles.
 - **CI:** ECMWF `downstream-ci` (`.github/workflows/ci.yml`) runs the test suite
   and the `python_qa` lint gate; `cd.yml` publishes to PyPI on a bare
   `MAJOR.MINOR.MICRO` git tag.
-- **Docs:** Read the Docs builds `docs/` (Sphinx).
+- **Docs:** Read the Docs builds the MkDocs site from `mkdocs.yml` + `docs/`.
 
 ## Testing Topology
 

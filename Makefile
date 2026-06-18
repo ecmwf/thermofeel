@@ -11,10 +11,10 @@
 #
 # thermofeel is pure Python (runtime dependency: numpy). The environment is
 # managed by `uv`; targets wrap the raw tool commands so there is one source of
-# truth (see CONTRIBUTING.rst). The QA tools mirror what CI's python_qa step
+# truth (see CONTRIBUTING.md). The QA tools mirror what CI's python_qa step
 # enforces: black + isort (profile=black) + flake8 (config in tox.ini).
 
-.PHONY: help all check test lint fmt docs version clean \
+.PHONY: help all check test lint fmt docs docs-serve version clean \
         venv black-check isort-check flake8
 
 # ── Tooling ─────────────────────────────────────────────────────────────────
@@ -74,14 +74,19 @@ fmt: ## Apply isort + black formatting in place
 	$(BLACK) $(PY_SRC)
 
 # ── Docs ────────────────────────────────────────────────────────────────────
+# MkDocs (Material) + mkdocstrings. mkdocstrings introspects the installed
+# package, so these run in the project env (thermofeel importable) with the doc
+# tooling added on top from docs/requirements.txt.
 
-docs: ## Build the Sphinx documentation into docs/build/html
-	$(UV) run --no-project --with-requirements docs/requirements.txt \
-		sphinx-build -b html docs/source docs/build/html
+docs: ## Build the documentation site (MkDocs) into site/
+	$(UV) run --with-requirements docs/requirements.txt mkdocs build --strict
+
+docs-serve: ## Serve the documentation locally with live reload
+	$(UV) run --with-requirements docs/requirements.txt mkdocs serve
 
 # ── Versioning ────────────────────────────────────────────────────────────
 # Single source of truth: thermofeel/__init__.py __version__ (pyproject reads it
-# dynamically). To release, bump it there, add a ChangeLog.rst entry, then tag
+# dynamically). To release, bump it there, add a CHANGELOG.md entry, then tag
 # the bare MAJOR.MINOR.MICRO (no leading 'v').
 
 version: ## Print the canonical version from thermofeel/__init__.py
@@ -92,6 +97,6 @@ version: ## Print the canonical version from thermofeel/__init__.py
 clean: ## Remove the venv, build artefacts, and caches
 	rm -rf $(VENV)
 	rm -rf build/ dist/ *.egg-info thermofeel.egg-info
-	rm -rf docs/build/
+	rm -rf site/
 	rm -rf .pytest_cache
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

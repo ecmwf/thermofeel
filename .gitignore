@@ -5,6 +5,8 @@
 __pycache__/
 htmlcov
 docs/build/*
+site/
+uv.lock
 *.csv
 *.grib
 *.npz

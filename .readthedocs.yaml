@@ -1,16 +1,16 @@
 version: 2
 
-formats: []
-
 build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
 
+mkdocs:
+  configuration: mkdocs.yml
+
 python:
   install:
     - requirements: docs/requirements.txt
-
-sphinx:
-  configuration: docs/source/conf.py
-
+    # install thermofeel itself so mkdocstrings can introspect the docstrings
+    - method: pip
+      path: .

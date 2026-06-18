@@ -27,7 +27,7 @@ against the literature / known answers* and is where edge-case reasoning lives.
   1. **A bug** — fix the code, not the reference.
   2. **A deliberate formula correction** — regenerate the affected CSV (each test
      has a commented `np.savetxt(...)` line that produced it), record the change
-     and its scientific justification in `../ChangeLog.rst`, and cite the source.
+     and its scientific justification in `../CHANGELOG.md`, and cite the source.
 - Never weaken the `decimal=` tolerance to make a failing assertion pass without
   understanding why it drifted.
 

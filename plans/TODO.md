@@ -48,11 +48,9 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
     the `threshold` parameter defaults to `0.1`. Make the comment reference the
     parameter so the two cannot drift.
 
-- [ ] **Sync the docs version.** `docs/source/conf.py` has `release = "v1"`,
-    stale and out of step with `thermofeel/__init__.py` `__version__`. Either set
-    it from the package version (single source of truth) or add a check. Also
-    review the Python-version trove classifiers in `pyproject.toml` (claim
-    3.6–3.13; the library runs on 3.14).
+- [ ] **Review the Python-version trove classifiers** in `pyproject.toml` (they
+    claim 3.6–3.13; the library runs on 3.14). (The former stale Sphinx
+    `release = "v1"` was removed with the move to MkDocs.)
 
 ## Robustness
 

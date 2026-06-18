@@ -1,0 +1,89 @@
+# ChangeLog
+
+## 2.2.0
+
+- Added `calculate_wbgt_liljegren`: physically based Wet Bulb Globe Temperature
+  using the Liljegren et al. (2008) method, validated against Liljegren's
+  reference implementation (github.com/mdljts/wbgt)
+- Added `calculate_wind_speed_2m_liljegren`: the KNMI/Liljegren
+  stability-dependent 10 m-to-2 m wind-speed profile, used by default in
+  `calculate_wbgt_liljegren` (selectable via its `wind_scaling` argument)
+- Added `calculate_heat_force`: the KNMI 0–10 heat-force (hittekracht) scale
+  derived from WBGT (KNMI Technical Report TR-26-04)
+- Removed the broken, unexported `experimental_wbgt` module, now superseded by
+  `calculate_wbgt_liljegren`
+- Fixed the `calculate_bgt` argument order in the scalar test suite
+
+## 2.1.7
+
+- Change project to single branch main
+
+## 2.1.6
+
+- Updated humidex unit tests
+
+## 2.1.5
+
+- Fix descriptions
+- Fix variable names
+- Updated humidex calculation and reference
+
+## 2.1.4
+
+- Fix setup of project
+- Removed unused dependency on earthkit-meteo
+
+## 2.1.3
+
+- Fix documentation
+
+## 2.1.2
+
+- Fix calculation of adjusted Heat Index (function `calculate_heat_index_adjusted`)
+
+## 2.1.1
+
+- Small bug fix in the UTCI computation
+
+## 2.1.0
+
+- Fix computation of normal effective temperature
+- Fix documentation links to new repository URL
+
+## 2.0.0
+
+**Standardisation**
+
+- I/O variables converted into International System of Units (SI) (e.g., K)
+- Docstrings standardised in their descriptions (e.g., inputs as float arrays) and references
+- Variable names standardised across function declarations (i.e., t2m vs t2k vs t_k → now t2_k)
+- Use of temperature converter functions
+- Input variables are limited to those explicitly needed in the function formula (see e.g., `calculate_normal_effective_temperature` function)
+
+**New Functions**
+
+- `scale_windspeed` function to scale 10 m wind speed to height h with h < 10 m
+- `calculate_nonsaturation_vapour_pressure` to calculate vapour pressure at a given relative humidity and air temperature
+- `calculate_wbgt_simple` function renamed
+- `calculate_normal_effective_temperature` function renamed
+
+**Improvements**
+
+- thermofeel library docstring lists computed variables in alphabetical order
+- the cosine of the solar zenith angle now computed via the [earthkit-meteo](https://github.com/ecmwf/earthkit-meteo) library and must be provided as input
+- `calculate_bgt` function is calculated via a 4× faster formula
+- `calculate_saturation_vapour_pressure_multiphase` formulas replaced with those used in the IFS
+- changeable threshold in `approximate_dsrp` function (set to 0.1 by default)
+- invalidity outside input variables range specified in `calculate_wind_chill` function docstring
+
+**Bug Fixes**
+
+- fixed `approximate_dsrp` to avoid fdir being overwritten with dsrp when calculating MRT
+- fixed `calculate_wbgt_simple` constant value and vapour pressure calculated from non-saturated formula
+- fixed `calculate_bgt` wind speed at 1.1 m in input
+- fixed `calculate_mrt_from_bgt` wind speed at 1.1 m in input
+- fixed `calculate_normal_effective_temperature` wind speed at 1.2 m in input
+- fixed `calculate_apparent_temperature` wind speed at 10 m in input; vapour pressure calculated from non-saturated formula
+- fixed `calculate_wind_chill` wind speed in km/h and operation symbols in main formula
+- fixed `calculate_heat_index_simplified` a wrong sign and missing constant value in hiarray; hi set to 2 m air temperature when the latter is below 20 °C
+- fixed `fahrenheit_to_kelvin` converter function

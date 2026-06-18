@@ -91,4 +91,4 @@ implementation that users can adopt directly or audit against the literature.
    gridded arrays.
 4. **Reproducibility:** results are stable across releases unless a formula is
    deliberately corrected, and every such correction is recorded in
-   `ChangeLog.rst`.
+   `CHANGELOG.md`.

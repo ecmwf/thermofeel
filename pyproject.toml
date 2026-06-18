@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "thermofeel"
 description = "A library to calculate human thermal comfort indexes"
-readme = "README.rst"
+readme = "README.md"
 authors = [
     { name = "European Centre for Medium-Range Weather Forecasts (ECMWF)", email = "software@ecmwf.int" }
 ]
