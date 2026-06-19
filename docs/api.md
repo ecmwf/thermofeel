@@ -1,9 +1,11 @@
 # API reference
 
-Most functions are available at the top level of the package, for example
-`thermofeel.calculate_utci(...)`. The excess heat and cold factors are an
-exception: they live in the `thermofeel.excess_heat` submodule. This page is
-generated from the source docstrings.
+The thermal-index functions are available at the top level of the package, for
+example `thermofeel.calculate_utci(...)` or
+`thermofeel.calculate_excess_heat_factor(...)`. The supporting functions for the
+excess heat/cold factors (daily mean temperature, significance and
+acclimatisation indices, heatwave severity) live in the `thermofeel.excess_heat`
+submodule. This page is generated from the source docstrings.
 
 ## Thermal indices and supporting quantities
 
@@ -15,8 +17,12 @@ generated from the source docstrings.
 
 ## Excess heat and cold factors
 
-Accessed via the `thermofeel.excess_heat` submodule, for example
-`thermofeel.excess_heat.excess_heat_factor(...)`.
+The Excess Heat Factor and Excess Cold Factor are available at the top level as
+`thermofeel.calculate_excess_heat_factor(...)` and
+`thermofeel.calculate_excess_cold_factor(...)` (listed above). The
+`thermofeel.excess_heat` submodule below additionally provides the supporting
+daily mean temperature, significance and acclimatisation indices, and heatwave
+severity.
 
 ::: thermofeel.excess_heat
     options:

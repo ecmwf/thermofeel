@@ -2,6 +2,8 @@
 
 ## 2.2.0
 
+- Added inline type hints across the public API and a `py.typed` marker
+  (PEP 561), so downstream type-checkers pick up thermofeel's signatures
 - Raised the minimum supported Python to 3.10 (`requires-python = ">=3.10"`),
   refreshed the trove classifiers and added Python 3.14
 - Repaired the `examples/compute-thermal-indices.py` example to the 2.x API:
@@ -14,8 +16,10 @@
 - Added the `thermofeel.excess_heat` submodule: Excess Heat Factor (EXHF),
   Excess Cold Factor (EXCF), heatwave severity, and the supporting daily mean
   temperature, significance and acclimatisation indices, after Nairn & Fawcett
-  (2014). The functions implement the per-day formulas; the temporal
-  aggregations are left to upstream tooling (e.g. earthkit-transforms)
+  (2014). The factors are also exposed at the top level as
+  `calculate_excess_heat_factor` / `calculate_excess_cold_factor`. The functions
+  implement the per-day formulas; the temporal aggregations are left to upstream
+  tooling (e.g. earthkit-transforms)
 - Added `calculate_wbgt_liljegren`: physically based Wet Bulb Globe Temperature
   using the Liljegren et al. (2008) method, validated against Liljegren's
   reference implementation (github.com/mdljts/wbgt)

@@ -37,6 +37,7 @@ Repository = "https://github.com/ecmwf/thermofeel"
 [project.optional-dependencies]
 test = [
     "pytest",
+    "pytest-cov",
 ]
 
 [tool.setuptools]
@@ -49,6 +50,10 @@ version = { attr = "thermofeel.__version__" }
 [tool.setuptools.packages.find]
 where = ["."]
 
+# Ship the PEP 561 marker so downstream type-checkers use the inline hints.
+[tool.setuptools.package-data]
+thermofeel = ["py.typed"]
+
 # Single linter + formatter, replacing flake8 + isort + black.
 [tool.ruff]
 # 88 columns matches the formatting the codebase already uses.
@@ -59,3 +64,10 @@ target-version = "py310"
 # Default rules (Pyflakes "F" + pycodestyle "E4"/"E7"/"E9") plus import sorting
 # ("I"), which together cover what flake8 + isort previously enforced.
 extend-select = ["I"]
+
+[tool.coverage.run]
+source = ["thermofeel"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true

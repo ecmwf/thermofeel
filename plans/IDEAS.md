@@ -34,8 +34,6 @@ mature and get decided move up to `TODO.md`.
   NumPy, so they likely work under `xarray.apply_ufunc` / dask arrays today.
   Verify, document the pattern, and add an example — without taking a hard
   dependency.
-- [ ] **Typed signatures.** Add type hints (`numpy.typing.NDArray`) and ship a
-  `py.typed` marker for downstream type-checking.
 
 ## Performance
 
@@ -52,7 +50,6 @@ mature and get decided move up to `TODO.md`.
 - [ ] **Property-based tests** (`hypothesis`): monotonicity and physical-sanity
   properties (e.g. UTCI increases with temperature at fixed other inputs; indices
   stay finite over the documented input domain).
-- [ ] **Coverage reporting** wired into CI (the repo already ships `codecov.yml`).
 - [ ] **Cross-implementation parity.** Compare outputs against an independent
   reference implementation of each index (where one exists) as a one-off
   validation artefact, separate from the regression CSVs.

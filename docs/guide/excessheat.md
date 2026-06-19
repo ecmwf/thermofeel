@@ -100,6 +100,9 @@ exhf = excess_heat_factor(ehi_sig_heat, ehi_accl)
 exhf_clipped = excess_heat_factor(ehi_sig_heat, ehi_accl, clip=True)
 ```
 
+This factor is also available at the top level as
+`thermofeel.calculate_excess_heat_factor(ehi_sig, ehi_accl, clip=False)`.
+
 The output unit is the input unit squared, e.g. K².
 
 ### Heatwave severity
@@ -130,5 +133,8 @@ from thermofeel.excess_heat import excess_cold_factor
 excf = excess_cold_factor(ehi_sig_cold, ehi_accl)
 excf_clipped = excess_cold_factor(ehi_sig_cold, ehi_accl, clip=True)
 ```
+
+This factor is also available at the top level as
+`thermofeel.calculate_excess_cold_factor(ehi_sig, ehi_accl, clip=False)`.
 
 The output unit is the input unit squared, e.g. K².

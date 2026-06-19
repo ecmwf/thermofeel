@@ -121,3 +121,45 @@ def test_heatwave_severity():
 def test_heatwave_severity_scalar():
     hsev = tmf.excess_heat.heatwave_severity(3.0, threshold=2.5)
     assert hsev == pytest.approx(1.2)
+
+
+# The excess heat/cold factors are also exposed at the top level as
+# calculate_excess_{heat,cold}_factor, wrapping the excess_heat submodule.
+
+
+def test_calculate_excess_heat_factor_matches_submodule():
+    ehi_sig = np.asarray([5.0, 0.0, -2.0])
+    ehi_accl = np.asarray([3.0, 0.0, -4.0])
+    np.testing.assert_allclose(
+        tmf.calculate_excess_heat_factor(ehi_sig, ehi_accl),
+        tmf.excess_heat.excess_heat_factor(ehi_sig, ehi_accl),
+    )
+    np.testing.assert_allclose(
+        tmf.calculate_excess_heat_factor(ehi_sig, ehi_accl, clip=True),
+        tmf.excess_heat.excess_heat_factor(ehi_sig, ehi_accl, clip=True),
+    )
+
+
+def test_calculate_excess_cold_factor_matches_submodule():
+    ehi_sig = np.asarray([5.0, 0.0, -2.0])
+    ehi_accl = np.asarray([-4.0, 0.0, 3.0])
+    np.testing.assert_allclose(
+        tmf.calculate_excess_cold_factor(ehi_sig, ehi_accl),
+        tmf.excess_heat.excess_cold_factor(ehi_sig, ehi_accl),
+    )
+    np.testing.assert_allclose(
+        tmf.calculate_excess_cold_factor(ehi_sig, ehi_accl, clip=True),
+        tmf.excess_heat.excess_cold_factor(ehi_sig, ehi_accl, clip=True),
+    )
+
+
+def test_calculate_excess_factor_scalars():
+    assert tmf.calculate_excess_heat_factor(5.0, 3.0) == pytest.approx(15.0)
+    assert tmf.calculate_excess_cold_factor(5.0, -4.0) == pytest.approx(20.0)
+
+
+def test_excess_factor_raw_names_not_exported_at_top_level():
+    # Only the calculate_* wrappers are public at the top level; the bare
+    # submodule names are deliberately not re-exported there.
+    assert not hasattr(tmf, "excess_heat_factor")
+    assert not hasattr(tmf, "excess_cold_factor")

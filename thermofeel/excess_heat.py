@@ -7,9 +7,10 @@
 # does it submit to any jurisdiction.
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 
-def daily_mean_temperature(t2_min, t2_max):
+def daily_mean_temperature(t2_min: ArrayLike, t2_max: ArrayLike) -> np.ndarray:
     """
     Daily mean temperature computed from min and max
 
@@ -22,7 +23,7 @@ def daily_mean_temperature(t2_min, t2_max):
     return 0.5 * (t2_min + t2_max)
 
 
-def significance_index(dmt, threshold):
+def significance_index(dmt: ArrayLike, threshold: ArrayLike) -> np.ndarray:
     """
     Significance index
 
@@ -37,7 +38,7 @@ def significance_index(dmt, threshold):
     return dmt - threshold
 
 
-def acclimatisation_index(dmt, threshold):
+def acclimatisation_index(dmt: ArrayLike, threshold: ArrayLike) -> np.ndarray:
     """
     Acclimatisation index
 
@@ -50,7 +51,9 @@ def acclimatisation_index(dmt, threshold):
     return dmt - threshold
 
 
-def excess_heat_factor(ehi_sig, ehi_accl, clip=False):
+def excess_heat_factor(
+    ehi_sig: ArrayLike, ehi_accl: ArrayLike, clip: bool = False
+) -> np.ndarray:
     """
     Excess heat factor
 
@@ -67,7 +70,7 @@ def excess_heat_factor(ehi_sig, ehi_accl, clip=False):
     return ehi_sig * np.maximum(1.0, ehi_accl)
 
 
-def heatwave_severity(exhf, threshold):
+def heatwave_severity(exhf: ArrayLike, threshold: ArrayLike) -> np.ndarray:
     """
     Heatwave severity index
 
@@ -81,7 +84,9 @@ def heatwave_severity(exhf, threshold):
     return exhf / threshold
 
 
-def excess_cold_factor(ehi_sig, ehi_accl, clip=False):
+def excess_cold_factor(
+    ehi_sig: ArrayLike, ehi_accl: ArrayLike, clip: bool = False
+) -> np.ndarray:
     """
     Excess cold factor
 

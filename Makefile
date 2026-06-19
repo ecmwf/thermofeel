@@ -52,8 +52,8 @@ check: venv ## Import-check the package and verify the version resolves
 
 # ── Test ──────────────────────────────────────────────────────────────────
 
-test: venv ## Run the pytest suite (array regression + scalar pointwise tests)
-	$(PYTHON) -m pytest tests/ -v
+test: venv ## Run the pytest suite with coverage (array + scalar tests)
+	$(PYTHON) -m pytest tests/ -v --cov=thermofeel --cov-report=term-missing
 
 # ── Lint / format ───────────────────────────────────────────────────────────
 

@@ -26,6 +26,7 @@ See also: Kong and Huber (2022) https://doi.org/10.1029/2021EF002334
 """
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from .helpers import celsius_to_kelvin, kelvin_to_celsius
 
@@ -70,19 +71,19 @@ LSRDT = np.array(
 URBAN_EXP = np.array([0.15, 0.15, 0.20, 0.25, 0.30, 0.30])
 
 
-def esat(tk):
+def esat(tk: ArrayLike) -> np.ndarray:
     """Saturation vapour pressure over liquid water [hPa], Buck (1981)."""
     y = (tk - 273.15) / (tk - 32.18)
     return 1.004 * 6.1121 * np.exp(17.502 * y)
 
 
-def dew_point(e):
+def dew_point(e: ArrayLike) -> np.ndarray:
     """Dew-point temperature [K] from vapour pressure [hPa] (inverse of esat)."""
     z = np.log(e / (6.1121 * 1.004))
     return 273.15 + 240.97 * z / (17.502 - z)
 
 
-def viscosity(tk):
+def viscosity(tk: ArrayLike) -> np.ndarray:
     """Dynamic viscosity of air [kg m-1 s-1] (Bird, Stewart & Lightfoot)."""
     sigma = 3.617
     eps_kappa = 97.0
@@ -91,12 +92,12 @@ def viscosity(tk):
     return 2.6693e-6 * np.sqrt(M_AIR * tk) / (sigma * sigma * omega)
 
 
-def thermal_cond(tk):
+def thermal_cond(tk: ArrayLike) -> np.ndarray:
     """Thermal conductivity of air [W m-1 K-1] (Eucken relation)."""
     return (CP + 1.25 * R_AIR) * viscosity(tk)
 
 
-def diffusivity(tk, pair):
+def diffusivity(tk: ArrayLike, pair: ArrayLike) -> np.ndarray:
     """Diffusivity of water vapour in air [m2 s-1]; pair in hPa (BSL p.505)."""
     pcrit_air = 36.4
     pcrit_h2o = 218.0
@@ -112,18 +113,18 @@ def diffusivity(tk, pair):
     return a * (tk / tcrit12) ** b * pcrit13 * tcrit512 * mmix / patm * 1e-4
 
 
-def evap(tk):
+def evap(tk: ArrayLike) -> np.ndarray:
     """Latent heat of vaporisation [J kg-1], valid 283-313 K."""
     return (313.15 - tk) / 30.0 * (-71100.0) + 2.4073e6
 
 
-def emis_atm(tk, rh):
+def emis_atm(tk: ArrayLike, rh: ArrayLike) -> np.ndarray:
     """Clear-sky atmospheric emissivity; rh as fraction (Oke 2nd ed.)."""
     e = rh * esat(tk)
     return 0.575 * e**0.143
 
 
-def h_sphere_in_air(tk, pair, speed):
+def h_sphere_in_air(tk: ArrayLike, pair: ArrayLike, speed: ArrayLike) -> np.ndarray:
     """Convective heat-transfer coefficient for the globe (sphere) [W m-2 K-1]."""
     density = pair * 100.0 / (R_AIR * tk)
     re = np.maximum(speed, MIN_SPEED) * density * D_GLOBE / viscosity(tk)
@@ -131,7 +132,7 @@ def h_sphere_in_air(tk, pair, speed):
     return nu * thermal_cond(tk) / D_GLOBE
 
 
-def h_cylinder_in_air(tk, pair, speed):
+def h_cylinder_in_air(tk: ArrayLike, pair: ArrayLike, speed: ArrayLike) -> np.ndarray:
     """Convective heat-transfer coefficient for the wick (cylinder) [W m-2 K-1]."""
     a = 0.56
     b = 0.281
@@ -142,7 +143,15 @@ def h_cylinder_in_air(tk, pair, speed):
     return nu * thermal_cond(tk) / D_WICK
 
 
-def solve_globe(ta, rh, pair, speed, solar, fdir, cza):
+def solve_globe(
+    ta: ArrayLike,
+    rh: ArrayLike,
+    pair: ArrayLike,
+    speed: ArrayLike,
+    solar: ArrayLike,
+    fdir: ArrayLike,
+    cza: ArrayLike,
+) -> np.ndarray:
     """Globe temperature [degC] by fixed-point iteration of the energy balance.
 
     ``rh`` is a fraction. NaN is returned where the iteration does not converge
@@ -178,7 +187,16 @@ def solve_globe(ta, rh, pair, speed, solar, fdir, cza):
     return result
 
 
-def solve_wetbulb(ta, rh, pair, speed, solar, fdir, cza, rad):
+def solve_wetbulb(
+    ta: ArrayLike,
+    rh: ArrayLike,
+    pair: ArrayLike,
+    speed: ArrayLike,
+    solar: ArrayLike,
+    fdir: ArrayLike,
+    cza: ArrayLike,
+    rad: float,
+) -> np.ndarray:
     """Wet-bulb temperature [degC] by fixed-point iteration of the energy balance.
 
     ``rh`` is a fraction. With ``rad=1`` this is the natural wet-bulb temperature
@@ -223,7 +241,7 @@ def solve_wetbulb(ta, rh, pair, speed, solar, fdir, cza, rad):
     return result
 
 
-def wind_speed_2m(va, cossza, ssrd):
+def wind_speed_2m(va: ArrayLike, cossza: ArrayLike, ssrd: ArrayLike) -> np.ndarray:
     """10 m -> 2 m wind speed via the Liljegren stability-dependent profile.
 
     ``va * (2/10)**p``, where the power-law exponent ``p`` comes from a
@@ -258,7 +276,15 @@ def wind_speed_2m(va, cossza, ssrd):
     return np.maximum(va * (2.0 / 10.0) ** exponent, MIN_SPEED)
 
 
-def wbgt(t2_k, rh, pressure, speed_2m, ssrd, fdir, cossza):
+def wbgt(
+    t2_k: ArrayLike,
+    rh: ArrayLike,
+    pressure: ArrayLike,
+    speed_2m: ArrayLike,
+    ssrd: ArrayLike,
+    fdir: ArrayLike,
+    cossza: ArrayLike,
+) -> np.ndarray:
     """Liljegren WBGT [K] from the 2 m wind and the other meteorological inputs.
 
     ``rh`` is a percentage and ``speed_2m`` is the wind already scaled to 2 m.
