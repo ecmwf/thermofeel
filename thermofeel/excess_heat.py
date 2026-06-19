@@ -11,12 +11,7 @@ import numpy as np
 
 def daily_mean_temperature(t2_min, t2_max):
     """
-    Daily mean temperature, computed from min and max only
-
-    The day is usually defined in the local timezone from 9 am to 9 am local
-    time, so that the daily maximum typically preceeds the daily minimum to
-    account for the greater significance of the human physiological response
-    to a hot night following a hot day compared to the other way around.
+    Daily mean temperature computed from min and max
 
         :param t2_min: 2-metre daily minimum temperature.
         :param t2_max: 2-metre daily maximum temperature.

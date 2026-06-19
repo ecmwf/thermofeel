@@ -27,22 +27,24 @@ References
 How To Use
 ----------
 
-The indices are computed in a pipeline of steps, as described in the subsections
-below. Each step builds on the output of the previous one.
-
 .. note::
 
-    The functions defined here only implement the basic formulas of the indices,
+    The functions defined here only implement the basic formulas of the indices
     but not the required aggregations of the input data. The intermediate
     aggregated quantities required by the pipeline, including running means
     of daily mean temperature and climatological percentile thresholds, can, for
     example, be computed with `earthkit.transforms <https://earthkit-transforms.readthedocs.io>`_.
 
-**Daily Mean Temperature**
 
-The first step is to compute the daily mean temperature from the 2-metre daily
-minimum and maximum temperatures. Both inputs must be in the same unit (K or °C);
-the output is in the same unit.
+Daily Mean Temperature
+######################
+
+The excess heat and cold factor computations are based on 2-metre daily mean
+temperature.
+
+Nairn and Fawcett (2014) approximate the daily mean temperature
+with the average of the daily minimum and maximum temperatures which are more
+readily available as inputs from long-running historical records.
 
 .. code-block:: python
 
@@ -50,13 +52,16 @@ the output is in the same unit.
 
     dmt = daily_mean_temperature(t2_min, t2_max)
 
-**Significance Index**
+Both inputs must be in the same unit (K or °C); the output is in the same unit.
+
+
+Significance Index
+##################
 
 The significance index measures how far the 3-day running mean of daily mean
 temperature exceeds a climatological threshold. For heat events the threshold is
 typically the 95th percentile of daily mean temperature over a reference period;
-for cold events the 5th percentile is used instead. The output unit matches the
-input unit (K or °C).
+for cold events the 5th percentile is used instead.
 
 .. code-block:: python
 
@@ -68,11 +73,23 @@ input unit (K or °C).
     # cold events: threshold = 5th-percentile climatology of dmt
     ehi_sig_cold = significance_index(dmt_3day_mean, threshold_5th)
 
-**Acclimatisation Index**
+The output unit matches the input unit.
+
+.. note::
+
+    The use of a static climatological threshold in the significance index
+    means that indicated hot and cold extremes will almost exclusively occur
+    in the summer or winter seasons, respectively. A time-varying climatological
+    threshold allows for the detection of warm and cold *spells* (relative
+    anomalies) instead.
+
+
+Acclimatisation Index
+#####################
 
 The acclimatisation index measures how far the 3-day running mean of daily mean
-temperature exceeds the 30-day running mean of daily mean temperature in the
-preceding period. The output unit matches the input unit (K or °C).
+temperature (days i, i+1, i+2) exceeds the 30-day running mean of daily mean
+temperature in the preceding period (days i-30, ..., i-1).
 
 .. code-block:: python
 
@@ -80,12 +97,15 @@ preceding period. The output unit matches the input unit (K or °C).
 
     ehi_accl = acclimatisation_index(dmt_3day_mean, dmt_30day_mean)
 
-**Excess Heat Factor**
+The output unit matches the input unit.
 
-The excess heat factor is the product of the significance index and the
-acclimatisation index (clamped from below at 1). It is returned in K² (or °C²
-if the inputs are in °C). Optionally, set ``clip=True`` to restrict the result
-to non-negative values, retaining only heat events.
+
+Excess Heat Factor
+##################
+
+The excess heat factor combines the significance index and the acclimatisation
+index. Optionally, set ``clip=True`` to restrict the EXHF to non-negative
+values.
 
 .. code-block:: python
 
@@ -94,12 +114,15 @@ to non-negative values, retaining only heat events.
     exhf = excess_heat_factor(ehi_sig_heat, ehi_accl)
     exhf_clipped = excess_heat_factor(ehi_sig_heat, ehi_accl, clip=True)
 
-**Heatwave Severity**
+The output unit is the input unit squared, e.g., K².
 
-The heatwave severity index normalises the excess heat factor by a threshold —
-typically the 85th percentile of all *positive* EXHF values over a reference
-period — to produce a dimensionless measure of event severity relative to a
-historical baseline.
+Heatwave Severity
+#################
+
+The heatwave severity index normalises the excess heat factor by a threshold
+to produce a dimensionless measure of event severity relative to a historical
+baseline. The 85th percentile of all *positive* EXHF values over a reference
+period is typically used as the threshold value.
 
 .. code-block:: python
 
@@ -107,7 +130,11 @@ historical baseline.
 
     hsev = heatwave_severity(exhf, threshold_exhf_85th)
 
-**Excess Cold Factor**
+The severity index is nondimensional.
+
+
+Excess Cold Factor
+##################
 
 The excess cold factor uses the same formulation as the excess heat factor but
 is symmetric about zero to capture cold extremes. Use the significance index
@@ -120,3 +147,5 @@ restrict the result to non-negative values, retaining only cold events.
 
     excf = excess_cold_factor(ehi_sig_cold, ehi_accl)
     excf_clipped = excess_cold_factor(ehi_sig_cold, ehi_accl, clip=True)
+
+The output unit is the input unit squared, e.g., K².
