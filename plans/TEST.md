@@ -87,4 +87,5 @@ pytest tests/ -v
 ```
 
 CI runs the same suite through ECMWF `downstream-ci` on every push/PR, plus the
-`python_qa` lint gate (`black` + `isort` + `flake8`).
+`qa` job that runs `ruff` (lint + format check — the single replacement for
+`black` + `isort` + `flake8`).

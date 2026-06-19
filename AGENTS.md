@@ -122,15 +122,16 @@ Useful focused targets (run `make help` for the complete list):
 | `make venv` | Create the local `.venv` via `uv` and install the package + test deps |
 | `make check` | Import-check the package and verify the version is resolvable |
 | `make test` | Run the pytest suite (array regression + scalar pointwise tests) |
-| `make lint` | `flake8` + `isort --check` + `black --check` |
-| `make fmt` | Apply `isort` + `black` formatting in place |
+| `make lint` | `ruff check` + `ruff format --check` |
+| `make fmt` | Apply `ruff check --fix` + `ruff format` in place |
 | `make docs` | Build the MkDocs documentation site (`mkdocs build --strict`) |
 | `make version` | Print the canonical version from `thermofeel/__init__.py` |
 | `make clean` | Remove `.venv`, build artefacts, caches |
 
-- The toolchain mirrors what CI's `python_qa` step enforces: `black` + `isort`
-  (profile=black) + `flake8` (config in `tox.ini`). Run `make fmt` before
-  `make lint` to auto-fix formatting.
+- The toolchain is `ruff` — a single linter + formatter replacing `flake8` +
+  `isort` + `black`. Its config lives in `pyproject.toml` under `[tool.ruff]`.
+  CI runs the same `ruff check` + `ruff format --check` in the `qa` job. Run
+  `make fmt` before `make lint` to auto-fix lint and formatting.
 - The Makefile uses `uv` to manage the virtual environment. The targets wrap the
   raw tool commands so there is one source of truth — see the *Building* and
   *Testing* sections of `CONTRIBUTING.md`.

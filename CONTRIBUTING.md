@@ -28,6 +28,6 @@ This project is pure Python (runtime dependency: `numpy`) and uses a top-level
 ```bash
 make venv     # create a local .venv (uv) with the package + test deps
 make all      # the full gate: check + test + lint
-make fmt      # apply isort + black formatting
+make fmt      # apply ruff lint fixes + formatting
 make docs     # build the MkDocs documentation site
 ```

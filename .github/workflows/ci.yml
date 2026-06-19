@@ -26,7 +26,9 @@ jobs:
     uses: ecmwf-actions/downstream-ci/.github/workflows/downstream-ci.yml@main
     with:
       thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
-      python_qa: true
+      # QA is handled by the dedicated `qa` job below (ruff), not the
+      # downstream-ci black/isort/flake8 gate.
+      python_qa: false
     secrets: inherit
 
   # Build downstream packages on HPC
@@ -37,6 +39,25 @@ jobs:
     with:
       thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
     secrets: inherit
+
+  # Lint and check formatting with ruff (replaces black + isort + flake8)
+  qa:
+    name: qa
+    if: github.event_name != 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      - name: Ruff lint (config in pyproject.toml)
+        run: ruff check thermofeel tests
+      - name: Ruff format check
+        run: ruff format --check --diff thermofeel tests
 
   # Verify the documentation builds (MkDocs); does not publish (Read the Docs does)
   docs:

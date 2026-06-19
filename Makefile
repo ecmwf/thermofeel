@@ -11,11 +11,11 @@
 #
 # thermofeel is pure Python (runtime dependency: numpy). The environment is
 # managed by `uv`; targets wrap the raw tool commands so there is one source of
-# truth (see CONTRIBUTING.md). The QA tools mirror what CI's python_qa step
-# enforces: black + isort (profile=black) + flake8 (config in tox.ini).
+# truth (see CONTRIBUTING.md). The QA tool is ruff (linter + formatter, the
+# single replacement for flake8 + isort + black); its config lives in
+# pyproject.toml under [tool.ruff].
 
-.PHONY: help all check test lint fmt docs docs-serve version clean \
-        venv black-check isort-check flake8
+.PHONY: help all check test lint fmt docs docs-serve version clean venv
 
 # ── Tooling ─────────────────────────────────────────────────────────────────
 
@@ -23,11 +23,10 @@ UV      ?= uv
 VENV    ?= .venv
 PYTHON  ?= $(VENV)/bin/python
 
-# Formatting / lint tools run in ephemeral uv environments (`--no-project` so uv
-# does not build thermofeel just to run a linter). Pinned config lives in tox.ini.
-BLACK   ?= $(UV) run --no-project --with black black
-ISORT   ?= $(UV) run --no-project --with isort isort
-FLAKE8  ?= $(UV) run --no-project --with flake8 flake8
+# ruff (linter + formatter) runs in an ephemeral uv environment (`--no-project`
+# so uv does not build thermofeel just to run a linter). Config lives in
+# pyproject.toml under [tool.ruff].
+RUFF    ?= $(UV) run --no-project --with ruff ruff
 
 # Code that the QA tools operate on (the package + its tests).
 PY_SRC  ?= thermofeel tests
@@ -58,20 +57,13 @@ test: venv ## Run the pytest suite (array regression + scalar pointwise tests)
 
 # ── Lint / format ───────────────────────────────────────────────────────────
 
-flake8: ## Run flake8 (config in tox.ini)
-	$(FLAKE8) $(PY_SRC)
+lint: ## Lint and check formatting with ruff (check-only)
+	$(RUFF) check $(PY_SRC)
+	$(RUFF) format --check --diff $(PY_SRC)
 
-isort-check: ## Check import ordering (isort, profile=black)
-	$(ISORT) --check-only --diff $(PY_SRC)
-
-black-check: ## Check code formatting (black)
-	$(BLACK) --check --diff $(PY_SRC)
-
-lint: flake8 isort-check black-check ## Run all lints (flake8 + isort + black, check-only)
-
-fmt: ## Apply isort + black formatting in place
-	$(ISORT) $(PY_SRC)
-	$(BLACK) $(PY_SRC)
+fmt: ## Apply ruff lint fixes (incl. import sorting) and formatting in place
+	$(RUFF) check --fix $(PY_SRC)
+	$(RUFF) format $(PY_SRC)
 
 # ── Docs ────────────────────────────────────────────────────────────────────
 # MkDocs (Material) + mkdocstrings. mkdocstrings introspects the installed
