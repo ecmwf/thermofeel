@@ -15,7 +15,7 @@
 # single replacement for flake8 + isort + black); its config lives in
 # pyproject.toml under [tool.ruff].
 
-.PHONY: help all check test lint fmt docs docs-serve version clean venv
+.PHONY: help all check test lint fmt docs docs-serve version build release clean venv
 
 # ── Tooling ─────────────────────────────────────────────────────────────────
 
@@ -28,8 +28,8 @@ PYTHON  ?= $(VENV)/bin/python
 # pyproject.toml under [tool.ruff].
 RUFF    ?= $(UV) run --no-project --with ruff ruff
 
-# Code that the QA tools operate on (the package + its tests).
-PY_SRC  ?= thermofeel tests
+# Code that the QA tools operate on (the package, its tests, and helper scripts).
+PY_SRC  ?= thermofeel tests scripts
 
 # ── Defaults ──────────────────────────────────────────────────────────────
 
@@ -83,6 +83,31 @@ docs-serve: ## Serve the documentation locally with live reload
 
 version: ## Print the canonical version from thermofeel/__init__.py
 	@$(UV) run --no-project python -c "import re,pathlib; print(re.search(r'__version__\s*=\s*[\"\047]([^\"\047]+)', pathlib.Path('thermofeel/__init__.py').read_text()).group(1))"
+
+# ── Build / Release ───────────────────────────────────────────────────────
+# `make build` produces the dist/ artefacts locally and checks their metadata
+# (no upload). `make release X.Y.Z` validates the release and, with CONFIRM=1,
+# bumps __version__ forward to X.Y.Z (never backward), commits, and creates the
+# bare tag — it NEVER pushes. Publishing happens in CI (.github/workflows/cd.yml)
+# when the tag is pushed. See scripts/release.py and AGENTS.md for the protocol.
+
+build: ## Build the sdist + wheel into dist/ and check metadata (no upload)
+	rm -rf dist/
+	$(UV) build
+	$(UV) run --no-project --with twine twine check dist/*
+
+release: ## Validate + tag a release: make release X.Y.Z [CONFIRM=1] (never pushes)
+	@CONFIRM="$(CONFIRM)" ALLOW_MAJOR="$(ALLOW_MAJOR)" ALLOW_BRANCH="$(ALLOW_BRANCH)" SKIP_GATE="$(SKIP_GATE)" \
+		$(UV) run --no-project python scripts/release.py "$(or $(VERSION),$(filter-out release,$(MAKECMDGOALS)))"
+
+# Allow a bare version goal (`make release 2.3.0`) to be passed through to the
+# release target instead of being treated as its own target. Non-version typos
+# still error rather than silently no-op.
+%:
+	@case "$@" in \
+	  [0-9]*.[0-9]*.[0-9]*) : ;; \
+	  *) printf "make: *** No rule to make target '%s'.  Stop.\n" "$@" >&2; exit 2 ;; \
+	esac
 
 # ── Cleanup ───────────────────────────────────────────────────────────────
 

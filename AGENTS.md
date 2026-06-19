@@ -126,6 +126,8 @@ Useful focused targets (run `make help` for the complete list):
 | `make fmt` | Apply `ruff check --fix` + `ruff format` in place |
 | `make docs` | Build the MkDocs documentation site (`mkdocs build --strict`) |
 | `make version` | Print the canonical version from `thermofeel/__init__.py` |
+| `make build` | Build the sdist + wheel into `dist/` and check metadata (no upload) |
+| `make release X.Y.Z` | Validate a release; with `CONFIRM=1` bump/commit/tag (never pushes) |
 | `make clean` | Remove `.venv`, build artefacts, caches |
 
 - The toolchain is `ruff` — a single linter + formatter replacing `flake8` +
@@ -148,12 +150,18 @@ Useful focused targets (run `make help` for the complete list):
 - NOTE: SINGLE SOURCE OF TRUTH FOR VERSION — `thermofeel/__init__.py`
   `__version__` is canonical. `pyproject.toml` derives it dynamically. On a
   release: update `__version__`, add the `CHANGELOG.md` entry, commit, then tag.
-- REMEMBER on releases:
-  - check all is committed and pushed upstream, otherwise STOP and warn the user
-  - bump `__version__` in `thermofeel/__init__.py`
-  - add the release section to `CHANGELOG.md`
-  - git tag with the bare version (no `v`) and push; the `cd` workflow publishes
-    to PyPI
+- REMEMBER on releases — driven by `make release X.Y.Z` (see `scripts/release.py`):
+  - all work must be committed and pushed to `main` first, otherwise STOP and warn
+    (the script blocks if the tree is dirty or `HEAD` is not in sync with
+    `origin/main`)
+  - the `## X.Y.Z` section must already exist in `CHANGELOG.md` (curated by hand;
+    never auto-generated)
+  - `make release X.Y.Z` validates, and with `CONFIRM=1` bumps `__version__`
+    forward to `X.Y.Z` if needed (NEVER backward — SemVer), commits, and creates
+    the bare tag (no `v`). `ALLOW_MAJOR=1` is required for a MAJOR bump.
+  - it NEVER pushes — it prints the `git push` commands; pushing the tag triggers
+    the `cd` workflow, which builds and publishes to PyPI
+  - run `make build` first to build and inspect the `dist/` artefacts locally
 
 # Tracking Work Done
 

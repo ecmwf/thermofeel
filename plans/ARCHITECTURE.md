@@ -115,10 +115,14 @@ dataset lacks it — explicitly documented as approximate near low sun angles.
 
 ## Distribution
 
-- **PyPI:** `pip install thermofeel` (pure-Python wheel/sdist).
+- **PyPI:** `pip install thermofeel` (pure-Python wheel/sdist; the wheel ships
+  only the `thermofeel` package — `packages.find` is scoped to `thermofeel*`).
 - **CI:** ECMWF `downstream-ci` (`.github/workflows/ci.yml`) runs the test suite,
-  and a dedicated `qa` job runs the `ruff` lint + format gate; `cd.yml` publishes
-  to PyPI on a bare `MAJOR.MINOR.MICRO` git tag.
+  a `qa` job runs the `ruff` lint + format gate, and a `coverage` job uploads to
+  Codecov; `cd.yml` publishes to PyPI on a bare `MAJOR.MINOR.MICRO` git tag.
+- **Release tooling:** `make build` builds/inspects the artefacts; `make release
+  X.Y.Z` (driving `scripts/release.py`) validates, bumps `__version__` forward,
+  commits and tags — never pushing. See the release notes in `AGENTS.md`.
 - **Docs:** Read the Docs builds the MkDocs site from `mkdocs.yml` + `docs/`.
 
 ## Testing Topology

@@ -55,9 +55,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff
       - name: Ruff lint (config in pyproject.toml)
-        run: ruff check thermofeel tests
+        run: ruff check thermofeel tests scripts
       - name: Ruff format check
-        run: ruff format --check --diff thermofeel tests
+        run: ruff format --check --diff thermofeel tests scripts
 
   # Run the test suite with coverage and upload to Codecov
   coverage:

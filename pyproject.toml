@@ -49,6 +49,8 @@ version = { attr = "thermofeel.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["."]
+# Ship only the library; keep examples/, scripts/ and tests/ out of the wheel.
+include = ["thermofeel*"]
 
 # Ship the PEP 561 marker so downstream type-checkers use the inline hints.
 [tool.setuptools.package-data]

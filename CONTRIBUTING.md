@@ -31,3 +31,21 @@ make all      # the full gate: check + test + lint
 make fmt      # apply ruff lint fixes + formatting
 make docs     # build the MkDocs documentation site
 ```
+
+## Releasing
+
+Releases are published to PyPI by the `cd` workflow when a bare
+`MAJOR.MINOR.MICRO` tag (no leading `v`) is pushed. The version is single-sourced
+in `thermofeel/__init__.py` (`__version__`); `pyproject.toml` reads it
+dynamically.
+
+```bash
+make build              # build + metadata-check the sdist/wheel in dist/ (no upload)
+make release X.Y.Z      # plan only: validate everything and show what would happen
+make release X.Y.Z CONFIRM=1   # apply: bump __version__ forward if needed, commit, tag
+```
+
+`make release` only ever moves the version **forward** (never backward), requires
+the `## X.Y.Z` `CHANGELOG.md` section to exist, must run on a clean, pushed `main`,
+and **never pushes** — it prints the `git push` commands for you to run. A MAJOR
+bump additionally requires `ALLOW_MAJOR=1`.
