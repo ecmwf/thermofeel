@@ -72,6 +72,7 @@ nav:
       - Universal Thermal Climate Index: guide/utci.md
       - Wet Bulb Globe Temperature: guide/wbgt.md
       - Heat Force (Liljegren WBGT): guide/heatforce.md
+      - Excess Heat & Cold Factors: guide/excessheat.md
       - Wind Chill: guide/windchill.md
   - Supporting quantities:
       - Relative Humidity & Vapour Pressure: guide/relativehumidity.md

@@ -11,6 +11,11 @@
   renamed/removed functions and the obsolete timing decorators dropped
 - Removed dead, overwritten code in `scale_windspeed` (kept the computed log-law
   coefficient) and corrected the `approximate_dsrp` threshold comment
+- Added the `thermofeel.excess_heat` submodule: Excess Heat Factor (EXHF),
+  Excess Cold Factor (EXCF), heatwave severity, and the supporting daily mean
+  temperature, significance and acclimatisation indices, after Nairn & Fawcett
+  (2014). The functions implement the per-day formulas; the temporal
+  aggregations are left to upstream tooling (e.g. earthkit-transforms)
 - Added `calculate_wbgt_liljegren`: physically based Wet Bulb Globe Temperature
   using the Liljegren et al. (2008) method, validated against Liljegren's
   reference implementation (github.com/mdljts/wbgt)

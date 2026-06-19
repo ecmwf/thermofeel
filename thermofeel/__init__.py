@@ -6,6 +6,7 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
+from . import excess_heat  # noqa
 from .thermofeel import *  # noqa
 
 __version__ = "2.2.0"
