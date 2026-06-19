@@ -42,7 +42,7 @@ def acclimatisation_index(dmt, threshold):
     Acclimatisation index
 
         :param dmt: 3-day running mean daily mean temperature (days i, i+1, i+2).
-        :param: threshold: 30-day running mean daily mean temperature (days i-30, ..., i-1).
+        :param threshold: 30-day running mean daily mean temperature (days i-30, ..., i-1).
 
     Reference: Nairn and Fawcett (2014), equation (2)
     https://doi.org/10.3390/ijerph120100227
