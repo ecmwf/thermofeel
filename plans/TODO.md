@@ -21,37 +21,6 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
     Verify: round-trip tests that `units="C"` equals `kelvin_to_celsius(units="K")`
     for every affected index.
 
-## Correctness fixes (from codebase review)
-
-- [ ] **Repair the stale example `examples/compute-thermal-indices.py`.**
-    It calls functions that no longer exist in the 2.x API and would crash:
-    - `thermofeel.calculate.heat_index_adjusted` — wrong namespace
-      (should be `thermofeel.calculate_heat_index_adjusted`)
-    - `calculate_cos_solar_zenith_angle_integrated` — removed in 2.0; solar
-      geometry is now a caller input (use `earthkit-meteo`)
-    - `calculate_net_effective_temperature` — renamed to
-      `calculate_normal_effective_temperature`
-    - `kelvin_to_celcius` — misspelling of `kelvin_to_celsius`
-    - `thermofeel.func_timers` / the `@thermofeel.timer` decorator — no longer exist
-    - old UTCI kwargs `va_ms=`, `mrt_k=`, `e_hPa=` — now `va=`, `mrt=`, `ehPa=`
-    Bring it in line with the current API or clearly mark it legacy. An example
-    that calls a removed function is a bug, not documentation (see `AGENTS.md`).
-
-## Code cleanliness
-
-- [ ] **Remove dead code in `scale_windspeed`** (`thermofeel/thermofeel.py`).
-    `c = 1 / np.log10(10 / 0.01)` is immediately overwritten by the hardcoded
-    `c = 0.333333333333`. Keep one — preferably the computed expression with a
-    comment — and drop the misleading first line.
-
-- [ ] **Fix the `approximate_dsrp` comment.** It says "for cossza <= 0.01" while
-    the `threshold` parameter defaults to `0.1`. Make the comment reference the
-    parameter so the two cannot drift.
-
-- [ ] **Review the Python-version trove classifiers** in `pyproject.toml` (they
-    claim 3.6–3.13; the library runs on 3.14). (The former stale Sphinx
-    `release = "v1"` was removed with the move to MkDocs.)
-
 ## Robustness
 
 - [ ] **Work through the numerical-robustness checklist in `ROBUSTNESS.md`.**

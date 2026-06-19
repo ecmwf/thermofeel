@@ -2,6 +2,15 @@
 
 ## 2.2.0
 
+- Raised the minimum supported Python to 3.10 (`requires-python = ">=3.10"`),
+  refreshed the trove classifiers and added Python 3.14
+- Repaired the `examples/compute-thermal-indices.py` example to the 2.x API:
+  solar geometry now obtained from `earthkit-meteo`
+  (`solar.cos_solar_zenith_angle_integrated`), `calculate_utci`/`calculate_wbgt`/
+  `calculate_bgt`/`calculate_normal_effective_temperature` return Kelvin directly,
+  renamed/removed functions and the obsolete timing decorators dropped
+- Removed dead, overwritten code in `scale_windspeed` (kept the computed log-law
+  coefficient) and corrected the `approximate_dsrp` threshold comment
 - Added `calculate_wbgt_liljegren`: physically based Wet Bulb Globe Temperature
   using the Liljegren et al. (2008) method, validated against Liljegren's
   reference implementation (github.com/mdljts/wbgt)

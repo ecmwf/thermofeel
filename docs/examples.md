@@ -39,5 +39,5 @@ The cosine of the solar zenith angle can be obtained from
 ```python
 from earthkit.meteo import solar
 
-cossza = solar.calculate_cos_solar_zenith_angle(...)
+cossza = solar.cos_solar_zenith_angle(...)
 ```

@@ -18,6 +18,7 @@ from datetime import datetime, timedelta, timezone
 
 import eccodes
 import numpy as np
+from earthkit.meteo import solar
 
 import thermofeel as thermofeel
 
@@ -169,31 +170,31 @@ def decode_grib(fpath):
 ###########################################################################################################
 
 
-# @thermofeel.timer
 def calc_cossza_int(messages):
+    # Solar geometry is no longer computed inside thermofeel (removed in 2.0);
+    # the caller supplies the cosine of the solar zenith angle. Here we use
+    # earthkit-meteo to integrate it over the forecast step's time window.
     dt = messages["2t"]["base_datetime"]
     time, step, begin, end = timestep_interval(messages)
 
-    cossza = thermofeel.calculate_cos_solar_zenith_angle_integrated(
-        lat=lats,
-        lon=lons,
-        y=dt.year,
-        m=dt.month,
-        d=dt.day,
-        h=dt.hour,
-        tbegin=begin,
-        tend=end,
+    begin_date = dt + timedelta(hours=begin)
+    end_date = dt + timedelta(hours=end)
+
+    cossza = solar.cos_solar_zenith_angle_integrated(
+        begin_date=begin_date,
+        end_date=end_date,
+        latitudes=lats,
+        longitudes=lons,
         integration_order=2,
     )
 
     return cossza
 
 
-# @thermofeel.timer
 def approximate_dsrp(messages):
     """
     In the absence of dsrp, approximate it with fdir and cossza.
-    Note this introduces some amoutn of error as cossza approaches zero
+    Note this introduces some amount of error as cossza approaches zero
     """
     fdir = messages["fdir"]["values"]
     cossza = calc_field("cossza", calc_cossza_int, messages)
@@ -203,48 +204,44 @@ def approximate_dsrp(messages):
     return dsrp
 
 
-# @thermofeel.timer
 def calc_heatx(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
-    heatx = thermofeel.calculate.heat_index_adjusted(t2m=t2m, td=td)
+    heatx = thermofeel.calculate_heat_index_adjusted(t2_k=t2m, td_k=td)
 
     return heatx
 
 
-# @thermofeel.timer
 def calc_aptmp(messages):
     t2m = messages["2t"]["values"]
 
     ws = calc_field("ws", calc_ws, messages)
+    rhp = calc_field("rhp", calc_rhp, messages)
 
-    aptmp = thermofeel.calculate_apparent_temperature(t2m=t2m, va=ws)
+    aptmp = thermofeel.calculate_apparent_temperature(t2_k=t2m, va=ws, rh=rhp)
 
     return aptmp
 
 
-# @thermofeel.timer
 def calc_humidex(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
-    humidex = thermofeel.calculate_humidex(t2m=t2m, td=td)
+    humidex = thermofeel.calculate_humidex(t2_k=t2m, td_k=td)
 
     return humidex
 
 
-# @thermofeel.timer
 def calc_rhp(messages):
     t2m = messages["2t"]["values"]
     td = messages["2d"]["values"]
 
-    rhp = thermofeel.calculate_relative_humidity_percent(t2m=t2m, td=td)
+    rhp = thermofeel.calculate_relative_humidity_percent(t2_k=t2m, td_k=td)
 
     return rhp
 
 
-# @thermofeel.timer
 def calc_mrt(messages):
     time, step, begin, end = timestep_interval(messages)
 
@@ -285,7 +282,6 @@ def calc_field(name, func, messages):
     return values
 
 
-# @thermofeel.timer
 def calc_ws(messages):
     u10 = messages["10u"]["values"]
     v10 = messages["10v"]["values"]
@@ -299,7 +295,6 @@ def compute_ehPa_(rh_pc, svp):
     return svp * rh_pc * 0.01  # / 100.0
 
 
-# @thermofeel.timer
 def compute_ehPa(t2m, t2d):
     rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
     svp = thermofeel.calculate_saturation_vapour_pressure(t2m)
@@ -307,13 +302,11 @@ def compute_ehPa(t2m, t2d):
     return ehPa
 
 
-# @thermofeel.timer
 def compute_utci_in_kelvin(t2m, ws, mrt, ehPa):
-    utci = thermofeel.calculate_utci(t2_k=t2m, va_ms=ws, mrt_k=mrt, e_hPa=ehPa)
-    return thermofeel.celsius_to_kelvin(utci)
+    # calculate_utci already returns Kelvin in the 2.x API.
+    return thermofeel.calculate_utci(t2_k=t2m, va=ws, mrt=mrt, ehPa=ehPa)
 
 
-# @thermofeel.timer
 def filter_utci(t2m, va, mrt, ehPa, utci):
     e_mrt = np.subtract(mrt, t2m)
 
@@ -336,7 +329,6 @@ def filter_utci(t2m, va, mrt, ehPa, utci):
     return misses
 
 
-# @thermofeel.timer
 def validate_utci(utci, misses):
     utci[misses] = np.nan
 
@@ -356,7 +348,6 @@ def validate_utci(utci, misses):
     utci[misses] = MISSING_VALUE
 
 
-# @thermofeel.timer
 def calc_utci(messages):
     t2m = messages["2t"]["values"]
     t2d = messages["2d"]["values"]
@@ -375,7 +366,6 @@ def calc_utci(messages):
     return utci
 
 
-# @thermofeel.timer
 def calc_wbgt(messages):
     t2m = messages["2t"]["values"]  # Kelvin
     t2d = messages["2d"]["values"]
@@ -383,51 +373,47 @@ def calc_wbgt(messages):
     ws = calc_field("ws", calc_ws, messages)
     mrt = calc_field("mrt", calc_mrt, messages)
 
+    # calculate_wbgt returns Kelvin in the 2.x API.
     wbgt = thermofeel.calculate_wbgt(t2m, mrt, ws, t2d)
-    wbgt = thermofeel.celsius_to_kelvin(wbgt)
 
     return wbgt
 
 
-# @thermofeel.timer
 def calc_bgt(messages):
     t2m = messages["2t"]["values"]  # Kelvin
 
     ws = calc_field("ws", calc_ws, messages)
     mrt = calc_field("mrt", calc_mrt, messages)
 
+    # calculate_bgt returns Kelvin in the 2.x API.
     bgt = thermofeel.calculate_bgt(t2m, mrt, ws)
-    bgt = thermofeel.celsius_to_kelvin(bgt)
 
     return bgt
 
 
-# @thermofeel.timer
 def calc_wbt(messages):
-    t2m = messages["2t"]["values"]
-    t2m = thermofeel.kelvin_to_celcius(t2m)
+    t2m = messages["2t"]["values"]  # Kelvin
 
     rhp = calc_field("rhp", calc_rhp, messages)
 
-    wbt = thermofeel.calculate_relative_humidity_percent(t2m=t2m, rh=rhp)
+    wbt = thermofeel.calculate_wbt(t2_k=t2m, rh=rhp)
 
     return wbt
 
 
-# @thermofeel.timer
 def calc_net(messages):
     t2m = messages["2t"]["values"]  # Kelvin
-    t2d = messages["2d"]["values"]
 
     ws = calc_field("ws", calc_ws, messages)
+    rhp = calc_field("rhp", calc_rhp, messages)
 
-    net = thermofeel.calculate_net_effective_temperature(t2m, ws, t2d)
-    net = thermofeel.celsius_to_kelvin(net)
+    # calculate_normal_effective_temperature takes relative humidity (not dew
+    # point) and returns Kelvin in the 2.x API.
+    net = thermofeel.calculate_normal_effective_temperature(t2m, ws, rhp)
 
     return net
 
 
-# @thermofeel.timer
 def calc_windchill(messages):
     t2m = messages["2t"]["values"]
 
@@ -458,7 +444,6 @@ def check_messages(msgs):
         assert ftime == m["forecast_datetime"]
 
 
-# @thermofeel.timer
 def output_grib(output, msg, paramid, values, missing=None):
     """Encode field in GRIB2"""
     grib = msg["grib"]
@@ -502,7 +487,6 @@ def timestep_interval(messages):
     return time, step, step_begin, step_end
 
 
-# @thermofeel.timer
 def process_step(args, msgs, output):
     check_messages(msgs)
 
@@ -669,12 +653,7 @@ def main():
 
     print(f"\nProcessed steps: {steps}\n")
 
-    print("Performance summary:")
-    print("--------------------")
-    for func, stats in thermofeel.func_timers.items():
-        assert stats["calls"] > 0
-        average = stats["elapsed"] / stats["calls"]
-        print(func, "->", stats, f"average {average:0.6f} s")
+    output.close()
 
 
 if __name__ == "__main__":

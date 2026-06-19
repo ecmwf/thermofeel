@@ -1,4 +1,4 @@
-﻿# (C) Copyright 1996- ECMWF.
+# (C) Copyright 1996- ECMWF.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -142,8 +142,9 @@ def scale_windspeed(va, h):
     Reference: Bröde et al. (2012)
     https://doi.org/10.1007/s00484-011-0454-1
     """
-    c = 1 / np.log10(10 / 0.01)  #
-    c = 0.333333333333
+    # log-law scaling factor 1 / log10(z_ref / z0), with the 10 m reference
+    # height and a 0.01 m roughness length (evaluates to 1/3).
+    c = 1 / np.log10(10 / 0.01)
     vh = va * np.log10(h / 0.01) * c
 
     return vh
@@ -161,7 +162,7 @@ def approximate_dsrp(fdir, cossza, threshold=0.1):
     """
     # filter statement for solar zenith angle to avoid division by zero.
     csza_filter1 = np.where((cossza > threshold))
-    dsrp = np.copy(fdir)  # dsrp = fdir for cossza <= 0.01, equals to fdir
+    dsrp = np.copy(fdir)  # leave dsrp = fdir where cossza <= threshold
     dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
     return dsrp
 
