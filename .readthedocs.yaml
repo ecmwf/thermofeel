@@ -4,13 +4,10 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-
-mkdocs:
-  configuration: mkdocs.yml
-
-python:
-  install:
-    - requirements: docs/requirements.txt
-    # install thermofeel itself so mkdocstrings can introspect the docstrings
-    - method: pip
-      path: .
+  # Build the MkDocs (Material) site ourselves so the output is identical to
+  # the local `make docs` build and the CI docs-build job. Installing the
+  # package lets mkdocstrings introspect the docstrings for the API reference.
+  commands:
+    - pip install -r docs/requirements.txt
+    - pip install .
+    - mkdocs build --strict --site-dir $READTHEDOCS_OUTPUT/html
