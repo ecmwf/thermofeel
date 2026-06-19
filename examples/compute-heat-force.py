@@ -27,7 +27,7 @@ def main():
 
     # The cosine of the solar zenith angle can be obtained from earthkit-meteo:
     #   from earthkit.meteo import solar
-    #   cossza = solar.calculate_cos_solar_zenith_angle(...)
+    #   cossza = solar.cos_solar_zenith_angle(...)
 
     wbgt_k = thermofeel.calculate_wbgt_liljegren(
         t2_k, rh, pressure, va, ssrd, fdir, cossza
