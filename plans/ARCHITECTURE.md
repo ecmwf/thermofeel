@@ -33,10 +33,17 @@ history, see [../CHANGELOG.md](../CHANGELOG.md).
               │  wbgt / wbgt_simple wbt                           │
               │  wbgt_liljegren    dew_point / scale_windspeed    │
               │  heat_force        approximate_dsrp               │
-              │  wind_chill                                       │
-              └───────────────────────┬───────────────────────┘
-                                      │  uses
-                        ┌─────────────▼─────────────┐
+              │  wind_chill        wind_speed_2m_liljegren         │
+              └───────────┬───────────────────────┬───────────────┘
+                          │ uses                   │ delegates to
+                          │              ┌─────────▼──────────────┐
+                          │              │ thermofeel/liljegren.py │
+                          │              │ Liljegren WBGT internals:│
+                          │              │ constants, property fns, │
+                          │              │ globe/wet-bulb solvers,  │
+                          │              │ 2 m wind profile         │
+                          │              └─────────┬──────────────┘
+                        ┌─▼──────────────────────▼─┐
                         │     thermofeel/helpers.py  │
                         │  SI unit converters         │
                         │  (C/K/F interconversion)    │
@@ -52,7 +59,8 @@ history, see [../CHANGELOG.md](../CHANGELOG.md).
 | Path | Role |
 |------|------|
 | `thermofeel/__init__.py` | Public surface: `from .thermofeel import *` and the canonical `__version__` (single source of truth; `pyproject.toml` reads it dynamically) |
-| `thermofeel/thermofeel.py` | All index and supporting-quantity functions. The substance of the library |
+| `thermofeel/thermofeel.py` | All index and supporting-quantity functions (the public API). The substance of the library |
+| `thermofeel/liljegren.py` | Internal Liljegren WBGT implementation: physical constants, property functions, the globe/wet-bulb energy-balance solvers, and the 2 m wind profile. `thermofeel.py` exposes thin public wrappers (`calculate_wbgt_liljegren`, `calculate_wind_speed_2m_liljegren`) |
 | `thermofeel/helpers.py` | Pure SI unit converters used by the index functions |
 | `tests/` | pytest suites + stored CSV reference outputs |
 | `examples/` | Runnable usage examples (incl. ECMWF GRIB/eccodes pipeline examples) |

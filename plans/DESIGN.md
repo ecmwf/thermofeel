@@ -108,10 +108,12 @@ The library offers three WBGT routines for different needs:
 - `calculate_wbgt_liljegren` — the physically based Liljegren (2008) method that
   solves the globe and natural-wet-bulb energy balances by fixed-point
   iteration. This is the "gold standard" used operationally by KNMI and is the
-  basis of `calculate_heat_force`. The private `_liljegren_*` helpers (property
-  functions and the two solvers) are transcribed from Liljegren's reference C
-  code and validated bit-for-bit against it; they are not part of the public
-  surface. NaN is returned where the iteration does not converge.
+  basis of `calculate_heat_force`. Its implementation (physical constants,
+  property functions, the two energy-balance solvers, the stability-based 2 m
+  wind profile) lives in the internal **`thermofeel/liljegren.py`** submodule,
+  transcribed from Liljegren's reference C code and validated bit-for-bit
+  against it; only the thin public wrappers stay in `thermofeel.py`. NaN is
+  returned where the iteration does not converge.
 
 ### Output stays in SI even when the formula is empirical
 
