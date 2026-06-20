@@ -4,8 +4,12 @@
 [![tag release](https://img.shields.io/github/v/release/ecmwf/thermofeel?sort=semver)](https://github.com/ecmwf/thermofeel)
 [![docs](https://readthedocs.org/projects/thermofeel/badge/?version=latest)](https://thermofeel.readthedocs.io/en/latest/?badge=latest)
 [![ci](https://img.shields.io/github/actions/workflow/status/ecmwf/thermofeel/ci.yml)](https://github.com/ecmwf/thermofeel/actions)
+[![maturity](https://github.com/ecmwf/codex/raw/refs/heads/main/Project%20Maturity/emerging_badge.svg)](https://github.com/ecmwf/codex/raw/refs/heads/main/Project%20Maturity#graduated)
 
 # thermofeel
+
+> [!IMPORTANT]
+> This software is **Graduated** and subject to ECMWF's guidelines on [Software Maturity](https://github.com/ecmwf/codex/raw/refs/heads/main/Project%20Maturity).
 
 **thermofeel** (pronounced *thermo-feel*)
 
