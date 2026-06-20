@@ -606,10 +606,13 @@ def calculate_bgt(t2_k: ArrayLike, mrt: ArrayLike, va: ArrayLike) -> np.ndarray:
         :param va: (float array) wind speed at 10 meters [m/s]
         returns globe temperature [K]
 
-    Solves the globe energy balance with a closed-form quartic root. The root is
-    real-valued for non-zero wind; at exactly zero wind speed (``va == 0``) it
-    returns ``NaN`` (the convective term vanishes and the inner square root goes
-    negative). Supply a small positive wind for calm conditions.
+    Solves the globe energy balance with a closed-form quartic root.
+
+    Edge case — calm air: the closed form is a ``0/0`` indeterminate at exactly
+    zero wind speed. The limit as ``va -> 0`` is the mean radiant temperature
+    (with no convection the globe reaches radiative equilibrium, ``bgt -> mrt``),
+    so ``mrt`` is returned where ``va == 0``. Invalid negative wind still yields
+    ``NaN``.
 
     Reference: Guo et al. 2018
     https://doi.org/10.1016/j.enbuild.2018.08.029
@@ -624,10 +627,15 @@ def calculate_bgt(t2_k: ArrayLike, mrt: ArrayLike, va: ArrayLike) -> np.ndarray:
 
     q = 12 * e
     s = 27 * (d**2)
-    delta = ((s + np.sqrt(s**2 - 4 * (q**3))) / 2) ** (1 / 3)
-    Q = 0.5 * np.sqrt((1 / 3) * (delta + q / delta))
+    # At v == 0 the closed form evaluates 0/0; guard the warnings and substitute
+    # the analytic calm-air limit (bgt -> mrt) below.
+    with np.errstate(invalid="ignore", divide="ignore"):
+        delta = ((s + np.sqrt(s**2 - 4 * (q**3))) / 2) ** (1 / 3)
+        Q = 0.5 * np.sqrt((1 / 3) * (delta + q / delta))
+        bgt = -Q + 0.5 * np.sqrt(-4 * (Q**2) + d / Q)
 
-    bgt = -Q + 0.5 * np.sqrt(-4 * (Q**2) + d / Q)
+    # Calm-air limit: no convection -> globe at radiative equilibrium (= mrt).
+    bgt = np.where(v == 0.0, np.asarray(mrt, dtype=float), bgt)
 
     return bgt
 

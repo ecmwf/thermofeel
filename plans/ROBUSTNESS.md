@@ -70,14 +70,17 @@ robustness-specific guarantees this document tracks, layered on top, are:
 > Each entry: ID, severity, surface, description, status, mitigation, regression
 > test.
 
-- **R-1 — MEDIUM — `calculate_bgt` (closed-form globe temperature).** At exactly
-  zero wind (`va == 0`) the convective term `d` vanishes, so `d/Q == 0` and the
-  inner `np.sqrt(-4*Q**2)` is negative → returns `NaN` (with a NumPy sqrt
-  warning). Real-valued for any `va > 0`. **Status:** documented (docstring +
-  `DESIGN.md`); behaviour intentionally not changed to preserve reference
-  reproducibility — callers should pass a small positive wind for calm
-  conditions. A future minor could add an opt-in wind floor. **Test:**
-  `test_bgt_zero_wind_returns_nan`.
+- **R-1 — MEDIUM — `calculate_bgt` (closed-form globe temperature) — FIXED
+  (2.2.0).** At exactly zero wind (`va == 0`) the convective term `d` vanishes,
+  so the closed form is a `0/0` indeterminate (previously `NaN` with a NumPy sqrt
+  warning). The analytic limit as `va -> 0` is the mean radiant temperature (no
+  convection ⇒ globe at radiative equilibrium, `bgt -> mrt`), so `mrt` is now
+  returned at `va == 0` and the warnings are suppressed via `np.errstate`. This
+  also makes the only internal consumer, `calculate_wbgt`, finite at `va == 0`.
+  Invalid negative wind still yields `NaN`. No reference data changed (the test
+  inputs have `va >= 0.02`; all `va > 0` outputs are byte-identical). **Tests:**
+  `test_bgt_zero_wind_returns_mrt`, `test_wbgt_zero_wind_is_finite`,
+  `test_bgt_negative_wind_is_nan`.
 - **R-2 — LOW — all public indices, `NaN` propagation.** A `NaN` input yields a
   `NaN` output element-wise; no function raises on finite, correctly-shaped
   arrays. **Status:** confirmed and pinned. **Test:**

@@ -73,14 +73,28 @@ def test_wbgt_liljegren_nan_element_propagates():
     assert np.isnan(out[1])
 
 
-def test_bgt_zero_wind_returns_nan():
-    # Documented edge: the closed-form globe temperature is NaN at exactly zero
-    # wind, but finite for any positive wind speed.
-    with np.errstate(invalid="ignore"):
-        zero = tmf.calculate_bgt(T, MRT, np.array([0.0]))
+def test_bgt_zero_wind_returns_mrt():
+    # Calm-air limit: with no convection the globe sits at radiative equilibrium,
+    # so the globe temperature equals the mean radiant temperature at va == 0
+    # (the closed form is 0/0 there). Positive wind is finite as usual.
+    zero = tmf.calculate_bgt(T, MRT, np.array([0.0]))
     positive = tmf.calculate_bgt(T, MRT, np.array([0.5]))
-    assert np.isnan(zero).all()
+    np.testing.assert_allclose(zero, MRT)
     assert np.isfinite(positive).all()
+
+
+def test_wbgt_zero_wind_is_finite():
+    # calculate_wbgt depends on calculate_bgt, so the calm-air limit (bgt -> mrt)
+    # makes the Stull WBGT finite at va == 0 too (previously NaN).
+    out = tmf.calculate_wbgt(T, MRT, np.array([0.0]), TD)
+    assert np.isfinite(out).all()
+
+
+def test_bgt_negative_wind_is_nan():
+    # Negative wind is invalid input; it is not masked by the calm-air limit.
+    with np.errstate(invalid="ignore"):
+        out = tmf.calculate_bgt(T, MRT, np.array([-1.0]))
+    assert np.isnan(out).all()
 
 
 def test_utci_requires_ehpa_or_td():

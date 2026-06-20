@@ -24,9 +24,9 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
 ## Robustness
 
 - The first numerical-robustness hardening pass is **done** (see
-  `ROBUSTNESS.md` §5 and `tests/test_robustness.py`). Possible follow-ups, not
-  yet accepted: an opt-in zero-wind floor for `calculate_bgt` (finding R-1) and
-  `hypothesis` property tests (see `IDEAS.md`).
+  `ROBUSTNESS.md` §5 and `tests/test_robustness.py`), including the R-1 calm-air
+  fix for `calculate_bgt`. Possible follow-up, not yet accepted: `hypothesis`
+  property tests (see `IDEAS.md`).
 
 ## Notes
 

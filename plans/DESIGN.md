@@ -109,9 +109,10 @@ the formula's specification and is covered by tests.
 
 `calculate_bgt` solves the globe-temperature energy balance with a closed-form
 quartic root rather than iteration (faster and deterministic over large grids).
-The root is real-valued across the documented input domain for non-zero wind; at
-exactly zero wind speed it returns `NaN` (documented in the docstring and in
-`ROBUSTNESS.md`).
+The root is real-valued for non-zero wind; the closed form is a `0/0`
+indeterminate at exactly zero wind, where the analytic limit (no convection ⇒
+globe at radiative equilibrium) is `bgt -> mrt`, so `mrt` is returned there. This
+feeds the only internal consumer, `calculate_wbgt`. See `ROBUSTNESS.md` R-1.
 
 ### Three WBGT implementations
 
