@@ -23,6 +23,12 @@ Repo: ecmwf/thermofeel
    MUST convert back so the public boundary is always SI. Callers never have to
    think about units.
 
+   *Documented exception:* the Excess Heat / Excess Cold Factors
+   (`thermofeel.excess_heat`) are **unit-agnostic** — they operate on temperature
+   *differences* and accept K or °C, returning the input unit *squared* (e.g.
+   K²). This is intrinsic to those indices (they combine temperature anomalies),
+   not a contract violation; it is called out in their docstrings and guide page.
+
 3. **Vectorised over NumPy.** Every function must work elementwise on NumPy
    arrays of any shape, and equivalently on Python scalars wrapped in arrays.
    No Python-level loops over grid points. Masking and conditional branches use
@@ -54,7 +60,8 @@ Three families:
   `calculate_heat_index_simplified`, `calculate_heat_index_adjusted`,
   `calculate_humidex`, `calculate_normal_effective_temperature`,
   `calculate_wbgt`, `calculate_wbgt_simple`, `calculate_wbgt_liljegren`,
-  `calculate_heat_force`, `calculate_wind_chill`.
+  `calculate_heat_force`, `calculate_excess_heat_factor`,
+  `calculate_excess_cold_factor`, `calculate_wind_chill`.
 - **Supporting physical quantities** — `calculate_mean_radiant_temperature`,
   `calculate_bgt`, `calculate_mrt_from_bgt`, `calculate_relative_humidity_percent`,
   `calculate_saturation_vapour_pressure`,
@@ -64,6 +71,12 @@ Three families:
   `calculate_wind_speed_2m_liljegren`, `approximate_dsrp`.
 - **Unit converters** (`helpers.py`) — `celsius_to_kelvin`, `kelvin_to_celsius`,
   `kelvin_to_fahrenheit`, `fahrenheit_to_celsius`, `fahrenheit_to_kelvin`.
+
+`calculate_excess_heat_factor` / `calculate_excess_cold_factor` are thin
+top-level wrappers over the `thermofeel.excess_heat` submodule, which also
+provides the supporting per-day functions (`daily_mean_temperature`,
+`significance_index`, `acclimatisation_index`, `heatwave_severity`); those stay
+namespaced rather than re-exported at the top level.
 
 ## Key Design Decisions
 
@@ -96,10 +109,11 @@ the formula's specification and is covered by tests.
 
 `calculate_bgt` solves the globe-temperature energy balance with a closed-form
 quartic root rather than iteration (faster and deterministic over large grids).
-The previous iterative version is retained as a commented reference in the
-source for traceability.
+The root is real-valued across the documented input domain for non-zero wind; at
+exactly zero wind speed it returns `NaN` (documented in the docstring and in
+`ROBUSTNESS.md`).
 
-### Two WBGT implementations
+### Three WBGT implementations
 
 The library offers three WBGT routines for different needs:
 - `calculate_wbgt_simple` — single empirical regression (ACSM), temperature + RH.

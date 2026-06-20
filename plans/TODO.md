@@ -23,11 +23,10 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
 
 ## Robustness
 
-- [ ] **Work through the numerical-robustness checklist in `ROBUSTNESS.md`.**
-    The first hardening pass: audit `np.log`/`np.sqrt`/`np.power`/division for
-    `NaN`/`Inf`-producing domains, confirm the `approximate_dsrp` divide-by-zero
-    guard, confirm the `calculate_bgt` root stays real-valued, and add explicit
-    `NaN`/`Inf` propagation tests. Record findings in `ROBUSTNESS.md`.
+- The first numerical-robustness hardening pass is **done** (see
+  `ROBUSTNESS.md` §5 and `tests/test_robustness.py`). Possible follow-ups, not
+  yet accepted: an opt-in zero-wind floor for `calculate_bgt` (finding R-1) and
+  `hypothesis` property tests (see `IDEAS.md`).
 
 ## Notes
 

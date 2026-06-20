@@ -1,8 +1,8 @@
 # Contributing to *thermofeel*
 
-Please report [bug reports](https://github.com/ecmwf-projects/thermofeel/issues)
-or [pull requests](https://github.com/ecmwf-projects/thermofeel/issues) on
-[GitHub](https://github.com/ecmwf-projects/thermofeel).
+Please report [bug reports](https://github.com/ecmwf/thermofeel/issues)
+or [pull requests](https://github.com/ecmwf/thermofeel/issues) on
+[GitHub](https://github.com/ecmwf/thermofeel).
 
 We want your feedback, please e-mail: <user-services@ecmwf.int>
 

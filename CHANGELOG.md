@@ -4,6 +4,13 @@
 
 - Added inline type hints across the public API and a `py.typed` marker
   (PEP 561), so downstream type-checkers pick up thermofeel's signatures
+- Exported `fahrenheit_to_celsius` at the top level, completing the C/K/F
+  converter set
+- Ran a first numerical-robustness pass (`ROBUSTNESS.md`): documented the
+  edge behaviour (e.g. `calculate_bgt` returns `NaN` at exactly zero wind) and
+  added `NaN`-propagation and error-contract tests
+- The published wheel now ships only the `thermofeel` package (`examples/`,
+  `scripts/` and `tests/` are no longer packaged)
 - Raised the minimum supported Python to 3.10 (`requires-python = ">=3.10"`),
   refreshed the trove classifiers and added Python 3.14
 - Repaired the `examples/compute-thermal-indices.py` example to the 2.x API:

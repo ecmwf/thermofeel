@@ -47,6 +47,9 @@ from .helpers import (
     kelvin_to_celsius,
     kelvin_to_fahrenheit,
 )
+from .helpers import (
+    fahrenheit_to_celsius as fahrenheit_to_celsius,  # re-export (not used here)
+)
 from .liljegren import MIN_WIND_10M as _LILJEGREN_MIN_WIND_10M
 from .liljegren import wbgt as _liljegren_wbgt
 from .liljegren import wind_speed_2m as _liljegren_wind_speed_2m
@@ -602,6 +605,12 @@ def calculate_bgt(t2_k: ArrayLike, mrt: ArrayLike, va: ArrayLike) -> np.ndarray:
         :param mrt: (float array) mean radiant temperature [K]
         :param va: (float array) wind speed at 10 meters [m/s]
         returns globe temperature [K]
+
+    Solves the globe energy balance with a closed-form quartic root. The root is
+    real-valued for non-zero wind; at exactly zero wind speed (``va == 0``) it
+    returns ``NaN`` (the convective term vanishes and the inner square root goes
+    negative). Supply a small positive wind for calm conditions.
+
     Reference: Guo et al. 2018
     https://doi.org/10.1016/j.enbuild.2018.08.029
     """
@@ -619,25 +628,6 @@ def calculate_bgt(t2_k: ArrayLike, mrt: ArrayLike, va: ArrayLike) -> np.ndarray:
     Q = 0.5 * np.sqrt((1 / 3) * (delta + q / delta))
 
     bgt = -Q + 0.5 * np.sqrt(-4 * (Q**2) + d / Q)
-
-    # f = (1.1e8 * va**0.6) / (0.95 * 0.15**0.4)
-    # a = f / 2
-    # b = -f * t2_k - mrt**4
-    # rt1 = 3 ** (1 / 3)
-    # rt2 = np.sqrt(3) * np.sqrt(27 * a**4 - 16 * b**3) + 9 * a**2
-    # rt3 = 2 * 2 ** (2 / 3) * b
-    # a = a.clip(min=0)
-    # bgt = -1 / 2 * np.sqrt(
-    #     rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-    # ) + 1 / 2 * np.sqrt(
-    #     (4 * a)
-    #     / np.sqrt(
-    #         rt3 / (rt1 * rt2 ** (1 / 3))
-    #         + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-    #     )
-    #     - (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-    #     - rt3 / (rt1 * rt2 ** (1 / 3))
-    # )
 
     return bgt
 
@@ -929,7 +919,7 @@ def calculate_wind_chill(t2_k: ArrayLike, va: ArrayLike) -> np.ndarray:
 def calculate_heat_index_simplified(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
     """
     Heat Index
-        :param t2m: (float array) 2m temperature [K]
+        :param t2_k: (float array) 2m temperature [K]
         :param rh: (float array) relative humidity [%]
         returns heat index [K]
     Reference: Blazejczyk et al. (2012)

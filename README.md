@@ -23,6 +23,7 @@ Currently calculates the thermal indices:
 - Wet Bulb Globe Temperature Simple
 - Wet Bulb Globe Temperature (Liljegren method)
 - Heat Force (KNMI 0–10 heat-stress scale)
+- Excess Heat Factor and Excess Cold Factor
 - Wind Chill
 
 In support of the above indices, it also calculates:
@@ -58,6 +59,12 @@ Optionally, thermofeel depends on:
 - pytest — for unit testing
 
 ## Release notes
+
+Version 2.2 adds the physically based Liljegren Wet Bulb Globe Temperature and
+the KNMI 0–10 Heat Force scale, the Excess Heat / Excess Cold Factors, inline
+type hints with a `py.typed` marker, and raises the minimum Python to 3.10. See
+the [ChangeLog](https://github.com/ecmwf/thermofeel/blob/main/CHANGELOG.md) for
+the full list.
 
 Thermofeel 2.0 brings a number of changes to the underlying code but most
 importantly to the API.

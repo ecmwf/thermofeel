@@ -1,9 +1,10 @@
 # Numerical Robustness & Failure Modes
 
-> **Status:** scaffold — no formal robustness pass has been run yet.
+> **Status:** first hardening pass done (2.2.0). The `np.log`/`np.sqrt`/
+> `np.power`/division domains were audited, the guards confirmed, and
+> `NaN`/`Inf` behaviour pinned by `tests/test_robustness.py`. Findings are in §5.
 > This document records how thermofeel behaves under bad, edge, or out-of-domain
-> input: the failure modes to guard against, plus a checklist and findings log
-> for a first hardening pass.
+> input: the failure modes to guard against, plus the checklist and findings log.
 
 ## 0. Why robustness is the risk surface
 
@@ -52,23 +53,51 @@ robustness-specific guarantees this document tracks, layered on top, are:
 
 ## 4. Robustness checklist (first hardening pass)
 
-- [ ] Audit every `np.log`, `np.sqrt`, `np.power`, and division for the input
+- [x] Audit every `np.log`, `np.sqrt`, `np.power`, and division for the input
       domain that produces `NaN`/`Inf`; document the behaviour or guard it where
-      a guard is clearly correct (do not mask real out-of-domain use).
-- [ ] Confirm `approximate_dsrp`'s `threshold` guard fully prevents
+      a guard is clearly correct (do not mask real out-of-domain use). → R-1…R-6.
+- [x] Confirm `approximate_dsrp`'s `threshold` guard fully prevents
       divide-by-zero across the input range, and that the documented large-error
-      regime near low sun angles is called out.
-- [ ] Confirm the `calculate_bgt` closed-form root is real-valued (no negative
+      regime near low sun angles is called out. → R-5 (guard confirmed).
+- [x] Confirm the `calculate_bgt` closed-form root is real-valued (no negative
       discriminant) across the documented input domain, including zero/low wind.
-- [ ] Add explicit tests for `NaN`/`Inf` propagation behaviour so it is a
-      defined contract rather than incidental.
+      → R-1 (real for `va > 0`; `NaN` at exactly `va == 0`, now documented).
+- [x] Add explicit tests for `NaN`/`Inf` propagation behaviour so it is a
+      defined contract rather than incidental. → `tests/test_robustness.py`.
 
 ## 5. Findings log
 
 > Each entry: ID, severity, surface, description, status, mitigation, regression
-> test. None recorded yet — populate as the checklist above is worked through.
+> test.
 
-_(no robustness pass run yet)_
+- **R-1 — MEDIUM — `calculate_bgt` (closed-form globe temperature).** At exactly
+  zero wind (`va == 0`) the convective term `d` vanishes, so `d/Q == 0` and the
+  inner `np.sqrt(-4*Q**2)` is negative → returns `NaN` (with a NumPy sqrt
+  warning). Real-valued for any `va > 0`. **Status:** documented (docstring +
+  `DESIGN.md`); behaviour intentionally not changed to preserve reference
+  reproducibility — callers should pass a small positive wind for calm
+  conditions. A future minor could add an opt-in wind floor. **Test:**
+  `test_bgt_zero_wind_returns_nan`.
+- **R-2 — LOW — all public indices, `NaN` propagation.** A `NaN` input yields a
+  `NaN` output element-wise; no function raises on finite, correctly-shaped
+  arrays. **Status:** confirmed and pinned. **Test:**
+  `test_nan_temperature_propagates`.
+- **R-3 — LOW — `liljegren.solve_globe`/`solve_wetbulb` non-convergence.** Each
+  element that does not converge within `MAX_ITER` (e.g. a `NaN` input, which
+  never satisfies the tolerance) returns `NaN`; converging neighbours are
+  unaffected (per-element). **Status:** by design, confirmed. **Test:**
+  `test_wbgt_liljegren_nan_element_propagates`.
+- **R-4 — LOW (by design) — `np.log` at RH = 0.**
+  `calculate_dew_point_from_relative_humidity` and Liljegren `dew_point` evaluate
+  `np.log` of a vapour pressure that is 0 when RH = 0 → `-inf`. Documented domain
+  is RH > 0. **Status:** accepted; no guard (masking would hide real bad input).
+- **R-5 — guarded, no action — divide-by-(near-)zero.** `approximate_dsrp`
+  divides by `cossza` only where `cossza > threshold` (default 0.1); the Liljegren
+  solvers guard `cza → 0` (`cza_safe`), `tan(sza)`, and the `0 * inf` direct-beam
+  term. **Status:** guards reviewed and confirmed correct.
+- **R-6 — LOW — `liljegren.solve_wetbulb` `(pair - ewick)` denominator.** Safe
+  for the meteorological domain (`ewick` ≪ `pair`); would only approach zero near
+  water's boiling point, far outside valid wet-bulb inputs. **Status:** accepted.
 
 ## 6. Severity definitions
 
