@@ -6,6 +6,13 @@
   (PEP 561), so downstream type-checkers pick up thermofeel's signatures
 - Exported `fahrenheit_to_celsius` at the top level, completing the C/K/F
   converter set
+- Fixed silent integer-dtype truncation in
+  `calculate_saturation_vapour_pressure_multiphase` and `approximate_dsrp`: an
+  integer-typed input array no longer truncates the float result
+- Added the missing citation for `calculate_relative_humidity_percent`
+  (Magnus-Tetens; Murray 1967) and documented validity ranges in the UTCI, wet
+  bulb, simple WBGT, NET, apparent-temperature and humidex docstrings; documented
+  the array calling convention and that relative humidity is not clamped
 - `calculate_bgt` (and therefore the Stull `calculate_wbgt`) now returns the
   mean radiant temperature at exactly zero wind — the analytic calm-air limit
   (no convection ⇒ globe at radiative equilibrium) — instead of `NaN`. Values for

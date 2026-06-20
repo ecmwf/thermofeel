@@ -63,6 +63,14 @@ def calculate_relative_humidity_percent(t2_k: ArrayLike, td_k: ArrayLike) -> np.
         :param t2_k: (float array) 2m temperature [K]
         :param td_k: (float array) dew point temperature [K]
         returns relative humidity [%]
+
+    Uses the Magnus-Tetens saturation vapour pressure (coefficients over water) -
+    a different empirical form to ``calculate_saturation_vapour_pressure``
+    (Hardy 1998). The result is not clamped: when ``td_k > t2_k`` (supersaturation)
+    it exceeds 100%.
+
+    Reference: Tetens (1930); coefficients per Murray (1967)
+    https://doi.org/10.1175/1520-0450(1967)006<0203:OTCOSV>2.0.CO;2
     """
 
     t2_c = kelvin_to_celsius(t2_k)
@@ -109,14 +117,21 @@ def calculate_saturation_vapour_pressure_multiphase(
     """
     Saturation vapour pressure over liquid water and ice
         :param t2_k: (float array) 2m temperature [K]
-        :param phase: 0 over liquid water and 1 over ice
+        :param phase: (int array) 0 over liquid water, 1 over ice (same shape as
+            t2_k)
         returns pressure of water vapor over a surface of liquid water or ice [hPa] == [mBar]
+
+    ``t2_k`` and ``phase`` are array-like (wrap a scalar in an array). Only
+    elements with ``phase`` equal to 0 (liquid) or 1 (ice) are computed; any
+    other ``phase`` value leaves that element at 0 hPa.
+
     Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018) pp. 116
     https://doi.org/10.21957/4whwo8jw0
     https://metview.readthedocs.io/en/latest/api/functions/saturation_vapour_pressure.html
     """
     T0 = 273.16  # triple point of water 273.16 K (0.01 °C) at 611.73 Pa
-    es = np.zeros_like(t2_k)
+    # float dtype so integer-typed temperature input is not truncated on assignment
+    es = np.zeros_like(t2_k, dtype=float)
     y = (t2_k - T0) / (t2_k - 32.19)  # over liquid water
     es[phase == 0] = 6.1121 * np.exp(17.502 * y[phase == 0])
     y = (t2_k - T0) / (t2_k + 0.7)  # over ice
@@ -165,16 +180,23 @@ def approximate_dsrp(
 ) -> np.ndarray:
     """
     Helper function to approximate dsrp from fdir and cossza
-    Note that the function introduces large errors as cossza approaches zero.
-    Only use if dsrp is not available in your dataset.
-    To compute cossza consider using earhkit-meteo.solar.calculate_cos_solar_zenith_angle
+
+    By geometry the direct solar radiation perpendicular to the beam is
+    ``dsrp = fdir / cos(sza) = fdir / cossza``; this is applied where
+    ``cossza > threshold`` and left as ``fdir`` below it. The approximation
+    introduces large errors as cossza approaches zero, so use it only if dsrp is
+    not available in your dataset. ``fdir`` and ``cossza`` are array-like (wrap a
+    scalar in an array). To compute cossza consider using
+    earthkit-meteo.solar.cos_solar_zenith_angle.
         :param fdir: (float array) total sky direct solar radiation at surface [W m-2]
         :param cossza: (float array) cosine of solar zenith angle [dimentionless]
+        :param threshold: (float) minimum cossza for which fdir is divided (default 0.1)
         returns direct radiation from the Sun [W m-2]
     """
     # filter statement for solar zenith angle to avoid division by zero.
     csza_filter1 = np.where((cossza > threshold))
-    dsrp = np.copy(fdir)  # leave dsrp = fdir where cossza <= threshold
+    # float copy so integer-typed fdir input is not truncated on assignment below
+    dsrp = np.array(fdir, dtype=float)  # leave dsrp = fdir where cossza <= threshold
     dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
     return dsrp
 
@@ -535,6 +557,12 @@ def calculate_utci(
         :param td_k: (float array) is 2m dew point temperature [K]
         :param ehPa: (float array) is water vapour pressure [hPa]
     returns UTCI [K]
+
+    Validity: the polynomial is fitted for air temperature -50...+50 degC, 10 m
+    wind speed 0.5...17 m/s, mean radiant temperature from 30 degC below to
+    70 degC above air temperature, and water vapour pressure up to 50 hPa.
+    Inputs are not clamped; outside this range the approximation extrapolates.
+
     Reference: Brode et al. (2012)
     https://doi.org/10.1007/s00484-011-0454-1
     """
@@ -563,6 +591,11 @@ def calculate_wbgt_simple(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
         :param t2_k: (float array) 2m temperature [K]
         :param rh: (float array) relative humidity percentage [%]
         returns Wet Bulb Globe Temperature [K]
+
+    Validity: an empirical screening estimate (no radiation/wind term), intended
+    for moderate-to-warm outdoor conditions; it is not a substitute for the
+    physically based ``calculate_wbgt_liljegren`` where accuracy matters.
+
     Reference: ACSM (1984)
     https://doi.org/10.1080/00913847.1984.11701899
     See also: http://www.bom.gov.au/info/thermal_stress/#approximation
@@ -582,6 +615,10 @@ def calculate_wbt(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
         :param t2_k: (float array) 2m temperature [K]
         :param rh: (float array) relative humidity percentage [%]
         returns wet bulb temperature [K]
+
+    Validity: Stull's regression is fitted for relative humidity 5...99% and air
+    temperature -20...+50 degC at standard sea-level pressure (1013.25 hPa).
+
     Reference: Stull (2011)
     https://doi.org/10.1175/JAMC-D-11-0143.1
     """
@@ -848,6 +885,10 @@ def calculate_humidex(t2_k: ArrayLike, td_k: ArrayLike) -> np.ndarray:
         :param t2_k: (float array) 2m temperature [K]
         :param td_k: (float array) dew point temperature [K]
         returns humidex [K]
+
+    Validity: Environment Canada's index; it is most meaningful in warm, humid
+    conditions and is not reported by Environment Canada below ~20 degC.
+
     Reference: Environment Canada
     https://climate.weather.gc.ca/glossary_e.html#humidex
     """
@@ -867,6 +908,10 @@ def calculate_normal_effective_temperature(
         :param va: (float array) wind speed at 10 meters [m/s]
         :param rh: (float array) relative humidity percentage [%]
         returns normal effective temperature [K]
+
+    Validity: an empirical index derived for subtropical (Hong Kong) conditions
+    (Li and Chan 2000); it has no sharply defined input range.
+
     Reference: Li and Chan (2006)
     https://doi.org/10.1017/S1350482700001602
     """
@@ -892,6 +937,10 @@ def calculate_apparent_temperature(
         :param va: (float array) wind speed at 10 meters [m/s]
         :param rh: (float array) relative humidity percentage [%]
         returns apparent temperature [K]
+
+    Validity: the Bureau of Meteorology non-radiation form of Steadman's apparent
+    temperature; an empirical estimate without sharply defined input bounds.
+
     Reference: Steadman (1984)
     https://doi.org/10.1175/1520-0450(1984)023%3C1674:AUSOAT%3E2.0.CO;2
     See also: http://www.bom.gov.au/info/thermal_stress/#atapproximation
@@ -930,6 +979,11 @@ def calculate_heat_index_simplified(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarra
         :param t2_k: (float array) 2m temperature [K]
         :param rh: (float array) relative humidity [%]
         returns heat index [K]
+
+    The regression is applied only where air temperature exceeds 20 degC (below
+    that the air temperature is returned unchanged). Inputs are array-like (wrap
+    a scalar in an array), as the function masks elementwise internally.
+
     Reference: Blazejczyk et al. (2012)
     https://doi.org/10.1007/s00484-011-0453-2
     """

@@ -119,3 +119,26 @@ def test_wbgt_liljegren_rejects_unknown_wind_scaling():
 def test_fahrenheit_to_celsius():
     assert tmf.fahrenheit_to_celsius(32.0) == pytest.approx(0.0)
     assert fahrenheit_to_celsius(212.0) == pytest.approx(100.0)
+
+
+def test_multiphase_integer_input_not_truncated():
+    # An integer-typed temperature array must not silently truncate the float
+    # vapour pressure on assignment (regression for the np.zeros_like dtype bug).
+    phase = np.array([0, 0])
+    out_int = tmf.calculate_saturation_vapour_pressure_multiphase(
+        np.array([290, 300]), phase
+    )
+    out_float = tmf.calculate_saturation_vapour_pressure_multiphase(
+        np.array([290.0, 300.0]), phase
+    )
+    np.testing.assert_allclose(out_int, out_float)
+    assert not np.allclose(out_int, np.floor(out_float))  # genuinely fractional
+
+
+def test_approximate_dsrp_integer_input_not_truncated():
+    # Integer-typed fdir must not truncate the division result (regression for
+    # the np.copy dtype bug).
+    cossza = np.array([0.3, 0.3])
+    out_int = tmf.approximate_dsrp(np.array([400, 600]), cossza)
+    out_float = tmf.approximate_dsrp(np.array([400.0, 600.0]), cossza)
+    np.testing.assert_allclose(out_int, out_float)

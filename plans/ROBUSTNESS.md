@@ -101,6 +101,22 @@ robustness-specific guarantees this document tracks, layered on top, are:
 - **R-6 — LOW — `liljegren.solve_wetbulb` `(pair - ewick)` denominator.** Safe
   for the meteorological domain (`ewick` ≪ `pair`); would only approach zero near
   water's boiling point, far outside valid wet-bulb inputs. **Status:** accepted.
+- **R-7 — MEDIUM — integer-dtype truncation — FIXED (2.2.0).** Two functions built
+  their working array with a dtype-inheriting call and then assigned float
+  results, silently truncating when the input array was integer-typed:
+  `calculate_saturation_vapour_pressure_multiphase` (`np.zeros_like(t2_k)`) and
+  `approximate_dsrp` (`np.copy(fdir)`). A silent wrong answer on valid finite
+  input. **Fix:** construct as `float` (`np.zeros_like(..., dtype=float)`,
+  `np.array(fdir, dtype=float)`). **Tests:**
+  `test_multiphase_integer_input_not_truncated`,
+  `test_approximate_dsrp_integer_input_not_truncated`.
+- **R-8 — LOW (documented) — scalar vs array inputs.** Pure-arithmetic functions
+  accept bare Python scalars, but those that branch internally (`np.where` /
+  boolean indexing: `calculate_heat_index_simplified`, `approximate_dsrp`,
+  `calculate_saturation_vapour_pressure_multiphase`) require array input. The
+  array contract is now stated prominently (docs "Calling convention" + the
+  relevant docstrings). Uniform scalar acceptance via input coercion is a
+  possible follow-up (see `IDEAS.md`).
 
 ## 6. Severity definitions
 

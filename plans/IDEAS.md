@@ -26,6 +26,13 @@ mature and get decided move up to `TODO.md`.
 
 ## API & ergonomics
 
+- [ ] **Uniform scalar input support.** Today pure-arithmetic functions accept
+  bare Python scalars while the internally-branching ones
+  (`calculate_heat_index_simplified`, `approximate_dsrp`,
+  `calculate_saturation_vapour_pressure_multiphase`) require arrays. Coercing
+  inputs at the boundary (`np.atleast_1d(np.asarray(x, dtype=float))`) would let
+  every function accept scalars uniformly — decide whether to return a scalar or
+  a 1-element array for scalar input. (The array contract is documented for now.)
 - [ ] **Optional unit-aware boundary.** Beyond the accepted output-unit mode in
   `TODO.md`, explore an optional `pint`-style typed-quantity wrapper as a
   *separate* opt-in layer (never in the dependency-light core) for users who

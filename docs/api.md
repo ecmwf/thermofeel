@@ -7,6 +7,10 @@ excess heat/cold factors (daily mean temperature, significance and
 acclimatisation indices, heatwave severity) live in the `thermofeel.excess_heat`
 submodule. This page is generated from the source docstrings.
 
+All functions are vectorised over NumPy and take SI inputs; **pass arrays and
+wrap scalars in an array** (e.g. `np.array([300.0])`). See
+[Calling convention](guide/overview.md#calling-convention) for details.
+
 ## Thermal indices and supporting quantities
 
 ::: thermofeel.thermofeel

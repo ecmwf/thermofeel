@@ -21,3 +21,8 @@ a percentage.
 ```python
 calculate_relative_humidity_percent(2m_temperature, 2m_dew_point_temperature)
 ```
+
+This uses the Magnus-Tetens saturation vapour pressure (a different empirical
+form to `calculate_saturation_vapour_pressure`, which uses Hardy 1998). The
+result is **not clamped**: when the dew point exceeds the air temperature
+(supersaturation) it returns a value above 100%.
