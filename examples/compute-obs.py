@@ -17,6 +17,7 @@ import sys
 
 import dateutil.parser
 import numpy as np
+from earthkit.meteo import solar
 
 import thermofeel as thermofeel
 
@@ -198,8 +199,10 @@ def main():
             # print(k,  entry)
             # print(dt)
 
-            cossza = thermofeel.calculate_cos_solar_zenith_angle(
-                lat=lat, lon=lon, y=dt.year, m=dt.month, d=dt.day, h=dt.hour
+            # Solar geometry is supplied by the caller in the 2.x API; here we
+            # use earthkit-meteo for the cosine of the solar zenith angle.
+            cossza = solar.cos_solar_zenith_angle(
+                date=dt, latitudes=np.array([lat]), longitudes=np.array([lon])
             )
 
             rh = float(entry["rh"])  # percent
@@ -236,7 +239,7 @@ def main():
             # print(f"cossza={cossza} mrt {mrt} mrt_C {thermofeel.kelvin_to_celsius(mrt)} wbgt {wbgt}")
 
             entry.update(
-                {"cossza": cossza, "td": td[0], "mrt": mrt[0], "wbgt": wbgt[0]}
+                {"cossza": cossza[0], "td": td[0], "mrt": mrt[0], "wbgt": wbgt[0]}
             )
 
             completes.append(entry)

@@ -108,14 +108,15 @@ class TestThermalCalculator(unittest.TestCase):
         assert wbt == pytest.approx(286.84934189999996, abs=1e-6)
 
     def test_bgt(self):
-        t2_k = np.array([278.15, 300, 300])
-        va = np.array([20, 20, -10])  # negative va values are treated as 0
-        mrt = np.array([278.15, 310, 310])
-        bgt = np.array([tmf.calculate_bgt(t2_k, va, mrt)])
+        # signature is calculate_bgt(t2_k, mrt, va)
+        t2_k = np.array([278.15, 300.0])
+        mrt = np.array([278.15, 310.0])
+        va = np.array([20.0, 20.0])
+        bgt = np.array([tmf.calculate_bgt(t2_k, mrt, va)])
         # print(f"bgt {bgt}")
-        assert bgt[0, 0] == pytest.approx(277.1238737724192, abs=1e-6)
-        assert bgt[0, 1] == pytest.approx(298.70218703427656, abs=1e-6)
-        assert bgt[0, 2] == pytest.approx(298.70216299754475, abs=1e-6)
+        # when mrt == t2 (no net radiation) the globe temperature equals t2
+        assert bgt[0, 0] == pytest.approx(278.15, abs=1e-6)
+        assert bgt[0, 1] == pytest.approx(300.877985349940, abs=1e-6)
 
     def test_wbgt(self):
         t2_k = np.array([300])
@@ -130,6 +131,58 @@ class TestThermalCalculator(unittest.TestCase):
         # wbgt = np.array([tmf.calculate_wbgt(t_k, mrt, va, td_k)])
         # # print(f"wbgt {wbgt}")
         # assert wbgt[0] == pytest.approx(295.5769818634555, abs=1e-6)
+
+    def test_wind_speed_2m_liljegren(self):
+        # Hand-computed from the PyWBGT stability table and exponents:
+        # va * (2/10)**urban_exp[class-1], floored at 0.13 m/s.
+        # va=3, day, ssrd=800 -> col=1,row=2,class=2,exp=0.15
+        # va=0.62, day, ssrd=800 -> col=1,row=0,class=1,exp=0.15
+        # va=1, night, ssrd=0 -> col=5,row=0,class=5,exp=0.30
+        # va=7, day, ssrd=200 -> col=2,row=4,class=4,exp=0.25
+        va = np.array([3.0, 0.62, 1.0, 7.0])
+        cossza = np.array([0.9, 0.9, -0.5, 0.5])
+        ssrd = np.array([800.0, 800.0, 0.0, 200.0])
+        v2 = tmf.calculate_wind_speed_2m_liljegren(va, cossza, ssrd)
+        expected = np.array([2.356545, 0.487019, 0.617034, 4.681182])
+        np.testing.assert_array_almost_equal(v2, expected, decimal=6)
+
+    def test_wbgt_liljegren(self):
+        # Reference values generated from Liljegren's reference C implementation
+        # (MIT-licensed mirror github.com/mdljts/wbgt), called with the same
+        # preprocessing thermofeel applies (0.62 m/s 10 m wind floor, KNMI
+        # Liljegren 10->2 m stability scaling, fdir clamped to [0, 0.9] and 0
+        # below 89.5 deg zenith).
+        # Inputs: t2_k, rh[%], pressure[hPa], va_10m[m/s], ssrd[W/m2], fdir, cossza
+        cases = [
+            ((308.15, 40.0, 1013.0, 1.0, 800.0, 0.70, 0.90), 306.559802),
+            ((303.15, 70.0, 1010.0, 3.0, 500.0, 0.50, 0.70), 302.954374),
+            ((293.15, 60.0, 1015.0, 5.0, 200.0, 0.30, 0.50), 290.823880),
+            ((298.15, 85.0, 1008.0, 2.0, 0.0, 0.00, 0.05), 296.597705),
+            # va below the 0.62 m/s floor -> clamped
+            ((306.15, 50.0, 1013.0, 0.2, 700.0, 0.60, 0.80), 307.358482),
+            # fdir above 0.9 -> clamped
+            ((305.15, 35.0, 1012.0, 2.5, 900.0, 0.97, 0.95), 301.229074),
+        ]
+        for args, expected_k in cases:
+            arr = [np.array([v]) for v in args]
+            wbgt_k = np.array([tmf.calculate_wbgt_liljegren(*arr)])
+            assert wbgt_k[0] == pytest.approx(expected_k, abs=1e-4)
+
+    def test_wbgt_liljegren_brode_option(self):
+        # The "brode" wind-scaling option uses the generic scale_windspeed log
+        # profile instead of the KNMI stability profile, giving a different
+        # (validated) value for the same inputs.
+        args = [np.array([v]) for v in (308.15, 40.0, 1013.0, 1.0, 800.0, 0.70, 0.90)]
+        wbgt_brode = tmf.calculate_wbgt_liljegren(*args, wind_scaling="brode")
+        assert wbgt_brode[0] == pytest.approx(306.619995, abs=1e-4)
+
+    def test_heat_force(self):
+        # Lower-closed 2 degC WBGT bands: <14 -> 0, [14,16) -> 1, ..., >=32 -> 10
+        wbgt_c = np.array([10.0, 13.999, 14.0, 15.9, 16.0, 24.0, 31.999, 32.0, 35.0])
+        wbgt_k = tmf.celsius_to_kelvin(wbgt_c)
+        hf = tmf.calculate_heat_force(wbgt_k)
+        expected = np.array([0, 0, 1, 1, 2, 6, 9, 10, 10])
+        np.testing.assert_array_equal(hf, expected)
 
     def test_mrt_from_bgt(self):
         t2_k = np.array([tmf.celsius_to_kelvin(25.0)])

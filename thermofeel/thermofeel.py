@@ -1,4 +1,4 @@
-﻿# (C) Copyright 1996- ECMWF.
+# (C) Copyright 1996- ECMWF.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -18,6 +18,8 @@ thermofeel is a library to calculate human thermal comfort indexes.
   * Normal Effective Temperature
   * Wet Bulb Globe Temperature
   * Wet Bulb Globe Temperature Simple
+  * Wet Bulb Globe Temperature (Liljegren method)
+  * Heat Force (KNMI 0-10 heat-stress scale)
   * Wind Chill
 
   In support of the above indexes, it also calculates:
@@ -35,23 +37,40 @@ thermofeel is a library to calculate human thermal comfort indexes.
 import math
 
 import numpy as np
+from numpy.typing import ArrayLike
 
+from .excess_heat import excess_cold_factor as _excess_cold_factor
+from .excess_heat import excess_heat_factor as _excess_heat_factor
 from .helpers import (
     celsius_to_kelvin,
     fahrenheit_to_kelvin,
     kelvin_to_celsius,
     kelvin_to_fahrenheit,
 )
+from .helpers import (
+    fahrenheit_to_celsius as fahrenheit_to_celsius,  # re-export (not used here)
+)
+from .liljegren import MIN_WIND_10M as _LILJEGREN_MIN_WIND_10M
+from .liljegren import wbgt as _liljegren_wbgt
+from .liljegren import wind_speed_2m as _liljegren_wind_speed_2m
 
 to_radians = math.pi / 180.0
 
 
-def calculate_relative_humidity_percent(t2_k, td_k):
+def calculate_relative_humidity_percent(t2_k: ArrayLike, td_k: ArrayLike) -> np.ndarray:
     """
     Relative Humidity in percent
         :param t2_k: (float array) 2m temperature [K]
         :param td_k: (float array) dew point temperature [K]
         returns relative humidity [%]
+
+    Uses the Magnus-Tetens saturation vapour pressure (coefficients over water) -
+    a different empirical form to ``calculate_saturation_vapour_pressure``
+    (Hardy 1998). The result is not clamped: when ``td_k > t2_k`` (supersaturation)
+    it exceeds 100%.
+
+    Reference: Tetens (1930); coefficients per Murray (1967)
+    https://doi.org/10.1175/1520-0450(1967)006<0203:OTCOSV>2.0.CO;2
     """
 
     t2_c = kelvin_to_celsius(t2_k)
@@ -64,7 +83,7 @@ def calculate_relative_humidity_percent(t2_k, td_k):
     return rh
 
 
-def calculate_saturation_vapour_pressure(t2_k):
+def calculate_saturation_vapour_pressure(t2_k: ArrayLike) -> np.ndarray:
     """
     Saturation vapour pressure over water
         :param t2_k: (float array) 2m temperature [K]
@@ -92,18 +111,27 @@ def calculate_saturation_vapour_pressure(t2_k):
     return ess
 
 
-def calculate_saturation_vapour_pressure_multiphase(t2_k, phase):
+def calculate_saturation_vapour_pressure_multiphase(
+    t2_k: ArrayLike, phase: ArrayLike
+) -> np.ndarray:
     """
     Saturation vapour pressure over liquid water and ice
         :param t2_k: (float array) 2m temperature [K]
-        :param phase: 0 over liquid water and 1 over ice
+        :param phase: (int array) 0 over liquid water, 1 over ice (same shape as
+            t2_k)
         returns pressure of water vapor over a surface of liquid water or ice [hPa] == [mBar]
+
+    ``t2_k`` and ``phase`` are array-like (wrap a scalar in an array). Only
+    elements with ``phase`` equal to 0 (liquid) or 1 (ice) are computed; any
+    other ``phase`` value leaves that element at 0 hPa.
+
     Reference: ECMWF IFS Documentation CY45R1 - Part IV : Physical processes (2018) pp. 116
     https://doi.org/10.21957/4whwo8jw0
     https://metview.readthedocs.io/en/latest/api/functions/saturation_vapour_pressure.html
     """
     T0 = 273.16  # triple point of water 273.16 K (0.01 °C) at 611.73 Pa
-    es = np.zeros_like(t2_k)
+    # float dtype so integer-typed temperature input is not truncated on assignment
+    es = np.zeros_like(t2_k, dtype=float)
     y = (t2_k - T0) / (t2_k - 32.19)  # over liquid water
     es[phase == 0] = 6.1121 * np.exp(17.502 * y[phase == 0])
     y = (t2_k - T0) / (t2_k + 0.7)  # over ice
@@ -112,7 +140,9 @@ def calculate_saturation_vapour_pressure_multiphase(t2_k, phase):
     return es
 
 
-def calculate_nonsaturation_vapour_pressure(t2_k, rh):
+def calculate_nonsaturation_vapour_pressure(
+    t2_k: ArrayLike, rh: ArrayLike
+) -> np.ndarray:
     """
     Non saturated vapour pressure
         :param t2_k: (float array) 2m temperature [K]
@@ -128,7 +158,7 @@ def calculate_nonsaturation_vapour_pressure(t2_k, rh):
     return ens
 
 
-def scale_windspeed(va, h):
+def scale_windspeed(va: ArrayLike, h: ArrayLike) -> np.ndarray:
     """
     Scaling wind speed from 10 metres to height h
         :param va: (float array) 10m wind speed [m/s]
@@ -137,31 +167,43 @@ def scale_windspeed(va, h):
     Reference: Bröde et al. (2012)
     https://doi.org/10.1007/s00484-011-0454-1
     """
-    c = 1 / np.log10(10 / 0.01)  #
-    c = 0.333333333333
+    # log-law scaling factor 1 / log10(z_ref / z0), with the 10 m reference
+    # height and a 0.01 m roughness length (evaluates to 1/3).
+    c = 1 / np.log10(10 / 0.01)
     vh = va * np.log10(h / 0.01) * c
 
     return vh
 
 
-def approximate_dsrp(fdir, cossza, threshold=0.1):
+def approximate_dsrp(
+    fdir: ArrayLike, cossza: ArrayLike, threshold: float = 0.1
+) -> np.ndarray:
     """
     Helper function to approximate dsrp from fdir and cossza
-    Note that the function introduces large errors as cossza approaches zero.
-    Only use if dsrp is not available in your dataset.
-    To compute cossza consider using earhkit-meteo.solar.calculate_cos_solar_zenith_angle
+
+    By geometry the direct solar radiation perpendicular to the beam is
+    ``dsrp = fdir / cos(sza) = fdir / cossza``; this is applied where
+    ``cossza > threshold`` and left as ``fdir`` below it. The approximation
+    introduces large errors as cossza approaches zero, so use it only if dsrp is
+    not available in your dataset. ``fdir`` and ``cossza`` are array-like (wrap a
+    scalar in an array). To compute cossza consider using
+    earthkit-meteo.solar.cos_solar_zenith_angle.
         :param fdir: (float array) total sky direct solar radiation at surface [W m-2]
         :param cossza: (float array) cosine of solar zenith angle [dimentionless]
+        :param threshold: (float) minimum cossza for which fdir is divided (default 0.1)
         returns direct radiation from the Sun [W m-2]
     """
     # filter statement for solar zenith angle to avoid division by zero.
     csza_filter1 = np.where((cossza > threshold))
-    dsrp = np.copy(fdir)  # dsrp = fdir for cossza <= 0.01, equals to fdir
+    # float copy so integer-typed fdir input is not truncated on assignment below
+    dsrp = np.array(fdir, dtype=float)  # leave dsrp = fdir where cossza <= threshold
     dsrp[csza_filter1] = dsrp[csza_filter1] / cossza[csza_filter1]
     return dsrp
 
 
-def calculate_dew_point_from_relative_humidity(rh, t2_k):
+def calculate_dew_point_from_relative_humidity(
+    rh: ArrayLike, t2_k: ArrayLike
+) -> np.ndarray:
     """
     Dew point temperature at 2m from relative humidity in percent
         :param rh: (float array) relative humidity [%]
@@ -180,7 +222,15 @@ def calculate_dew_point_from_relative_humidity(rh, t2_k):
     return td_k
 
 
-def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza):
+def calculate_mean_radiant_temperature(
+    ssrd: ArrayLike,
+    ssr: ArrayLike,
+    dsrp: ArrayLike,
+    strd: ArrayLike,
+    fdir: ArrayLike,
+    strr: ArrayLike,
+    cossza: ArrayLike,
+) -> np.ndarray:
     """
     MRT - Mean Radiant Temperature
     To compute cossza consider using earhkit-meteo.solar.calculate_cos_solar_zenith_angle
@@ -221,7 +271,9 @@ def calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza
     return mrt
 
 
-def calculate_utci_polynomial(t2m, mrt, va, wvp):
+def calculate_utci_polynomial(
+    t2m: ArrayLike, mrt: ArrayLike, va: ArrayLike, wvp: ArrayLike
+) -> np.ndarray:
     """
     Helper function to calculate the UTCI polynomial approximation
         :param t2m: (float array) is 2m temperature [C]
@@ -490,7 +542,13 @@ def calculate_utci_polynomial(t2m, mrt, va, wvp):
     return utci
 
 
-def calculate_utci(t2_k, va, mrt, td_k=None, ehPa=None):
+def calculate_utci(
+    t2_k: ArrayLike,
+    va: ArrayLike,
+    mrt: ArrayLike,
+    td_k: ArrayLike | None = None,
+    ehPa: ArrayLike | None = None,
+) -> np.ndarray:
     """
     UTCI - Universal Thermal Climate Index
         :param t2_k: (float array) is 2m temperature [K]
@@ -499,19 +557,24 @@ def calculate_utci(t2_k, va, mrt, td_k=None, ehPa=None):
         :param td_k: (float array) is 2m dew point temperature [K]
         :param ehPa: (float array) is water vapour pressure [hPa]
     returns UTCI [K]
+
+    Validity: the polynomial is fitted for air temperature -50...+50 degC, 10 m
+    wind speed 0.5...17 m/s, mean radiant temperature from 30 degC below to
+    70 degC above air temperature, and water vapour pressure up to 50 hPa.
+    Inputs are not clamped; outside this range the approximation extrapolates.
+
     Reference: Brode et al. (2012)
     https://doi.org/10.1007/s00484-011-0454-1
     """
 
     if ehPa is not None:
-        wvp = ehPa / 10.0  # water vapour pressure in kPa
+        vapour = ehPa
+    elif td_k is not None:
+        rh_pc = calculate_relative_humidity_percent(t2_k, td_k)
+        vapour = calculate_saturation_vapour_pressure(t2_k) * rh_pc / 100.0
     else:
-        if td_k is not None:
-            rh_pc = calculate_relative_humidity_percent(t2_k, td_k)
-            ehPa = calculate_saturation_vapour_pressure(t2_k) * rh_pc / 100.0
-            wvp = ehPa / 10.0  # water vapour pressure in kPa
-        else:
-            raise ValueError("Missing input ehPa or td_k")
+        raise ValueError("Missing input ehPa or td_k")
+    wvp = vapour / 10.0  # water vapour pressure in kPa
 
     t2_c = kelvin_to_celsius(t2_k)  # polynomial approx. is in Celsius
     mrt_c = kelvin_to_celsius(mrt)  # polynomial approx. is in Celsius
@@ -522,12 +585,17 @@ def calculate_utci(t2_k, va, mrt, td_k=None, ehPa=None):
     return utci_k
 
 
-def calculate_wbgt_simple(t2_k, rh):
+def calculate_wbgt_simple(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
     """
     WBGT - Wet Bulb Globe Temperature computed by a the simpler algorithm
         :param t2_k: (float array) 2m temperature [K]
         :param rh: (float array) relative humidity percentage [%]
         returns Wet Bulb Globe Temperature [K]
+
+    Validity: an empirical screening estimate (no radiation/wind term), intended
+    for moderate-to-warm outdoor conditions; it is not a substitute for the
+    physically based ``calculate_wbgt_liljegren`` where accuracy matters.
+
     Reference: ACSM (1984)
     https://doi.org/10.1080/00913847.1984.11701899
     See also: http://www.bom.gov.au/info/thermal_stress/#approximation
@@ -541,12 +609,16 @@ def calculate_wbgt_simple(t2_k, rh):
     return wbgt_k
 
 
-def calculate_wbt(t2_k, rh):
+def calculate_wbt(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
     """
     Wet Bulb Temperature
         :param t2_k: (float array) 2m temperature [K]
         :param rh: (float array) relative humidity percentage [%]
         returns wet bulb temperature [K]
+
+    Validity: Stull's regression is fitted for relative humidity 5...99% and air
+    temperature -20...+50 degC at standard sea-level pressure (1013.25 hPa).
+
     Reference: Stull (2011)
     https://doi.org/10.1175/JAMC-D-11-0143.1
     """
@@ -563,13 +635,22 @@ def calculate_wbt(t2_k, rh):
     return tw_k
 
 
-def calculate_bgt(t2_k, mrt, va):
+def calculate_bgt(t2_k: ArrayLike, mrt: ArrayLike, va: ArrayLike) -> np.ndarray:
     """
     Globe temperature
         :param t2_k: (float array) 2m temperature [K]
         :param mrt: (float array) mean radiant temperature [K]
         :param va: (float array) wind speed at 10 meters [m/s]
         returns globe temperature [K]
+
+    Solves the globe energy balance with a closed-form quartic root.
+
+    Edge case — calm air: the closed form is a ``0/0`` indeterminate at exactly
+    zero wind speed. The limit as ``va -> 0`` is the mean radiant temperature
+    (with no convection the globe reaches radiative equilibrium, ``bgt -> mrt``),
+    so ``mrt`` is returned where ``va == 0``. Invalid negative wind still yields
+    ``NaN``.
+
     Reference: Guo et al. 2018
     https://doi.org/10.1016/j.enbuild.2018.08.029
     """
@@ -583,34 +664,22 @@ def calculate_bgt(t2_k, mrt, va):
 
     q = 12 * e
     s = 27 * (d**2)
-    delta = ((s + np.sqrt(s**2 - 4 * (q**3))) / 2) ** (1 / 3)
-    Q = 0.5 * np.sqrt((1 / 3) * (delta + q / delta))
+    # At v == 0 the closed form evaluates 0/0; guard the warnings and substitute
+    # the analytic calm-air limit (bgt -> mrt) below.
+    with np.errstate(invalid="ignore", divide="ignore"):
+        delta = ((s + np.sqrt(s**2 - 4 * (q**3))) / 2) ** (1 / 3)
+        Q = 0.5 * np.sqrt((1 / 3) * (delta + q / delta))
+        bgt = -Q + 0.5 * np.sqrt(-4 * (Q**2) + d / Q)
 
-    bgt = -Q + 0.5 * np.sqrt(-4 * (Q**2) + d / Q)
-
-    # f = (1.1e8 * va**0.6) / (0.95 * 0.15**0.4)
-    # a = f / 2
-    # b = -f * t2_k - mrt**4
-    # rt1 = 3 ** (1 / 3)
-    # rt2 = np.sqrt(3) * np.sqrt(27 * a**4 - 16 * b**3) + 9 * a**2
-    # rt3 = 2 * 2 ** (2 / 3) * b
-    # a = a.clip(min=0)
-    # bgt = -1 / 2 * np.sqrt(
-    #     rt3 / (rt1 * rt2 ** (1 / 3)) + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-    # ) + 1 / 2 * np.sqrt(
-    #     (4 * a)
-    #     / np.sqrt(
-    #         rt3 / (rt1 * rt2 ** (1 / 3))
-    #         + (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-    #     )
-    #     - (2 ** (1 / 3) * rt2 ** (1 / 3)) / 3 ** (2 / 3)
-    #     - rt3 / (rt1 * rt2 ** (1 / 3))
-    # )
+    # Calm-air limit: no convection -> globe at radiative equilibrium (= mrt).
+    bgt = np.where(v == 0.0, np.asarray(mrt, dtype=float), bgt)
 
     return bgt
 
 
-def calculate_wbgt(t2_k, mrt, va, td_k):
+def calculate_wbgt(
+    t2_k: ArrayLike, mrt: ArrayLike, va: ArrayLike, td_k: ArrayLike
+) -> np.ndarray:
     """
     WBGT - Wet Bulb Globe Temperature
         :param t2_k: (float array) 2m temperature [K]
@@ -637,7 +706,159 @@ def calculate_wbgt(t2_k, mrt, va, td_k):
     return wbgt_k
 
 
-def calculate_mrt_from_bgt(t2_k, bgt_k, va):
+def calculate_wind_speed_2m_liljegren(
+    va: ArrayLike, cossza: ArrayLike, ssrd: ArrayLike
+) -> np.ndarray:
+    """
+    Scale 10m wind speed to 2m using the Liljegren stability-dependent profile
+        :param va: (float array) wind speed at 10 metres [m/s]
+        :param cossza: (float array) cosine of the solar zenith angle
+            [dimensionless]
+        :param ssrd: (float array) instantaneous downward shortwave
+            radiation at the surface (SSRD) [W/m2]
+        returns wind speed at 2 metres [m/s]
+
+    This is the 10m -> 2m conversion used operationally by KNMI within the
+    Liljegren WBGT (``va * (2/10)**p``), where the power-law exponent ``p`` comes
+    from a Pasquill-Gifford stability class derived from the solar elevation,
+    incoming radiation and wind speed. The result is floored at 0.13 m/s.
+
+    Reference: Liljegren et al. (2008)
+    https://doi.org/10.1080/15459620802310770
+    See also: Kong and Huber (2022) https://doi.org/10.1029/2021EF002334
+    """
+    return _liljegren_wind_speed_2m(va, cossza, ssrd)
+
+
+def calculate_wbgt_liljegren(
+    t2_k: ArrayLike,
+    rh: ArrayLike,
+    pressure: ArrayLike,
+    va: ArrayLike,
+    ssrd: ArrayLike,
+    fdir: ArrayLike,
+    cossza: ArrayLike,
+    wind_scaling: str = "liljegren",
+) -> np.ndarray:
+    """
+    WBGT - Wet Bulb Globe Temperature, Liljegren method
+        :param t2_k: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity [%]
+        :param pressure: (float array) surface air pressure [hPa]
+        :param va: (float array) wind speed at 10 metres [m/s]
+        :param ssrd: (float array) instantaneous downward shortwave
+            radiation at the surface (SSRD) [W/m2]
+        :param fdir: (float array) fraction of ssrd that is direct beam
+            [dimensionless, 0-1]
+        :param cossza: (float array) cosine of the solar zenith angle
+            [dimensionless]
+        :param wind_scaling: (str) how to convert the 10m wind to the 2m sensor
+            height: "liljegren" (default, the KNMI stability-dependent profile,
+            see calculate_wind_speed_2m_liljegren) or "brode" (the generic
+            scale_windspeed log profile)
+        returns wet bulb globe temperature [K]
+
+    Physically based WBGT after Liljegren et al. (2008), the method used
+    operationally by KNMI. The globe and natural-wet-bulb temperatures are each
+    solved from their steady-state energy balance by fixed-point iteration and
+    combined with the air temperature as ``WBGT = 0.7*Tnw + 0.2*Tg + 0.1*Ta``.
+
+    The KNMI operational guards are applied: wind below 0.62 m/s at 10 m is
+    raised to that floor (it is then scaled to 2 m for the sensor model); the
+    direct-beam fraction is clamped to [0, 0.9] and set to 0 when the sun is at
+    or below 89.5 degrees zenith. Instantaneous ``ssrd`` and ``cossza`` are
+    supplied by the caller (e.g. via earthkit-meteo). NaN is returned where the
+    iteration does not converge.
+
+    The Liljegren energy-balance solvers and physical constants live in the
+    ``thermofeel.liljegren`` submodule.
+
+    Reference: Liljegren et al. (2008)
+    https://doi.org/10.1080/15459620802310770
+    See also: Kong and Huber (2022) https://doi.org/10.1029/2021EF002334
+    """
+    va = np.asarray(va, dtype=float)
+
+    # KNMI minimum wind floor at 10 m, then scale to the 2 m sensor height.
+    va = np.maximum(va, _LILJEGREN_MIN_WIND_10M)
+    if wind_scaling == "liljegren":
+        speed = _liljegren_wind_speed_2m(va, cossza, ssrd)
+    elif wind_scaling == "brode":
+        speed = scale_windspeed(va, 2.0)
+    else:
+        raise ValueError(
+            f"wind_scaling must be 'liljegren' or 'brode', got {wind_scaling!r}"
+        )
+
+    return _liljegren_wbgt(t2_k, rh, pressure, speed, ssrd, fdir, cossza)
+
+
+def calculate_heat_force(wbgt_k: ArrayLike) -> np.ndarray:
+    """
+    Heat Force - KNMI 0-10 heat-stress communication scale (hittekracht)
+        :param wbgt_k: (float array) wet bulb globe temperature [K]
+        returns heat force on a 0-10 scale [dimensionless]
+
+    Translates WBGT onto the integer 0-10 "heat force" scale used by KNMI for
+    public communication of heat stress, analogous to wind force and the UV
+    index. The bands are fixed 2 degC intervals of WBGT (lower-closed): heat
+    force 0 is WBGT < 14 degC, 1 is [14, 16) degC, ..., 9 is [30, 32) degC, and
+    10 is WBGT >= 32 degC. Values are returned as whole numbers (as a float
+    array, so NaN inputs propagate).
+
+    Reference: KNMI Technical Report TR-26-04 (2026), Table 1.
+    """
+    wbgt_c = kelvin_to_celsius(np.asarray(wbgt_k, dtype=float))
+    return np.clip(np.floor((wbgt_c - 14.0) / 2.0) + 1.0, 0.0, 10.0)
+
+
+def calculate_excess_heat_factor(
+    ehi_sig: ArrayLike, ehi_accl: ArrayLike, clip: bool = False
+) -> np.ndarray:
+    """
+    EXHF - Excess Heat Factor
+        :param ehi_sig: (float array) significance index, e.g. relative to the
+            95th percentile of daily mean temperature over a reference period.
+        :param ehi_accl: (float array) acclimatisation index.
+        :param clip: (bool) clip the significance index at zero (default False).
+        returns excess heat factor [input unit squared, e.g. K^2]
+
+    Top-level convenience wrapper for
+    ``thermofeel.excess_heat.excess_heat_factor``. The supporting daily mean
+    temperature, significance and acclimatisation indices, and heatwave
+    severity, live in the ``thermofeel.excess_heat`` submodule.
+
+    Reference: Nairn and Fawcett (2014), equation (3)
+    https://doi.org/10.3390/ijerph120100227
+    """
+    return _excess_heat_factor(ehi_sig, ehi_accl, clip=clip)
+
+
+def calculate_excess_cold_factor(
+    ehi_sig: ArrayLike, ehi_accl: ArrayLike, clip: bool = False
+) -> np.ndarray:
+    """
+    EXCF - Excess Cold Factor
+        :param ehi_sig: (float array) significance index, e.g. relative to the
+            5th percentile of daily mean temperature over a reference period.
+        :param ehi_accl: (float array) acclimatisation index.
+        :param clip: (bool) clip the significance index at zero (default False).
+        returns excess cold factor [input unit squared, e.g. K^2]
+
+    Top-level convenience wrapper for
+    ``thermofeel.excess_heat.excess_cold_factor``. The supporting daily mean
+    temperature, significance and acclimatisation indices live in the
+    ``thermofeel.excess_heat`` submodule.
+
+    Reference: Nairn (2013), equation (7)
+    https://www.cawcr.gov.au/technical-reports/CTR_060.pdf
+    """
+    return _excess_cold_factor(ehi_sig, ehi_accl, clip=clip)
+
+
+def calculate_mrt_from_bgt(
+    t2_k: ArrayLike, bgt_k: ArrayLike, va: ArrayLike
+) -> np.ndarray:
     """
     Mean radiant temperature from globe temperature
         :param t2_k: (float array) 2m temperature [K]
@@ -658,12 +879,16 @@ def calculate_mrt_from_bgt(t2_k, bgt_k, va):
     return mrtc2
 
 
-def calculate_humidex(t2_k, td_k):
+def calculate_humidex(t2_k: ArrayLike, td_k: ArrayLike) -> np.ndarray:
     """
         Humidex
         :param t2_k: (float array) 2m temperature [K]
         :param td_k: (float array) dew point temperature [K]
         returns humidex [K]
+
+    Validity: Environment Canada's index; it is most meaningful in warm, humid
+    conditions and is not reported by Environment Canada below ~20 degC.
+
     Reference: Environment Canada
     https://climate.weather.gc.ca/glossary_e.html#humidex
     """
@@ -674,13 +899,19 @@ def calculate_humidex(t2_k, td_k):
     return humidex
 
 
-def calculate_normal_effective_temperature(t2_k, va, rh):
+def calculate_normal_effective_temperature(
+    t2_k: ArrayLike, va: ArrayLike, rh: ArrayLike
+) -> np.ndarray:
     """
     NET - Normal Effective Temperature
         :param t2_k: (float array) 2m temperature [K]
         :param va: (float array) wind speed at 10 meters [m/s]
         :param rh: (float array) relative humidity percentage [%]
         returns normal effective temperature [K]
+
+    Validity: an empirical index derived for subtropical (Hong Kong) conditions
+    (Li and Chan 2000); it has no sharply defined input range.
+
     Reference: Li and Chan (2006)
     https://doi.org/10.1017/S1350482700001602
     """
@@ -697,13 +928,19 @@ def calculate_normal_effective_temperature(t2_k, va, rh):
     return net_k
 
 
-def calculate_apparent_temperature(t2_k, va, rh):
+def calculate_apparent_temperature(
+    t2_k: ArrayLike, va: ArrayLike, rh: ArrayLike
+) -> np.ndarray:
     """
     Apparent Temperature - version without radiation
         :param t2_k: (float array) 2m temperature [K]
         :param va: (float array) wind speed at 10 meters [m/s]
         :param rh: (float array) relative humidity percentage [%]
         returns apparent temperature [K]
+
+    Validity: the Bureau of Meteorology non-radiation form of Steadman's apparent
+    temperature; an empirical estimate without sharply defined input bounds.
+
     Reference: Steadman (1984)
     https://doi.org/10.1175/1520-0450(1984)023%3C1674:AUSOAT%3E2.0.CO;2
     See also: http://www.bom.gov.au/info/thermal_stress/#atapproximation
@@ -716,7 +953,7 @@ def calculate_apparent_temperature(t2_k, va, rh):
     return at_k
 
 
-def calculate_wind_chill(t2_k, va):
+def calculate_wind_chill(t2_k: ArrayLike, va: ArrayLike) -> np.ndarray:
     """
     Wind Chill
         :param t2_k: (float array) 2m Temperature [K]
@@ -736,12 +973,17 @@ def calculate_wind_chill(t2_k, va):
     return windchill_k
 
 
-def calculate_heat_index_simplified(t2_k, rh):
+def calculate_heat_index_simplified(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
     """
     Heat Index
-        :param t2m: (float array) 2m temperature [K]
+        :param t2_k: (float array) 2m temperature [K]
         :param rh: (float array) relative humidity [%]
         returns heat index [K]
+
+    The regression is applied only where air temperature exceeds 20 degC (below
+    that the air temperature is returned unchanged). Inputs are array-like (wrap
+    a scalar in an array), as the function masks elementwise internally.
+
     Reference: Blazejczyk et al. (2012)
     https://doi.org/10.1007/s00484-011-0453-2
     """
@@ -780,7 +1022,7 @@ def calculate_heat_index_simplified(t2_k, rh):
     return hi_k
 
 
-def calculate_heat_index_adjusted(t2_k, td_k):
+def calculate_heat_index_adjusted(t2_k: ArrayLike, td_k: ArrayLike) -> np.ndarray:
     """
     Heat Index adjusted
       :param t2_k: (float array) 2m temperature [K]

@@ -52,6 +52,8 @@ class TestThermalCalculator(unittest.TestCase):
         self.wbt = np.loadtxt(data_file("wbt.csv"))
         self.bgt = np.loadtxt(data_file("bgt.csv"))
         self.wbgt = np.loadtxt(data_file("wbgt.csv"))
+        self.wbgt_liljegren = np.loadtxt(data_file("wbgt_liljegren.csv"))
+        self.heat_force = np.loadtxt(data_file("heat_force.csv"))
         self.humidex = np.loadtxt(data_file("humidex.csv"))
         self.net = np.loadtxt(data_file("net.csv"))
         self.at = np.loadtxt(data_file("at.csv"))
@@ -143,6 +145,24 @@ class TestThermalCalculator(unittest.TestCase):
         wbgt = tmf.calculate_wbgt(self.t2m, self.mrt, self.va, self.td)
         # np.savetxt("wbgt.csv", wbgt)
         self.assert_equal(self.wbgt, wbgt)
+
+    def test_wbgt_liljegren(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        pressure = np.full_like(self.t2m, 1013.25)
+        # instantaneous SSRD [W/m2] from accumulated [J/m2] over the hour, and
+        # the direct-beam fraction as direct/global radiation
+        ssrd_inst = self.ssrd / 3600
+        fdir_frac = self.fdir / self.ssrd
+        wbgt_liljegren = tmf.calculate_wbgt_liljegren(
+            self.t2m, rh_pc, pressure, self.va, ssrd_inst, fdir_frac, self.cossza
+        )
+        # np.savetxt("wbgt_liljegren.csv", wbgt_liljegren)
+        self.assert_equal(self.wbgt_liljegren, wbgt_liljegren)
+
+    def test_heat_force(self):
+        heat_force = tmf.calculate_heat_force(self.wbgt_liljegren)
+        # np.savetxt("heat_force.csv", heat_force)
+        self.assert_equal(self.heat_force, heat_force)
 
     def test_mrt_from_bgt(self):
         mrt_from_bgt = tmf.calculate_mrt_from_bgt(self.t2m, self.bgt, self.va)

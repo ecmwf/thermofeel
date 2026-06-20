@@ -4,7 +4,13 @@
 !.github
 __pycache__/
 htmlcov
+.coverage
+coverage.xml
+build/
+dist/
 docs/build/*
+site/
+uv.lock
 *.csv
 *.grib
 *.npz
