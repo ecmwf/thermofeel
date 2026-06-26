@@ -27,7 +27,7 @@ You need 2 m air temperature in Kelvin and relative humidity in percent. It
 returns the Discomfort Index in Kelvin.
 
 ```python
-calculate_discomfort_index(2m_temperature, relative_humidity)
+calculate_discomfort_index(2m_temperature, relative_humidity_percent)
 ```
 
 Relative humidity can be obtained from temperature and dew point with
