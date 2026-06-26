@@ -215,7 +215,7 @@ class TestThermalCalculator(unittest.TestCase):
         for t_c, rh_pc, expected_k in cases:
             t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
             rh = np.array([rh_pc])
-            di = np.array([tmf.calculate_discomfort_index(t2_k, rh)])
+            di = tmf.calculate_discomfort_index(t2_k, rh)
             assert di[0] == pytest.approx(expected_k, abs=1e-6)
 
     def test_normal_effective_temperature(self):
