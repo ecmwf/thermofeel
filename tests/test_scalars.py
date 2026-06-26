@@ -199,6 +199,25 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"hu {hu}")
         assert hu == pytest.approx(318.47466703, abs=1e-6)
 
+    def test_discomfort_index(self):
+        # Reference values derived analytically from Thom's relative-humidity
+        # form DI = T - 0.55 (1 - 0.01 RH)(T - 14.5) [T in degC], returned in K.
+        # The last two are exact identities of the formula (independent of the
+        # implementation): RH=100% -> DI equals air temperature; T=14.5 degC ->
+        # DI = 14.5 degC for any RH.
+        cases = [
+            (30.0, 70.0, 300.5925),
+            (40.0, 40.0, 304.735),
+            (25.0, 50.0, 295.2625),
+            (28.0, 100.0, 301.15),
+            (14.5, 35.0, 287.65),
+        ]
+        for t_c, rh_pc, expected_k in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            di = np.array([tmf.calculate_discomfort_index(t2_k, rh)])
+            assert di[0] == pytest.approx(expected_k, abs=1e-6)
+
     def test_normal_effective_temperature(self):
         t2_k = np.array([307])
         va = np.array([4])

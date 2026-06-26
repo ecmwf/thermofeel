@@ -55,6 +55,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.wbgt_liljegren = np.loadtxt(data_file("wbgt_liljegren.csv"))
         self.heat_force = np.loadtxt(data_file("heat_force.csv"))
         self.humidex = np.loadtxt(data_file("humidex.csv"))
+        self.di = np.loadtxt(data_file("di.csv"))
         self.net = np.loadtxt(data_file("net.csv"))
         self.at = np.loadtxt(data_file("at.csv"))
         self.windchill = np.loadtxt(data_file("windchill.csv"))
@@ -173,6 +174,12 @@ class TestThermalCalculator(unittest.TestCase):
         humidex = tmf.calculate_humidex(self.t2m, self.td)
         # np.savetxt("humidex.csv", humidex)
         self.assert_equal(self.humidex, humidex)
+
+    def test_discomfort_index(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        di = tmf.calculate_discomfort_index(self.t2m, rh_pc)
+        # np.savetxt("di.csv", di)
+        self.assert_equal(self.di, di)
 
     def test_normal_effective_temperature(self):
         rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)

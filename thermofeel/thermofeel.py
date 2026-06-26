@@ -15,6 +15,7 @@ thermofeel is a library to calculate human thermal comfort indexes.
   * Heat Index Adjusted
   * Heat Index Simplified
   * Humidex
+  * Discomfort Index
   * Normal Effective Temperature
   * Wet Bulb Globe Temperature
   * Wet Bulb Globe Temperature Simple
@@ -898,6 +899,36 @@ def calculate_humidex(t2_k: ArrayLike, td_k: ArrayLike) -> np.ndarray:
     humidex = t2_k + h
 
     return humidex
+
+
+def calculate_discomfort_index(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
+    """
+    Discomfort Index (Thom)
+        :param t2_k: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity [%]
+        returns discomfort index [K]
+
+    Thom's Discomfort Index (also called the Temperature-Humidity Index)
+    estimates heat discomfort from air temperature and relative humidity. This is
+    the Celsius/relative-humidity formulation of Thom's index given by Giles et
+    al. (1990), DI = T - 0.55 (1 - 0.01 RH)(T - 14.5), with T in degC and RH in
+    %; at 100% RH the index equals the air temperature and in drier air it falls
+    below it. It is a warm-season heat-stress indicator and is not clamped -
+    out-of-range inputs return the raw value (the caller masks).
+
+    Reference (this temperature/relative-humidity formulation): Giles et al.
+    (1990) https://doi.org/10.1007/BF01093455
+    Index origin (Thom's Discomfort Index / Temperature-Humidity Index):
+    Thom (1959) https://doi.org/10.1080/00431672.1959.9926960
+    See also (modern review and discomfort categories; a different wet-bulb
+    formulation): Epstein and Moran (2006)
+    https://doi.org/10.2486/indhealth.44.388
+    """
+    t2_c = kelvin_to_celsius(t2_k)
+    di = t2_c - 0.55 * (1.0 - 0.01 * rh) * (t2_c - 14.5)
+    di_k = celsius_to_kelvin(di)
+
+    return di_k
 
 
 def calculate_normal_effective_temperature(

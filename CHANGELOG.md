@@ -1,5 +1,18 @@
 # ChangeLog
 
+## 2.3.0
+
+- Added `calculate_discomfort_index`: Thom's Discomfort Index (Temperature-
+  Humidity Index) from 2 m temperature and relative humidity, returning Kelvin.
+  Implements the Celsius/relative-humidity formulation of Thom's index given by
+  Giles et al. (1990, https://doi.org/10.1007/BF01093455),
+  DI = T - 0.55 (1 - 0.01 RH)(T - 14.5); the index originates with Thom (1959,
+  https://doi.org/10.1080/00431672.1959.9926960). Validated against analytic
+  reference values (including the RH=100% -> DI=Ta and T=14.5 °C -> DI=14.5 °C
+  identities) and pinned by a regression CSV. Adds a guide page. See also the
+  review Epstein & Moran (2006, https://doi.org/10.2486/indhealth.44.388), which
+  uses a different wet-bulb formulation.
+
 ## 2.2.0
 
 - Added inline type hints across the public API and a `py.typed` marker

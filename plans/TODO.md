@@ -21,23 +21,6 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
     Verify: round-trip tests that `units="C"` equals `kelvin_to_celsius(units="K")`
     for every affected index.
 
-- [ ] **Discomfort Index** (new thermal index)
-    Add a `calculate_*` function for a Discomfort Index, promoted from the
-    "More thermal indices" idea in `IDEAS.md`. The exact variant, its
-    peer-reviewed reference, the input variables it consumes, and any
-    discomfort/validity bands are to be settled with the maintainer before
-    coding (there are several discomfort indices — e.g. Thom's
-    Temperature-Humidity Index). It must follow the library contract: a pure,
-    vectorised NumPy function with SI inputs/outputs (temperature in Kelvin,
-    relative humidity in %), converting at the boundary if the source formula is
-    in °C, and citing the reference in its docstring.
-    Verify: pointwise scalar checks against published worked examples
-    (`tests/test_scalars.py`) plus an array regression case with a stored
-    reference CSV (`tests/test_thermofeel.py`); a guide page under `docs/guide/`
-    and a runnable `examples/` snippet; add it to the index list in `README.md`,
-    the `thermofeel/thermofeel.py` module docstring and `docs/guide/overview.md`
-    (kept in step); and a `CHANGELOG.md` entry.
-
 ## Robustness
 
 - The first numerical-robustness hardening pass is **done** (see

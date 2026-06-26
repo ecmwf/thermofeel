@@ -67,6 +67,7 @@ nav:
   - Indices:
       - Apparent Temperature: guide/apparenttemperature.md
       - Heat Index: guide/heatindex.md
+      - Discomfort Index: guide/discomfortindex.md
       - Humidex: guide/humidex.md
       - Normal Effective Temperature: guide/net.md
       - Universal Thermal Climate Index: guide/utci.md

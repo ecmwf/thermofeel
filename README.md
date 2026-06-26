@@ -18,6 +18,7 @@ Currently calculates the thermal indices:
 - Heat Index Adjusted
 - Heat Index Simplified
 - Humidex
+- Discomfort Index
 - Normal Effective Temperature
 - Wet Bulb Globe Temperature
 - Wet Bulb Globe Temperature Simple
