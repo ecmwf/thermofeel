@@ -20,6 +20,7 @@ thermofeel is a library to calculate human thermal comfort indexes.
   * Wet Bulb Globe Temperature Simple
   * Wet Bulb Globe Temperature (Liljegren method)
   * Heat Force (KNMI 0-10 heat-stress scale)
+  * Excess Heat Factor and Excess Cold Factor
   * Wind Chill
 
   In support of the above indexes, it also calculates:
