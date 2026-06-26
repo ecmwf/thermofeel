@@ -912,9 +912,10 @@ def calculate_discomfort_index(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
     estimates heat discomfort from air temperature and relative humidity. This is
     the Celsius/relative-humidity formulation of Thom's index given by Giles et
     al. (1990), DI = T - 0.55 (1 - 0.01 RH)(T - 14.5), with T in degC and RH in
-    %; at 100% RH the index equals the air temperature and in drier air it falls
-    below it. It is a warm-season heat-stress indicator and is not clamped -
-    out-of-range inputs return the raw value (the caller masks).
+    %; at 100% RH the index equals the air temperature, and in warm conditions
+    (above 14.5 degC) drier air lowers it below the air temperature. It is a
+    warm-season heat-stress indicator and is not clamped - out-of-range inputs
+    return the raw value (the caller masks).
 
     Reference (this temperature/relative-humidity formulation): Giles et al.
     (1990) https://doi.org/10.1007/BF01093455

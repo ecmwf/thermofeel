@@ -37,8 +37,10 @@ Relative humidity can be obtained from temperature and dew point with
 
 The index uses the relative-humidity form
 DI = T - 0.55 (1 - 0.01 RH)(T - 14.5), with T in °C and RH in %. At 100% relative
-humidity the index equals the air temperature; in drier air it falls below it,
-reflecting the reduced heat stress of low humidity. This is Thom's index on the
+humidity the index equals the air temperature; in warm conditions (above 14.5 °C)
+drier air pulls it below the air temperature, reflecting the reduced heat stress
+of low humidity (below 14.5 °C the sign reverses, but the index is intended for
+warm-season use). This is Thom's index on the
 Celsius scale; the same index also appears in a Fahrenheit relative-humidity form
 (with 58 °F in place of 14.5 °C) and in Thom's original dry-bulb/wet-bulb form.
 
