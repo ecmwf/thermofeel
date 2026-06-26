@@ -2,6 +2,7 @@
 ?.*
 !.gitignore
 !.github
+!.opencode
 __pycache__/
 htmlcov
 .coverage
