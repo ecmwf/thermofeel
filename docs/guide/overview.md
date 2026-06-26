@@ -9,6 +9,7 @@ maintained by ECMWF (European Centre for Medium-Range Weather Forecasts).
 - Apparent Temperature
 - Heat Index
 - Humidex
+- Discomfort Index
 - Normal Effective Temperature
 - Universal Thermal Climate Index
 - Wet Bulb Globe Temperature

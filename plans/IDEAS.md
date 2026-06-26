@@ -12,9 +12,10 @@ mature and get decided move up to `TODO.md`.
 
 - [ ] **More thermal indices.** Candidates frequently requested in
   biometeorology: Physiological Equivalent Temperature (PET), Standard Effective
-  Temperature (SET), Discomfort Index (Thom). Each needs a citation and reference
-  values before it can leave IDEAS. (WBGT via the full Liljegren model is now
-  implemented as `calculate_wbgt_liljegren`.)
+  Temperature (SET). Each needs a citation and reference values before it can
+  leave IDEAS. (WBGT via the full Liljegren model is now implemented as
+  `calculate_wbgt_liljegren`; the Discomfort Index is now implemented as
+  `calculate_discomfort_index`.)
 - [ ] **Validity-range helpers.** Several indices are only defined over a range
   (Wind Chill, Heat Index). A small companion that returns a validity mask for a
   given index + inputs would let pipelines blank out-of-range points cleanly

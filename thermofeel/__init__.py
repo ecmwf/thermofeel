@@ -9,4 +9,4 @@
 from . import excess_heat  # noqa
 from .thermofeel import *  # noqa
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
