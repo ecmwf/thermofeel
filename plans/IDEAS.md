@@ -10,12 +10,15 @@ mature and get decided move up to `TODO.md`.
 
 ## Indices and physics
 
-- [ ] **More thermal indices.** Candidates frequently requested in
-  biometeorology: Physiological Equivalent Temperature (PET), Standard Effective
-  Temperature (SET). Each needs a citation and reference values before it can
-  leave IDEAS. (WBGT via the full Liljegren model is now implemented as
-  `calculate_wbgt_liljegren`; the Discomfort Index is now implemented as
-  `calculate_discomfort_index`.)
+- [ ] **More thermal indices.** **Standard Effective Temperature (SET)** remains
+  the speculative candidate here — it needs a citable equation set and reference
+  values before it can leave IDEAS (the Gagge two-node model is heavy and
+  overlaps PMV). *Promoted out of IDEAS into the 2.4.0 batch programme
+  (`plans/NEW_INDICES.md` / `plans/TODO.md`): Apparent Temperature radiation
+  form, Relative Strain Index, Summer Simmer Index, PMV/PPD, and PET — the last
+  conditional on obtaining citable equations + published reference values.*
+  (WBGT via the full Liljegren model is implemented as `calculate_wbgt_liljegren`;
+  the Discomfort Index as `calculate_discomfort_index`.)
 - [ ] **Validity-range helpers.** Several indices are only defined over a range
   (Wind Chill, Heat Index). A small companion that returns a validity mask for a
   given index + inputs would let pipelines blank out-of-range points cleanly
