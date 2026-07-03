@@ -226,6 +226,41 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"net {net}")
         assert net == pytest.approx(304.13650125, abs=1e-6)
 
+    def test_relative_strain_index(self):
+        # G2 analytic identity: at Ta = 21 degC the numerator (Ta - 21) is exactly
+        # 0, so RSI == 0 for any relative humidity (independent of the vapour
+        # pressure e). Encoded for several rh values.
+        for rh_pc in (10.0, 30.0, 50.0, 73.74, 90.0, 100.0):
+            t2_k = np.array([tmf.celsius_to_kelvin(21.0)])
+            rh = np.array([rh_pc])
+            rsi = tmf.calculate_relative_strain_index(t2_k, rh)
+            assert rsi[0] == 0.0
+
+        # G3 external reference: Asghari et al. (2020) Table 4, 15-yr summer
+        # monthly means (DOI 10.2174/1874213002013010011). Each row is re-derived
+        # here with thermofeel's non-saturation vapour pressure e(Ta, rh) via the
+        # hPa closed form RSI = (Ta - 21) / (58 - e). computed vs source (delta):
+        #   (34.27, 66.50) -> 0.59710 vs 0.600  (-0.00290), e = 35.7758 hPa
+        #   (28.12, 22.95) -> 0.14444 vs 0.151  (-0.00656), e =  8.7074 hPa
+        #   (27.54, 73.70) -> 0.21120 vs 0.210  (+0.00120), e = 27.0339 hPa
+        #   (33.73, 60.30) -> 0.48003 vs 0.480  (+0.00003), e = 31.4807 hPa
+        #   (27.00, 73.74) -> 0.18873 vs 0.190  (-0.00127), e = 26.2079 hPa
+        # All residuals are within abs=0.02 (max |delta| = 0.0066, mixed signs so
+        # no systematic bias); the spread reflects source rounding (2-3 dp) plus a
+        # mean-of-RSI vs RSI-of-means (Jensen) offset, not a formula mismatch.
+        cases = [
+            (34.27, 66.5, 0.60),
+            (28.12, 22.95, 0.151),
+            (27.54, 73.7, 0.21),
+            (33.73, 60.3, 0.48),
+            (27.00, 73.74, 0.19),
+        ]
+        for t_c, rh_pc, expected in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            rsi = tmf.calculate_relative_strain_index(t2_k, rh)
+            assert rsi[0] == pytest.approx(expected, abs=0.02)
+
     def test_apparent_temperature(self):
         t2_k = np.array([tmf.celsius_to_kelvin(25.0)])
         va = np.array([3])

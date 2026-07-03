@@ -57,6 +57,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.humidex = np.loadtxt(data_file("humidex.csv"))
         self.di = np.loadtxt(data_file("di.csv"))
         self.net = np.loadtxt(data_file("net.csv"))
+        self.rsi = np.loadtxt(data_file("rsi.csv"))
         self.at = np.loadtxt(data_file("at.csv"))
         self.windchill = np.loadtxt(data_file("windchill.csv"))
         self.heatindex = np.loadtxt(data_file("heatindex.csv"))
@@ -186,6 +187,12 @@ class TestThermalCalculator(unittest.TestCase):
         net = tmf.calculate_normal_effective_temperature(self.t2m, self.va, rh_pc)
         # np.savetxt("net.csv", net)
         self.assert_equal(self.net, net)
+
+    def test_relative_strain_index(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        rsi = tmf.calculate_relative_strain_index(self.t2m, rh_pc)
+        # np.savetxt("rsi.csv", rsi)
+        self.assert_equal(self.rsi, rsi)
 
     def test_apparent_temperature(self):
         rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
