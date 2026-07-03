@@ -66,11 +66,15 @@ nav:
   - Overview: guide/overview.md
   - Indices:
       - Apparent Temperature: guide/apparenttemperature.md
+      - Apparent Temperature (radiation): guide/apparenttemperature-radiation.md
       - Heat Index: guide/heatindex.md
       - Discomfort Index: guide/discomfortindex.md
+      - Summer Simmer Index: guide/summersimmerindex.md
       - Humidex: guide/humidex.md
       - Normal Effective Temperature: guide/net.md
+      - Relative Strain Index: guide/relativestrainindex.md
       - Universal Thermal Climate Index: guide/utci.md
+      - Predicted Mean Vote & PPD: guide/pmv.md
       - Wet Bulb Globe Temperature: guide/wbgt.md
       - Heat Force (Liljegren WBGT): guide/heatforce.md
       - Excess Heat & Cold Factors: guide/excessheat.md

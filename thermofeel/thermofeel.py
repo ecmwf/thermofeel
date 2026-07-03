@@ -12,16 +12,20 @@ thermofeel is a library to calculate human thermal comfort indexes.
   Currently calculates the thermal indexes:
   * Universal Thermal Climate Index
   * Apparent Temperature
+  * Apparent Temperature (radiation)
   * Heat Index Adjusted
   * Heat Index Simplified
   * Humidex
   * Discomfort Index
+  * Summer Simmer Index
   * Normal Effective Temperature
+  * Relative Strain Index
   * Wet Bulb Globe Temperature
   * Wet Bulb Globe Temperature Simple
   * Wet Bulb Globe Temperature (Liljegren method)
   * Heat Force (KNMI 0-10 heat-stress scale)
   * Excess Heat Factor and Excess Cold Factor
+  * Predicted Mean Vote and Predicted Percentage Dissatisfied (PMV/PPD)
   * Wind Chill
 
   In support of the above indexes, it also calculates:

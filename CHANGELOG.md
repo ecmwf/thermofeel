@@ -1,5 +1,27 @@
 # ChangeLog
 
+## 2.4.0
+
+- Added a batch of new thermal indices (all vectorised, SI in/out, each cited
+  and validated against published/independent references; see
+  `plans/NEW_INDICES.md`):
+  - `calculate_apparent_temperature_radiation`: the radiation-inclusive
+    Steadman/BoM Apparent Temperature from 2 m temperature, 10 m wind, relative
+    humidity and a caller-supplied body-absorbed net radiation `q`
+    (Steadman 1994, https://doi.org/10.1071/es94001; Australian BoM).
+  - `calculate_relative_strain_index`: the Relative Strain Index from 2 m
+    temperature and relative humidity (Lee & Henschel 1966,
+    https://doi.org/10.1111/j.1749-6632.1966.tb43059.x; hPa closed form and
+    bands from Asghari et al. 2020, https://doi.org/10.2174/1874213002013010011).
+  - `calculate_summer_simmer_index`: Pepi's Summer Simmer Index (common 1987
+    closed form, an affine transform of Thom's THI) from 2 m temperature and
+    relative humidity (Pepi 1987, https://doi.org/10.1080/00431672.1987.9933356;
+    equation reproduced from secondary sources — see the guide).
+  - `calculate_pmv` and `calculate_ppd`: Fanger's Predicted Mean Vote and
+    Predicted Percentage of Dissatisfied (ISO 7730:2005; Fanger 1970), from air
+    and mean-radiant temperature, body-level air velocity, humidity, metabolic
+    rate and clothing insulation; validated against the ISO 7730 Annex D table.
+
 ## 2.3.0
 
 - Added `calculate_discomfort_index`: Thom's Discomfort Index (Temperature-
