@@ -510,38 +510,6 @@ class TestThermalCalculator(unittest.TestCase):
         expected = np.array([76.8, 26.1, 10.2, 5.0, 10.2, 26.1, 76.8])
         np.testing.assert_allclose(tmf.calculate_ppd(pmv), expected, atol=0.1)
 
-    def test_pmv_humidity_contract(self):
-        # Exactly one humidity input is required (mirrors calculate_utci).
-        t = tmf.celsius_to_kelvin(np.array([22.0]))
-        v = np.array([0.1])
-        with pytest.raises(ValueError):
-            tmf.calculate_pmv(t, t, v)  # neither rh nor vapour_pressure_hpa
-        with pytest.raises(ValueError):
-            tmf.calculate_pmv(
-                t, t, v, rh=np.array([60.0]), vapour_pressure_hpa=np.array([14.0])
-            )  # both
-        # Passing vapour pressure (converted from an RH row with the same ISO
-        # relation the function uses internally) reproduces the rh-driven PMV.
-        ta_c, rh = 22.0, 60.0
-        pa_pa = rh * 10.0 * np.exp(16.6536 - 4030.183 / (ta_c + 235.0))
-        vp_hpa = np.array([pa_pa / 100.0])
-        pmv_rh = tmf.calculate_pmv(t, t, v, rh=np.array([rh]))
-        pmv_vp = tmf.calculate_pmv(t, t, v, vapour_pressure_hpa=vp_hpa)
-        np.testing.assert_allclose(pmv_vp, pmv_rh)
-
-    def test_pmv_nonconvergence_returns_nan(self):
-        # A NaN element never satisfies the convergence test, so the vectorised
-        # fixed point runs to its iteration cap and returns NaN for it (the
-        # documented non-convergence behaviour), while a finite neighbour still
-        # converges to a real value.
-        t2 = tmf.celsius_to_kelvin(np.array([22.0, np.nan]))
-        tr = tmf.celsius_to_kelvin(np.array([22.0, 22.0]))
-        var = np.array([0.1, 0.1])
-        rh = np.array([60.0, 60.0])
-        pmv = tmf.calculate_pmv(t2, tr, var, rh=rh)
-        assert np.isfinite(pmv[0])
-        assert np.isnan(pmv[1])
-
 
 if __name__ == "__main__":
     unittest.main()  # pragma: no cover

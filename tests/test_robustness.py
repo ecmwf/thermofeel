@@ -100,6 +100,19 @@ def test_relative_strain_index_singularity_and_sign_flip():
     assert rsi[1] < 0.0  # 36 degC / 100% RH: e ~ 59 hPa > 58 -> spurious negative
 
 
+def test_pmv_nonconvergence_returns_nan():
+    # A NaN element never satisfies the convergence test, so the vectorised fixed
+    # point runs to its iteration cap and returns NaN for it (the documented
+    # non-convergence behaviour), while a finite neighbour still converges.
+    t2 = tmf.celsius_to_kelvin(np.array([22.0, np.nan]))
+    tr = tmf.celsius_to_kelvin(np.array([22.0, 22.0]))
+    var = np.array([0.1, 0.1])
+    rh = np.array([60.0, 60.0])
+    pmv = tmf.calculate_pmv(t2, tr, var, rh=rh)
+    assert np.isfinite(pmv[0])
+    assert np.isnan(pmv[1])
+
+
 def test_bgt_zero_wind_returns_mrt():
     # Calm-air limit: with no convection the globe sits at radiative equilibrium,
     # so the globe temperature equals the mean radiant temperature at va == 0
@@ -127,6 +140,26 @@ def test_bgt_negative_wind_is_nan():
 def test_utci_requires_ehpa_or_td():
     with pytest.raises(ValueError):
         tmf.calculate_utci(T, VA, MRT)
+
+
+def test_pmv_humidity_contract():
+    # Exactly one humidity input is required (mirrors calculate_utci).
+    t = tmf.celsius_to_kelvin(np.array([22.0]))
+    v = np.array([0.1])
+    with pytest.raises(ValueError):
+        tmf.calculate_pmv(t, t, v)  # neither rh nor vapour_pressure_hpa
+    with pytest.raises(ValueError):
+        tmf.calculate_pmv(
+            t, t, v, rh=np.array([60.0]), vapour_pressure_hpa=np.array([14.0])
+        )  # both
+    # Passing vapour pressure (converted from an RH row with the same ISO relation
+    # the function uses internally) reproduces the rh-driven PMV.
+    ta_c, rh = 22.0, 60.0
+    pa_pa = rh * 10.0 * np.exp(16.6536 - 4030.183 / (ta_c + 235.0))
+    vp_hpa = np.array([pa_pa / 100.0])
+    pmv_rh = tmf.calculate_pmv(t, t, v, rh=np.array([rh]))
+    pmv_vp = tmf.calculate_pmv(t, t, v, vapour_pressure_hpa=vp_hpa)
+    np.testing.assert_allclose(pmv_vp, pmv_rh)
 
 
 def test_wbgt_liljegren_rejects_unknown_wind_scaling():
