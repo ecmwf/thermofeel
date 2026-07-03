@@ -64,7 +64,10 @@ A second, different closed form appears in the literature,
 (most likely mmHg). It could not be verified against the primary text and is
 **not** implemented here; only the peer-reviewed hPa form is provided.
 
-Note the domain edge: as `e` approaches 58 hPa (near-saturation around 35 °C) the
-denominator `58 − e` vanishes, so the index diverges to ±infinity and is NaN when
-`e` equals 58 hPa exactly. These values are returned as-is and are deliberately
-not clamped, so mask or guard the result if your inputs can reach that regime.
+Note the domain edge: as `e` approaches 58 hPa (near-saturation around 35–36 °C)
+the denominator `58 − e` shrinks, so the index grows without bound (±infinity),
+and for `e` above 58 hPa (very hot and near-saturated, beyond the ~35 °C validity
+range) the denominator turns negative and RSI becomes negative — a spurious value
+for a heat-strain index. These out-of-range values are returned as-is and are
+deliberately not clamped, so mask or guard the result if your inputs can reach
+that regime.

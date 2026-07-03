@@ -1015,10 +1015,13 @@ def calculate_relative_strain_index(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarra
     ``calculate_nonsaturation_vapour_pressure``). It is dimensionless and not
     clamped - out-of-range inputs return the raw value (the caller masks).
 
-    Domain edge: the denominator ``58 - e`` vanishes as e approaches 58 hPa (near
-    saturation around 35 degC), so RSI diverges to +/-inf there and is NaN where e
-    equals 58 hPa exactly. Such elements are returned as inf/NaN and are
-    deliberately not clamped.
+    Domain edge: the denominator ``58 - e`` shrinks as e approaches 58 hPa (near
+    saturation around 35-36 degC), so RSI grows without bound (diverging to
+    +/-inf), and for e > 58 hPa (very hot and near-saturated, beyond the ~35 degC
+    validity range) the denominator turns negative and RSI becomes negative - a
+    spurious value for a heat-strain index. These out-of-domain elements are
+    returned raw and are deliberately not clamped; the caller masks inputs above
+    the validity range.
 
     Variant caveat: a different literature form, (10.7 + 0.74 (Ta - 35)) / (44 -
     Pa), appears in secondary sources with Pa in other units (likely mmHg). It
