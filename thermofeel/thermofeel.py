@@ -932,6 +932,41 @@ def calculate_discomfort_index(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
     return di_k
 
 
+def calculate_summer_simmer_index(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
+    """
+    Summer Simmer Index (Pepi)
+        :param t2_k: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity [%]
+        returns summer simmer index [K]
+
+    The Summer Simmer Index (SSI) estimates warm-season heat discomfort from air
+    temperature and relative humidity. This is the common 1987 closed form,
+    evaluated in Fahrenheit,
+    SSI = 1.98 (Tf - (0.55 - 0.0055 RH)(Tf - 58)) - 56.83, with Tf the air
+    temperature in degF and RH in %, the result converted back to Kelvin. The
+    inner bracket is Thom's Temperature-Humidity Index in Fahrenheit, so the SSI
+    is an affine image of that index (SSI_F = 1.98 THI_F - 56.83), the near-exact
+    Fahrenheit sibling of calculate_discomfort_index (which uses 14.5 degC where
+    58 degF = 14.44... degC). It is a warm-season heat-stress indicator and is
+    not clamped - out-of-range inputs return the raw value (the caller masks).
+
+    Reference: Pepi, J.W. (1987) The Summer Simmer Index, Weatherwise 40(3):
+    143-145 https://doi.org/10.1080/00431672.1987.9933356
+
+    Provenance caveat: the 1987 article is not openly available, so the equation
+    above is reproduced from secondary sources. It is the *common* 1987 closed
+    form - an affine transform of Thom's Fahrenheit Temperature-Humidity Index -
+    NOT the author's later tabulated "New Summer Simmer Index", which is a
+    different relationship and is not implemented here.
+    """
+    t2_f = kelvin_to_fahrenheit(t2_k)
+    thi_f = t2_f - (0.55 - 0.0055 * rh) * (t2_f - 58.0)
+    ssi_f = 1.98 * thi_f - 56.83
+    ssi_k = fahrenheit_to_kelvin(ssi_f)
+
+    return ssi_k
+
+
 def calculate_normal_effective_temperature(
     t2_k: ArrayLike, va: ArrayLike, rh: ArrayLike
 ) -> np.ndarray:

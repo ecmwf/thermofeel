@@ -218,6 +218,63 @@ class TestThermalCalculator(unittest.TestCase):
             di = tmf.calculate_discomfort_index(t2_k, rh)
             assert di[0] == pytest.approx(expected_k, abs=1e-6)
 
+    def test_summer_simmer_index(self):
+        # PRIMARY gate (G2 affine-THI identity). By definition the common 1987
+        # SSI is an affine transform of Thom's Fahrenheit Temperature-Humidity
+        # Index: SSI_F = 1.98*THI_F - 56.83 with THI_F = Tf - (0.55 - 0.0055*RH)
+        # (Tf - 58). Rebuild that whole chain independently and require the
+        # function to reproduce it exactly. This proves the implemented formula
+        # matches its stated definition (only the *provenance* of that formula is
+        # secondary-source; the maths is pinned here).
+        identity_points = [
+            (33.0, 55.0),
+            (18.0, 90.0),
+            (37.5, 15.0),
+            (10.0, 100.0),
+            (28.2, 47.5),
+        ]
+        for t_c, rh_pc in identity_points:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            tf = tmf.kelvin_to_fahrenheit(t2_k)
+            thi_f = tf - (0.55 - 0.0055 * rh) * (tf - 58.0)
+            expected_ssi_f = 1.98 * thi_f - 56.83
+            expected_k = tmf.fahrenheit_to_kelvin(expected_ssi_f)
+            ssi = tmf.calculate_summer_simmer_index(t2_k, rh)
+            assert ssi[0] == pytest.approx(expected_k[0], abs=1e-6)
+
+        # Hand-derived exact evaluations. Every Tf is an integer so the whole
+        # chain is checkable by hand. Notation: coeff = 0.55 - 0.0055*RH,
+        # THI_F = Tf - coeff*(Tf - 58), SSI_F = 1.98*THI_F - 56.83,
+        # SSI_K = (SSI_F + 459.67)*5/9.
+        cases = [
+            # T=30C -> Tf=86; coeff=0.55-0.275=0.275; THI_F=86-0.275*28=78.3;
+            # SSI_F=1.98*78.3-56.83=98.204; SSI_K=(98.204+459.67)*5/9=309.930.
+            # (Task worked example quotes SSI_F~=98.20 -> SSI_K~=309.928; the
+            # unrounded value is 309.930 and both sit inside the 1e-2 gate.)
+            (30.0, 50.0, 309.930),
+            # T=25C -> Tf=77; coeff=0.55-0.22=0.33; THI_F=77-0.33*19=70.73;
+            # SSI_F=1.98*70.73-56.83=83.2154; SSI_K=(83.2154+459.67)*5/9=301.603.
+            (25.0, 40.0, 301.603),
+            # T=35C -> Tf=95; coeff=0.55-0.33=0.22; THI_F=95-0.22*37=86.86;
+            # SSI_F=1.98*86.86-56.83=115.1528; SSI_K=(115.1528+459.67)*5/9=319.346.
+            (35.0, 60.0, 319.346),
+            # T=20C -> Tf=68; coeff=0.55-0.44=0.11; THI_F=68-0.11*10=66.9;
+            # SSI_F=1.98*66.9-56.83=75.632; SSI_K=(75.632+459.67)*5/9=297.390.
+            (20.0, 80.0, 297.390),
+            # T=15C, RH=100 -> Tf=59; coeff=0 so THI_F=Tf=59 (RH=100 identity);
+            # SSI_F=1.98*59-56.83=59.99; SSI_K=(59.99+459.67)*5/9=288.700.
+            (15.0, 100.0, 288.700),
+            # T=40C -> Tf=104; coeff=0.55-0.11=0.44; THI_F=104-0.44*46=83.76;
+            # SSI_F=1.98*83.76-56.83=109.0148; SSI_K=(109.0148+459.67)*5/9=315.936.
+            (40.0, 20.0, 315.936),
+        ]
+        for t_c, rh_pc, expected_k in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            ssi = tmf.calculate_summer_simmer_index(t2_k, rh)
+            assert ssi[0] == pytest.approx(expected_k, abs=1e-2)
+
     def test_normal_effective_temperature(self):
         t2_k = np.array([307])
         va = np.array([4])
