@@ -1260,8 +1260,11 @@ def calculate_pmv(
         :param clo: (float array) clothing insulation [clo] (1 clo = 0.155
             m2 K W-1); default 0.5 clo (light indoor clothing).
         :param wme: (float array) external (mechanical) work [met]; default 0.0.
-        returns predicted mean vote [dimensionless] on the thermal-sensation
-        scale from -3 (cold) through 0 (neutral) to +3 (hot).
+        returns predicted mean vote [dimensionless]. The thermal-sensation
+        scale runs from -3 (cold) through 0 (neutral) to +3 (hot); the index is
+        not clamped, so inputs beyond the ISO 7730 validity range can yield
+        values outside +/-3 (ISO recommends interpreting PMV only within
+        about +/-2).
 
     Fanger's steady-state heat-balance comfort equation as standardised in
     ISO 7730:2005. The clothing-surface temperature is obtained by the Annex D

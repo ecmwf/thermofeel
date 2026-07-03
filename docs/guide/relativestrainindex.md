@@ -29,8 +29,10 @@ calculate_relative_strain_index(2m_temperature, relative_humidity_percent)
 
 The implemented form is `RSI = (Ta − 21) / (58 − e)`, with `Ta` the air
 temperature in °C and `e` the ambient water-vapour pressure in hPa. RSI is a
-summer index: it is meant for air temperatures up to about 35 °C, and below
-roughly 26 °C it stays at the comfort level regardless of humidity.
+summer index meant for air temperatures up to about 35 °C, and it rises with
+both temperature and humidity (through the vapour-pressure term `e`). At lower
+air temperatures it stays near the comfort level across most of the humidity
+range, though very humid conditions can still lift it past the comfort threshold.
 
 ## Interpret the output
 
