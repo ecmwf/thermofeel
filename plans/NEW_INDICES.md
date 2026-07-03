@@ -1,7 +1,7 @@
 # Programme: New Thermal Indices (target 2.4.0)
 
-Batch delivery of new indices promoted from the IDEAS assessment. Sprint 0
-(external research: provenance + validation) is **done**; the per-index findings
+Batch delivery of new indices promoted from the IDEAS assessment. The research
+phase (external provenance + validation) is **done**; the per-index findings
 are captured below. Implementation is **fanned out one agent per index** and
 **overlaid in a single PR** (target `2.4.0`). Each index must pass its own
 validation gates (§3) independently; **any index that cannot clear its gates is
@@ -27,9 +27,9 @@ with a written reason.
   independent MIT-licensed oracle; the oracle is **never** a runtime dependency
   (`TEST.md`). Core stays **numpy-only**.
 - **No index ships on trust.** Each implementation agent must *re-derive/verify*
-  the reference values against the cited formula before pinning them (Sprint 0
-  already found one dossier oracle value that does not reconcile with its stated
-  formula — see §5.1).
+  the reference values against the cited formula before pinning them (the
+  research phase already found one dossier oracle value that does not reconcile
+  with its stated formula — see §5.1).
 
 ## 2. Indices in this batch
 
@@ -95,15 +95,15 @@ colliding on the same lines.
 | PMV / PPD | end of module, after `calculate_heat_index_adjusted` | end of test class |
 | PET | after the PMV/PPD block (if unblocked) | end of test class |
 
-### 4.3 Sprints (indices run in parallel; grouped for review sanity)
+### 4.3 Phases (indices run in parallel; grouped for review sanity)
 
-- **Sprint 0 — Research** ✅ done (this document).
-- **Sprint 1 — Easy closed-forms (parallel ×3):** AT-radiation, RSI, SSI.
-- **Sprint 2 — PMV / PPD** (iterative; larger; has the richest validation table).
-- **Sprint 3 — PET** — **DEFERRED** (§5.5 / §6.1); not delivered in 2.4.0.
-- **Sprint 4 — Integration:** orchestrator merges sub-branches, reconciles the
+- **Research** ✅ done (this document).
+- **Implementation — closed-form indices (parallel ×3):** AT-radiation, RSI, SSI.
+- **Implementation — PMV / PPD** (iterative; larger; richest validation table).
+- **PET** — **DEFERRED** (§5.5 / §6.1); not delivered in 2.4.0.
+- **Integration:** the orchestrator merges the sub-branches, reconciles the
   shared lists, does the single `2.4.0` bump + CHANGELOG, runs `make all` +
-  `make docs`, opens the single PR, drives `/copilot-review-loop`.
+  `make docs`, and opens the single PR.
 
 ## 5. Per-index specifications
 
@@ -127,7 +127,7 @@ colliding on the same lines.
 - **Validation:**
   - G2: with `q=0` the radiation form is *not* equal to the non-radiation form
     (different constants: 0.348 vs 0.33, −4.25 vs −4.00) — encode that.
-  - G3 anchor (VERIFIED consistent with the BoM formula in Sprint 0):
+  - G3 anchor (verified consistent with the BoM formula during research):
     `Ta=23 °C, rh=70 %, ws=1 m/s, q=50 → AT≈28.1 °C` (validation-data, MIT).
   - ⚠️ The dossier's `Ta=25, rh=30, v=0.1, q=100 → 25.3 °C` value **does NOT
     reconcile** with the BoM formula (hand-calc ≈ 30.9 °C). **Do not pin it**
@@ -159,8 +159,8 @@ colliding on the same lines.
   - Bands (docs only): **Asghari et al. 2020 Table 2** (thresholds 0.15 / 0.25 /
     0.35 / 0.45). NOTE: an earlier draft mis-cited these to "Błażejczyk 2011
     `10.2478/v10288-012-0004-7`" — that paper is a *different* index (BCI) and
-    has no RSI band table; the Sprint-1 agent verified this and corrected the
-    attribution to Asghari 2020 (origin traces to Lee & Henschel 1966 / Kyle
+    has no RSI band table; the implementation agent verified this and corrected
+    the attribution to Asghari 2020 (origin traces to Lee & Henschel 1966 / Kyle
     1992). Do not reintroduce the Błażejczyk citation.
 
 ### 5.3 Summer Simmer Index
@@ -193,7 +193,7 @@ colliding on the same lines.
   `I_cl = 0.155·clo`; `M = 58.15·met`; `f_cl` piecewise; `h_c = max(2.38·|t_cl−t_a|^0.25,
   12.1·√v_ar)`; the `t_cl` fixed-point (init + `EPS=0.00015`, fail if `N>150`);
   `PMV = (0.303·e^{−0.036M}+0.028)·L`; `PPD = 100 − 95·exp(−0.03353·PMV⁴ −
-  0.2179·PMV²)`. (Full term list in the Sprint-0 dossier; transcribe from the ISO
+  0.2179·PMV²)`. (Full term list in the research dossier; transcribe from the ISO
   PDF, not memory.)
 - **Signatures:**
   `calculate_pmv(t2_k, mrt_k, var, rh=None, vapour_pressure_hpa=None, met=1.2, clo=0.5, wme=0.0)`
@@ -204,8 +204,8 @@ colliding on the same lines.
   wind — call this out in the docstring (do not silently pass `va`).
 - **Defaults:** `met=1.2` (ISO 8996 sedentary), `clo=0.5` (light) — cited as
   conventions, not ISO universals; maintainer confirms (§6).
-- **Validation (G3, strong):** ISO 7730 Annex D Table D.1 — 13 rows captured in
-  Sprint 0, e.g. `(t_a=22, t_r=22, v=0.1, rh=60, met=1.2, clo=0.5) → PMV=−0.75,
+- **Validation (G3, strong):** ISO 7730 Annex D Table D.1 — 13 rows captured
+  during research, e.g. `(t_a=22, t_r=22, v=0.1, rh=60, met=1.2, clo=0.5) → PMV=−0.75,
   PPD=17`; `(27,27,0.1,60,1.2,0.5) → 0.77, 17`; `(27,27,0.3,60,1.2,0.5) → 0.44,
   9`; … plus `(19,18,0.1,40,1.2,1.0) → −0.70, 15.3`. Pin all; also G2
   `PMV=0 ⇒ PPD=5`. Oracle: `pythermalcomfort.pmv_ppd_iso`.
@@ -234,8 +234,8 @@ colliding on the same lines.
   set — **Walther & Goestchel 2018** (`10.1016/j.buildenv.2018.03.054`, "first
   exhaustive explanation of PET") and/or **VDI 3787 Part 2** — via ECMWF
   institutional access, *and* a set of published reference values (VDI examples /
-  Höppe 1999 tables). If obtained → Sprint 3 proceeds with those as the cited
-  source + G3 data. If not → **PET stays in `IDEAS.md`** (with this reason) and
+  Höppe 1999 tables). If obtained → PET implementation proceeds with those as the
+  cited source + G3 data. If not → **PET stays in `IDEAS.md`** (with this reason) and
   the 2.4.0 batch ships the other four.
 - **If unblocked, target:** the Walther & Goestchel corrected steady PET,
   implemented independently from the published equations (numpy-only, bounded

@@ -383,7 +383,7 @@ class TestThermalCalculator(unittest.TestCase):
         )
         assert e_row_a[0] == pytest.approx(21.1435807, abs=1e-6)
 
-        # External anchor (independent MIT oracle, verified in Sprint 0):
+        # External anchor (independent MIT oracle, verified during research):
         #   Ta=23 degC (296.15 K), rh=70%, va=1, q=50 -> AT ~ 28.1 degC (301.25 K).
         # Re-derived from the BoM formula:
         #   e       = 0.70*6.105*exp(17.27*23/260.7) = 19.6104356 hPa
