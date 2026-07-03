@@ -10,15 +10,22 @@ mature and get decided move up to `TODO.md`.
 
 ## Indices and physics
 
-- [ ] **More thermal indices.** **Standard Effective Temperature (SET)** remains
-  the speculative candidate here — it needs a citable equation set and reference
-  values before it can leave IDEAS (the Gagge two-node model is heavy and
-  overlaps PMV). *Promoted out of IDEAS into the 2.4.0 batch programme
-  (`plans/NEW_INDICES.md` / `plans/TODO.md`): Apparent Temperature radiation
-  form, Relative Strain Index, Summer Simmer Index, PMV/PPD, and PET — the last
-  conditional on obtaining citable equations + published reference values.*
-  (WBGT via the full Liljegren model is implemented as `calculate_wbgt_liljegren`;
-  the Discomfort Index as `calculate_discomfort_index`.)
+- [ ] **More thermal indices.** Speculative candidates that need a citable
+  equation set + reference values before they can leave IDEAS:
+  - **Standard Effective Temperature (SET)** — Gagge two-node model; heavy,
+    overlaps PMV.
+  - **Physiological Equivalent Temperature (PET)** — Höppe 1999. Assessed for the
+    2.4.0 batch but **deferred**: the full MEMI equations are not openly citable
+    and no published `(inputs → PET)` validation rows were found; reference
+    implementations are SciPy-based or AGPL. Revisit only with a fully-cited
+    equation set (Walther & Goestchel 2018 `10.1016/j.buildenv.2018.03.054` /
+    VDI 3787-2) **and** published reference values; never reverse-engineer the
+    AGPL code. Retained spec: `plans/NEW_INDICES.md` §5.5.
+
+  *Promoted out of IDEAS into the 2.4.0 batch (`plans/NEW_INDICES.md`): Apparent
+  Temperature radiation form, Relative Strain Index, Summer Simmer Index,
+  PMV/PPD.* (WBGT via the full Liljegren model is implemented as
+  `calculate_wbgt_liljegren`; the Discomfort Index as `calculate_discomfort_index`.)
 - [ ] **Validity-range helpers.** Several indices are only defined over a range
   (Wind Chill, Heat Index). A small companion that returns a validity mask for a
   given index + inputs would let pipelines blank out-of-range points cleanly

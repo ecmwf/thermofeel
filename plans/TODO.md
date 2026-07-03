@@ -38,9 +38,9 @@ agent per index, each proven by its own validation gates (G1–G4 in
       Gate status: conditional on provenance (analytic THI gate). Spec §5.3.
 - [ ] **PMV / PPD** — `calculate_pmv`, `calculate_ppd` (ISO 7730:2005). Gate
       status: ready; richest validation table. Spec §5.4.
-- [ ] **PET** — `calculate_pet` (Höppe 1999). **Blocked** on citable equations
-      + published reference values (Walther & Goestchel 2018 / VDI 3787-2);
-      proceeds only if unblocked, else returns to `IDEAS.md`. Spec §5.5.
+  PET (`calculate_pet`) was assessed for this batch but is **deferred to
+  `IDEAS.md`** (not citable from open sources; no published reference values) —
+  see `NEW_INDICES.md` §5.5/§6.
 
 ## Robustness
 

@@ -39,7 +39,11 @@ with a written reason.
 | 2 | Relative Strain Index | `calculate_relative_strain_index` | `t2_k, rh` | Lee & Henschel 1966 `10.1111/j.1749-6632.1966.tb43059.x`; form via Asghari 2020 `10.2174/1874213002013010011` | Easy | **PASS** (variant note) |
 | 3 | Summer Simmer Index | `calculate_summer_simmer_index` | `t2_k, rh` | Pepi 1987 `10.1080/00431672.1987.9933356` | Easy | **CONDITIONAL** (secondary-source formula; analytic gate) |
 | 4 | PMV / PPD | `calculate_pmv`, `calculate_ppd` | `t2_k, mrt_k, var, rh, met, clo` | ISO 7730:2005; Fanger 1970 | Medium (bounded iteration) | **PASS** |
-| 5 | PET | `calculate_pet` | `t2_k, mrt_k, va, rh (+person)` | Höppe 1999 `10.1007/s004840050118`; Walther & Goestchel 2018 `10.1016/j.buildenv.2018.03.054`; VDI 3787-2 | Hard | **BLOCKED** — see §5.5 |
+| 5 | PET | `calculate_pet` | `t2_k, mrt_k, va, rh (+person)` | Höppe 1999 `10.1007/s004840050118`; Walther & Goestchel 2018 `10.1016/j.buildenv.2018.03.054`; VDI 3787-2 | Hard | **DEFERRED** (maintainer decision) — see §5.5 |
+
+**Batch as approved: four indices** — Apparent Temperature (radiation),
+Relative Strain Index, Summer Simmer Index, PMV/PPD. **PET is deferred** to
+`IDEAS.md` (§6 decision 1); it is **not** part of the 2.4.0 delivery.
 
 ## 3. Validation gates (every index must pass all four)
 
@@ -96,8 +100,7 @@ colliding on the same lines.
 - **Sprint 0 — Research** ✅ done (this document).
 - **Sprint 1 — Easy closed-forms (parallel ×3):** AT-radiation, RSI, SSI.
 - **Sprint 2 — PMV / PPD** (iterative; larger; has the richest validation table).
-- **Sprint 3 — PET** — **only if the provenance gate is unblocked** (§5.5);
-  otherwise deferred to `IDEAS.md` with a written reason.
+- **Sprint 3 — PET** — **DEFERRED** (§5.5 / §6.1); not delivered in 2.4.0.
 - **Sprint 4 — Integration:** orchestrator merges sub-branches, reconciles the
   shared lists, does the single `2.4.0` bump + CHANGELOG, runs `make all` +
   `make docs`, opens the single PR, drives `/copilot-review-loop`.
@@ -202,7 +205,15 @@ colliding on the same lines.
   9`; … plus `(19,18,0.1,40,1.2,1.0) → −0.70, 15.3`. Pin all; also G2
   `PMV=0 ⇒ PPD=5`. Oracle: `pythermalcomfort.pmv_ppd_iso`.
 
-### 5.5 PET — Physiological Equivalent Temperature  ⚠️ BLOCKED
+### 5.5 PET — Physiological Equivalent Temperature  ⚠️ DEFERRED (not in 2.4.0)
+
+> **Decision (maintainer):** PET is **deferred to `IDEAS.md`** and is **not**
+> implemented in this batch. Reason: the full MEMI equations are not openly
+> citable and no published `(inputs → PET)` validation rows were found, so it
+> fails `DESIGN.md` §5 and the G1/G3 gates. Revisit only when a fully-cited
+> equation set (Walther & Goestchel 2018 / VDI 3787-2) **and** published
+> reference values are available; never reverse-engineer the AGPL implementation.
+> The specification below is retained for that future work.
 
 - **Definition (G1 partial):** Höppe 1999 `10.1007/s004840050118` defines PET
   (air temperature of a reference indoor setting giving the same core+skin state)
@@ -227,19 +238,19 @@ colliding on the same lines.
   `calculate_pet(t2_k, mrt_k, va, rh, *, pressure_hpa=1013.25, met=…, clo=0.9, …)`
   → Kelvin, with the VDI reference person/environment documented and cited.
 
-## 6. Open decisions for the maintainer
+## 6. Decisions (resolved with maintainer)
 
-1. **PET disposition** (biggest): (a) attempt now **only if** ECMWF can supply
-   Walther & Goestchel 2018 / VDI 3787-2 full text + reference values, else
-   (b) defer PET to `IDEAS.md` and ship the other four as 2.4.0. Never
-   reverse-engineer the AGPL implementation.
-2. **SSI provenance:** ship the common Pepi-1987 closed form with the affine-THI
-   analytic gate + a provenance caveat, or defer to `IDEAS.md`?
-3. **PMV parameters:** accept `met`/`clo`/`var` as explicit args with cited
-   defaults (`met=1.2`, `clo=0.5`, `var` = body-level velocity), acknowledging
-   this broadens the "standard met inputs" premise for physiological indices?
-4. **Version/PR:** one `2.4.0` batch in a single PR stacked on #54 (confirm), or
-   split?
+1. **PET** → **DEFERRED** to `IDEAS.md`; not in 2.4.0 (never reverse-engineer the
+   AGPL impl). Batch = the other four.
+2. **SSI** → **ship** the common Pepi-1987 closed form, validated primarily by the
+   affine-THI analytic identity, with an explicit provenance caveat in the
+   docstring + guide.
+3. **PMV parameters** → **explicit args with cited defaults**: `met=1.2`
+   (ISO 8996 sedentary), `clo=0.5` (light), `var` = body-level relative velocity
+   (distinct from 10 m wind). Documented as broadening the "standard met inputs"
+   premise for physiological indices.
+4. **Version/PR** → one `2.4.0` batch in a single PR on `feat/new-indices`
+   (stacked on #54).
 
 ## 7. Risk register
 
