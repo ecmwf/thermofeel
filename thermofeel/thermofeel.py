@@ -1227,3 +1227,149 @@ def calculate_heat_index_adjusted(t2_k: ArrayLike, td_k: ArrayLike) -> np.ndarra
     hi_k = fahrenheit_to_kelvin(hi)
 
     return hi_k
+
+
+def calculate_pmv(
+    t2_k: ArrayLike,
+    mrt_k: ArrayLike,
+    var: ArrayLike,
+    rh: ArrayLike | None = None,
+    vapour_pressure_hpa: ArrayLike | None = None,
+    met: ArrayLike = 1.2,
+    clo: ArrayLike = 0.5,
+    wme: ArrayLike = 0.0,
+) -> np.ndarray:
+    """
+    PMV - Predicted Mean Vote (Fanger's thermal comfort model)
+        :param t2_k: (float array) 2m air temperature [K]
+        :param mrt_k: (float array) mean radiant temperature [K]
+        :param var: (float array) relative air velocity at the body [m/s].
+            This is the air movement felt at the body (the still-air velocity
+            plus any movement the occupant's own activity induces), NOT the
+            10 m meteorological wind speed - do not pass the model wind field.
+        :param rh: (float array) relative humidity [%]. Provide exactly one of
+            ``rh`` or ``vapour_pressure_hpa``.
+        :param vapour_pressure_hpa: (float array) water vapour pressure [hPa].
+            Provide exactly one of ``rh`` or ``vapour_pressure_hpa``.
+        :param met: (float array) metabolic rate [met] (1 met = 58.15 W m-2);
+            default 1.2 met (ISO 8996 sedentary/office activity).
+        :param clo: (float array) clothing insulation [clo] (1 clo = 0.155
+            m2 K W-1); default 0.5 clo (light indoor clothing).
+        :param wme: (float array) external (mechanical) work [met]; default 0.0.
+        returns predicted mean vote [dimensionless] on the thermal-sensation
+        scale from -3 (cold) through 0 (neutral) to +3 (hot).
+
+    Fanger's steady-state heat-balance comfort equation as standardised in
+    ISO 7730:2005. The clothing-surface temperature is obtained by the Annex D
+    fixed-point iteration (tolerance 0.00015, capped at 150 sweeps). The whole
+    array is iterated together (mirroring the Liljegren energy-balance solvers)
+    and any element that has not converged within the cap is returned as NaN.
+
+    ``met`` and ``clo`` are exposed as parameters because PMV is only defined for
+    a stated activity and clothing level; the defaults (1.2 met, 0.5 clo) are
+    common office conventions rather than fixed constants of the standard.
+
+    Reference: ISO 7730:2005 (Annex D); Fanger, P.O. (1970) Thermal Comfort:
+    Analysis and Applications in Environmental Engineering, McGraw-Hill.
+    """
+    ta = kelvin_to_celsius(np.asarray(t2_k, dtype=float))
+    tr = kelvin_to_celsius(np.asarray(mrt_k, dtype=float))
+    var = np.asarray(var, dtype=float)
+    met = np.asarray(met, dtype=float)
+    clo = np.asarray(clo, dtype=float)
+    wme = np.asarray(wme, dtype=float)
+
+    # Water vapour partial pressure [Pa]: require exactly one humidity input.
+    if rh is not None and vapour_pressure_hpa is None:
+        pa = (
+            np.asarray(rh, dtype=float)
+            * 10.0
+            * np.exp(16.6536 - 4030.183 / (ta + 235.0))
+        )
+    elif vapour_pressure_hpa is not None and rh is None:
+        pa = np.asarray(vapour_pressure_hpa, dtype=float) * 100.0
+    else:
+        raise ValueError("Provide exactly one of rh (%) or vapour_pressure_hpa (hPa)")
+
+    icl = 0.155 * clo  # clothing insulation [m2 K W-1]
+    m = 58.15 * met  # metabolic rate [W m-2]
+    w = 58.15 * wme  # external work [W m-2]
+    mw = m - w  # internal heat production [W m-2]
+
+    fcl = np.where(icl <= 0.078, 1.0 + 1.29 * icl, 1.05 + 0.645 * icl)
+    hcf = 12.1 * np.sqrt(var)  # forced convective heat transfer coeff.
+
+    taa = ta + 273.0
+    tra = tr + 273.0
+    tcla = taa + (35.5 - ta) / (3.5 * icl + 0.1)
+
+    p1 = icl * fcl
+    p2 = p1 * 3.96
+    p3 = p1 * 100.0
+    p4 = p1 * taa
+    p5 = 308.7 - 0.028 * mw + p2 * (tra / 100.0) ** 4
+
+    # Vectorised fixed-point iteration for the clothing-surface temperature,
+    # mirroring the Liljegren globe/wet-bulb solvers: the whole array is swept
+    # together and each element is frozen once it meets the ISO tolerance. The
+    # convergence mask replaces the standard's per-point "fail if N > 150".
+    eps = 0.00015
+    bshape = np.broadcast_shapes(
+        np.shape(taa),
+        np.shape(hcf),
+        np.shape(p2),
+        np.shape(p3),
+        np.shape(p4),
+        np.shape(p5),
+        np.shape(tcla),
+    )
+    xn = np.broadcast_to(tcla / 100.0, bshape)
+    xf = xn
+    hc = np.zeros(bshape, dtype=float)
+    converged = np.zeros(bshape, dtype=bool)
+    for _ in range(150):
+        xf_new = (xf + xn) / 2.0
+        hcn = 2.38 * np.abs(100.0 * xf_new - taa) ** 0.25
+        hc_new = np.maximum(hcf, hcn)
+        xn_new = (p5 + p4 * hc_new - p2 * xf_new**4) / (100.0 + p3 * hc_new)
+        update = ~converged
+        xf = np.where(update, xf_new, xf)
+        xn = np.where(update, xn_new, xn)
+        hc = np.where(update, hc_new, hc)
+        converged = converged | (np.abs(xn_new - xf_new) <= eps)
+        if converged.all():
+            break
+
+    tcl = 100.0 * xn - 273.0  # clothing-surface temperature [degC]
+
+    # Heat-loss components [W m-2]
+    hl1 = 3.05e-3 * (5733.0 - 6.99 * mw - pa)  # skin diffusion
+    hl2 = np.where(mw > 58.15, 0.42 * (mw - 58.15), 0.0)  # sweating
+    hl3 = 1.7e-5 * m * (5867.0 - pa)  # latent respiration
+    hl4 = 0.0014 * m * (34.0 - ta)  # dry respiration
+    hl5 = 3.96e-8 * fcl * ((tcl + 273.0) ** 4 - (tr + 273.0) ** 4)  # radiation
+    hl6 = fcl * hc * (tcl - ta)  # convection
+
+    ts = 0.303 * np.exp(-0.036 * m) + 0.028  # thermal-sensation transfer coeff.
+    pmv = ts * (mw - hl1 - hl2 - hl3 - hl4 - hl5 - hl6)
+
+    return np.where(converged, pmv, np.nan)
+
+
+def calculate_ppd(pmv: ArrayLike) -> np.ndarray:
+    """
+    PPD - Predicted Percentage of Dissatisfied
+        :param pmv: (float array) predicted mean vote [dimensionless]
+        returns predicted percentage of dissatisfied [%]
+
+    ISO 7730:2005 / Fanger relation mapping the Predicted Mean Vote onto the
+    percentage of occupants likely to be thermally dissatisfied. It is symmetric
+    in PMV (warm and cold deviations of equal magnitude give the same PPD) with a
+    minimum of 5% at PMV = 0 (thermal neutrality). A NaN PMV (e.g. a non-converged
+    ``calculate_pmv`` element) propagates to NaN.
+
+    Reference: ISO 7730:2005 (Annex D); Fanger, P.O. (1970) Thermal Comfort:
+    Analysis and Applications in Environmental Engineering, McGraw-Hill.
+    """
+    pmv = np.asarray(pmv, dtype=float)
+    return 100.0 - 95.0 * np.exp(-0.03353 * pmv**4 - 0.2179 * pmv**2)
