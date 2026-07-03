@@ -18,7 +18,8 @@ with a written reason.
   never MAJOR). A single `## 2.4.0` `CHANGELOG.md` section; `__version__` bumped
   once, by the orchestrator, at integration.
 - **Single PR**, on `feat/new-indices` (branched off `feat/discomfort-index`,
-  i.e. stacked on PR #54). GitHub retargets to `main` once #53/#54 merge.
+  i.e. stacked on the discomfort-index branch). It retargets to `main` as the
+  upstream branches in the stack merge.
 - **SI contract (`DESIGN.md` §2) is non-negotiable:** inputs are Kelvin (`*_k`),
   `rh` in %, vapour pressure in hPa, wind in m/s; temperature-like outputs return
   Kelvin. Dimensionless indices (PMV, PPD, RSI) return dimensionless; PPD is a %.
@@ -255,7 +256,7 @@ colliding on the same lines.
    (distinct from 10 m wind). Documented as broadening the "standard met inputs"
    premise for physiological indices.
 4. **Version/PR** → one `2.4.0` batch in a single PR on `feat/new-indices`
-   (stacked on #54).
+   (stacked on the discomfort-index branch).
 
 ## 7. Risk register
 
