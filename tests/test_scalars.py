@@ -269,6 +269,104 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"hia {hia}")
         assert hia[0] == pytest.approx(295.15355699, abs=1e-6)
 
+    def test_pmv(self):
+        # G3 - ISO 7730:2005 Annex D Table D.1: (ta, tr, v, rh, met, clo) -> PMV.
+        # Every row was re-derived from the Annex D fixed-point algorithm and
+        # cross-checked against the MIT oracle pythermalcomfort.pmv_ppd_iso
+        # (7730-2005 model). 12 of the 13 rows reproduce the printed PMV to
+        # <0.008. Row 7 (23.5, 23.5, 0.1, 40 %, 1.2 met, 1.0 clo) is a known
+        # ISO Table D.1 misprint: the standard prints PMV 0.50 / PPD 10, but the
+        # Annex D algorithm AND the oracle both give PMV 0.36 / PPD 7.7. The
+        # formula-reconciling value is pinned (the same policy the programme
+        # applied to the non-reconciling apparent-temperature dossier row), so
+        # the tolerance stays uniform at 0.02 with no per-row weakening.
+        ta = np.array([22, 27, 27, 23.5, 23.5, 19, 23.5, 23.5, 23, 23, 22, 27, 27])
+        tr = np.array([22, 27, 27, 25.5, 25.5, 19, 23.5, 23.5, 21, 21, 22, 27, 27])
+        v = np.array([0.1, 0.1, 0.3, 0.1, 0.3, 0.1, 0.1, 0.3, 0.1, 0.3, 0.1, 0.1, 0.3])
+        rh = np.array([60, 60, 60, 60, 60, 40, 40, 40, 40, 40, 60, 60, 60])
+        met = np.array(
+            [1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.6, 1.6, 1.6]
+        )
+        clo = np.array(
+            [0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.5]
+        )
+        # Row 7 uses the algorithm/oracle value (0.36), not the misprint (0.50).
+        pmv_expected = np.array(
+            [
+                -0.75,
+                0.77,
+                0.44,
+                -0.01,
+                -0.55,
+                -0.60,
+                0.36,
+                0.12,
+                0.05,
+                -0.16,
+                0.05,
+                1.17,
+                0.95,
+            ]
+        )
+        # Row 7 PPD pinned to the reconciling 8 (not the misprinted 10).
+        ppd_expected = np.array([17, 17, 9, 5, 11, 13, 8, 5, 5, 6, 5, 34, 24])
+        pmv = tmf.calculate_pmv(
+            tmf.celsius_to_kelvin(ta),
+            tmf.celsius_to_kelvin(tr),
+            v,
+            rh=rh,
+            met=met,
+            clo=clo,
+        )
+        assert not np.isnan(pmv).any()  # every ISO row converges
+        np.testing.assert_allclose(pmv, pmv_expected, atol=0.02)
+        ppd = tmf.calculate_ppd(pmv)
+        np.testing.assert_allclose(ppd, ppd_expected, atol=0.5)
+
+    def test_ppd(self):
+        # G2 identities: PPD is exactly 5% at thermal neutrality (PMV = 0) and is
+        # an even function of PMV (equal warm/cold deviations give equal PPD).
+        assert tmf.calculate_ppd(0.0) == 5.0
+        x = np.array([-2.4, -1.3, -0.5, 0.7, 1.6, 2.9])
+        np.testing.assert_array_equal(tmf.calculate_ppd(x), tmf.calculate_ppd(-x))
+        # Reference points on the ISO 7730 PPD(PMV) curve (PMV +-0.5 -> 10 %,
+        # +-1 -> 26 %, +-2 -> 77 %).
+        pmv = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0])
+        expected = np.array([76.8, 26.1, 10.2, 5.0, 10.2, 26.1, 76.8])
+        np.testing.assert_allclose(tmf.calculate_ppd(pmv), expected, atol=0.1)
+
+    def test_pmv_humidity_contract(self):
+        # Exactly one humidity input is required (mirrors calculate_utci).
+        t = tmf.celsius_to_kelvin(np.array([22.0]))
+        v = np.array([0.1])
+        with pytest.raises(ValueError):
+            tmf.calculate_pmv(t, t, v)  # neither rh nor vapour_pressure_hpa
+        with pytest.raises(ValueError):
+            tmf.calculate_pmv(
+                t, t, v, rh=np.array([60.0]), vapour_pressure_hpa=np.array([14.0])
+            )  # both
+        # Passing vapour pressure (converted from an RH row with the same ISO
+        # relation the function uses internally) reproduces the rh-driven PMV.
+        ta_c, rh = 22.0, 60.0
+        pa_pa = rh * 10.0 * np.exp(16.6536 - 4030.183 / (ta_c + 235.0))
+        vp_hpa = np.array([pa_pa / 100.0])
+        pmv_rh = tmf.calculate_pmv(t, t, v, rh=np.array([rh]))
+        pmv_vp = tmf.calculate_pmv(t, t, v, vapour_pressure_hpa=vp_hpa)
+        np.testing.assert_allclose(pmv_vp, pmv_rh)
+
+    def test_pmv_nonconvergence_returns_nan(self):
+        # A NaN element never satisfies the convergence test, so the vectorised
+        # fixed point runs to its iteration cap and returns NaN for it (the
+        # documented non-convergence behaviour), while a finite neighbour still
+        # converges to a real value.
+        t2 = tmf.celsius_to_kelvin(np.array([22.0, np.nan]))
+        tr = tmf.celsius_to_kelvin(np.array([22.0, 22.0]))
+        var = np.array([0.1, 0.1])
+        rh = np.array([60.0, 60.0])
+        pmv = tmf.calculate_pmv(t2, tr, var, rh=rh)
+        assert np.isfinite(pmv[0])
+        assert np.isnan(pmv[1])
+
 
 if __name__ == "__main__":
     unittest.main()  # pragma: no cover

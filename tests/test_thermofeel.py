@@ -63,6 +63,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.heatindexadjusted = np.loadtxt(data_file("hia.csv"))
         self.mrtr = np.loadtxt(data_file("mrtr.csv"))
         self.mrt_from_bgt = np.loadtxt(data_file("mrt_from_bgt.csv"))
+        self.pmv = np.loadtxt(data_file("pmv.csv"))
 
         self.dsrp = tmf.approximate_dsrp(self.fdir, self.cossza)
 
@@ -208,6 +209,16 @@ class TestThermalCalculator(unittest.TestCase):
         hia = tmf.calculate_heat_index_adjusted(self.t2m, self.td)
         # np.savetxt("hia.csv", hia)
         self.assert_equal(self.heatindexadjusted, hia)
+
+    def test_pmv(self):
+        # Drift guard for the vectorised ISO 7730 iteration. self.va is reused as
+        # the body-level relative air velocity driver (var); this exercises the
+        # whole-array fixed point and is not a claim that the 10 m wind equals
+        # body-level velocity. Every row converges (no NaN in pmv.csv).
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        pmv = tmf.calculate_pmv(self.t2m, self.mrt, self.va, rh=rh_pc)
+        # np.savetxt("pmv.csv", pmv)
+        self.assert_equal(self.pmv, pmv)
 
 
 if __name__ == "__main__":
