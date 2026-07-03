@@ -5,9 +5,15 @@ the human body from outdoor conditions, defined as the equivalent air
 temperature of a reference environment that would cause the same physiological
 response as the actual conditions.
 
-More information: Jendritzky, G., de Dear, R. & Havenith, G. UTCI—Why another
-thermal index?. Int J Biometeorol 56, 421–428 (2012).
-<https://doi.org/10.1007/s00484-011-0513-7>
+More information:
+
+- Jendritzky, G., de Dear, R. & Havenith, G. UTCI—Why another thermal index?.
+  Int J Biometeorol 56, 421–428 (2012).
+  <https://doi.org/10.1007/s00484-011-0513-7> (the concept)
+- Bröde, P., Fiala, D., Błażejczyk, K. et al. Deriving the operational procedure
+  for the Universal Thermal Climate Index (UTCI). Int J Biometeorol 56, 481–494
+  (2012). <https://doi.org/10.1007/s00484-011-0454-1> (the polynomial
+  approximation implemented here)
 
 ## How to use
 

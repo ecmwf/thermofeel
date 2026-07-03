@@ -3,9 +3,14 @@
 The Humidex is defined as the temperature (in °C) the human body perceives in
 hot, humid weather.
 
-More information: Blazejczyk, K., Epstein, Y., Jendritzky, G. et al. Comparison
-of UTCI to selected thermal indices. Int J Biometeorol 56, 515–535 (2012).
-<https://doi.org/10.1007/s00484-011-0453-2>
+More information:
+
+- Environment Canada. Humidex (glossary).
+  <https://climate.weather.gc.ca/glossary_e.html#humidex> (the source of the
+  humidex definition used here)
+- Blazejczyk, K., Epstein, Y., Jendritzky, G. et al. Comparison of UTCI to
+  selected thermal indices. Int J Biometeorol 56, 515–535 (2012).
+  <https://doi.org/10.1007/s00484-011-0453-2>
 
 ## How to use
 

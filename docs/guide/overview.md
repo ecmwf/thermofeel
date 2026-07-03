@@ -6,20 +6,22 @@ maintained by ECMWF (European Centre for Medium-Range Weather Forecasts).
 
 *thermofeel* calculates the following thermal indices:
 
+- Universal Thermal Climate Index
 - Apparent Temperature
 - Apparent Temperature (radiation)
-- Heat Index
+- Heat Index Adjusted
+- Heat Index Simplified
 - Humidex
 - Discomfort Index
 - Summer Simmer Index
 - Normal Effective Temperature
 - Relative Strain Index
-- Universal Thermal Climate Index
-- Predicted Mean Vote and Predicted Percentage of Dissatisfied (PMV/PPD)
 - Wet Bulb Globe Temperature
+- Wet Bulb Globe Temperature Simple
 - Wet Bulb Globe Temperature (Liljegren method)
 - Heat Force (KNMI 0–10 heat-stress scale)
 - Excess Heat Factor and Excess Cold Factor
+- Predicted Mean Vote and Predicted Percentage of Dissatisfied (PMV/PPD)
 - Wind Chill
 
 In support of the above, it also calculates:
