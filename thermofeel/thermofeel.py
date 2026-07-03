@@ -961,6 +961,43 @@ def calculate_normal_effective_temperature(
     return net_k
 
 
+def calculate_relative_strain_index(t2_k: ArrayLike, rh: ArrayLike) -> np.ndarray:
+    """
+    Relative Strain Index (RSI)
+        :param t2_k: (float array) 2m temperature [K]
+        :param rh: (float array) relative humidity percentage [%]
+        returns relative strain index [dimensionless]
+
+    The Relative Strain Index expresses warm-environment heat strain on a young,
+    healthy adult from air temperature and ambient water-vapour pressure. This is
+    the peer-reviewed hectopascal closed form stated with units by Asghari et al.
+    (2020), RSI = (Ta - 21) / (58 - e), with Ta the air temperature in degC and e
+    the ambient water-vapour pressure in hPa (from
+    ``calculate_nonsaturation_vapour_pressure``). It is dimensionless and not
+    clamped - out-of-range inputs return the raw value (the caller masks).
+
+    Domain edge: the denominator ``58 - e`` vanishes as e approaches 58 hPa (near
+    saturation around 35 degC), so RSI diverges to +/-inf there and is NaN where e
+    equals 58 hPa exactly. Such elements are returned as inf/NaN and are
+    deliberately not clamped.
+
+    Variant caveat: a different literature form, (10.7 + 0.74 (Ta - 35)) / (44 -
+    Pa), appears in secondary sources with Pa in other units (likely mmHg). It
+    could not be verified against the primary text and is deliberately NOT
+    implemented here; only this hPa closed form is provided.
+
+    Reference (this hPa closed form and the five-level assessment bands): Asghari
+    et al. (2020) https://doi.org/10.2174/1874213002013010011
+    Index origin (Relative Strain Index): Lee and Henschel (1966)
+    https://doi.org/10.1111/j.1749-6632.1966.tb43059.x
+    """
+    t2_c = kelvin_to_celsius(t2_k)
+    e = calculate_nonsaturation_vapour_pressure(t2_k, rh)
+    rsi = (t2_c - 21.0) / (58.0 - e)
+
+    return rsi
+
+
 def calculate_apparent_temperature(
     t2_k: ArrayLike, va: ArrayLike, rh: ArrayLike
 ) -> np.ndarray:
