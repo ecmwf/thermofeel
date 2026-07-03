@@ -156,7 +156,12 @@ colliding on the same lines.
     `Sari Aug: 27.54, 73.7 → 0.21` (source URL in dossier). Re-verify each against
     the formula + thermofeel's vapour pressure; pin at the tolerance the rounding
     supports.
-  - Bands (docs only): Błażejczyk 2011 `10.2478/v10288-012-0004-7`.
+  - Bands (docs only): **Asghari et al. 2020 Table 2** (thresholds 0.15 / 0.25 /
+    0.35 / 0.45). NOTE: an earlier draft mis-cited these to "Błażejczyk 2011
+    `10.2478/v10288-012-0004-7`" — that paper is a *different* index (BCI) and
+    has no RSI band table; the Sprint-1 agent verified this and corrected the
+    attribution to Asghari 2020 (origin traces to Lee & Henschel 1966 / Kyle
+    1992). Do not reintroduce the Błażejczyk citation.
 
 ### 5.3 Summer Simmer Index
 
