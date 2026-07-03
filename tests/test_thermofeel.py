@@ -58,6 +58,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.di = np.loadtxt(data_file("di.csv"))
         self.net = np.loadtxt(data_file("net.csv"))
         self.at = np.loadtxt(data_file("at.csv"))
+        self.at_radiation = np.loadtxt(data_file("at_radiation.csv"))
         self.windchill = np.loadtxt(data_file("windchill.csv"))
         self.heatindex = np.loadtxt(data_file("heatindex.csv"))
         self.heatindexadjusted = np.loadtxt(data_file("hia.csv"))
@@ -192,6 +193,18 @@ class TestThermalCalculator(unittest.TestCase):
         at = tmf.calculate_apparent_temperature(self.t2m, self.va, rh_pc)
         # np.savetxt("at.csv", at)
         self.assert_equal(self.at, at)
+
+    def test_apparent_temperature_radiation(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        # q is the caller-supplied net radiation absorbed per unit body-surface
+        # area (W m-2), NOT an NWP surface flux; fixed at 400 W m-2 here purely
+        # as a drift-guard regression driver.
+        q = np.full_like(self.t2m, 400.0)
+        at_radiation = tmf.calculate_apparent_temperature_radiation(
+            self.t2m, self.va, rh_pc, q
+        )
+        # np.savetxt("at_radiation.csv", at_radiation)
+        self.assert_equal(self.at_radiation, at_radiation)
 
     def test_wind_chill(self):
         windchill = tmf.calculate_wind_chill(self.t2m, self.va)
