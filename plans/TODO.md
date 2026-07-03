@@ -21,27 +21,6 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
     Verify: round-trip tests that `units="C"` equals `kelvin_to_celsius(units="K")`
     for every affected index.
 
-## Indices — the 2.4.0 batch programme
-
-Accepted batch of new thermal indices, promoted from the IDEAS assessment. The
-full programme spec (provenance, formulas, validation gates, agent topology,
-open decisions) is in **`plans/NEW_INDICES.md`** — that is the source of truth;
-this is the backlog pointer. Delivered as a single `2.4.0` PR, fanned out one
-agent per index, each proven by its own validation gates (G1–G4 in
-`NEW_INDICES.md` §3).
-
-- [ ] **Apparent Temperature (radiation form)** — `calculate_apparent_temperature_radiation`
-      (Steadman 1994 / BoM). Gate status: ready. Spec §5.1.
-- [ ] **Relative Strain Index** — `calculate_relative_strain_index`
-      (Lee & Henschel; peer-reviewed hPa form). Gate status: ready. Spec §5.2.
-- [ ] **Summer Simmer Index** — `calculate_summer_simmer_index` (Pepi 1987).
-      Gate status: conditional on provenance (analytic THI gate). Spec §5.3.
-- [ ] **PMV / PPD** — `calculate_pmv`, `calculate_ppd` (ISO 7730:2005). Gate
-      status: ready; richest validation table. Spec §5.4.
-  PET (`calculate_pet`) was assessed for this batch but is **deferred to
-  `IDEAS.md`** (not citable from open sources; no published reference values) —
-  see `NEW_INDICES.md` §5.5/§6.
-
 ## Robustness
 
 - The first numerical-robustness hardening pass is **done** (see
