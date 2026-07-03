@@ -15,7 +15,7 @@ maintained by ECMWF (European Centre for Medium-Range Weather Forecasts).
 - Normal Effective Temperature
 - Relative Strain Index
 - Universal Thermal Climate Index
-- Predicted Mean Vote and Predicted Percentage Dissatisfied (PMV/PPD)
+- Predicted Mean Vote and Predicted Percentage of Dissatisfied (PMV/PPD)
 - Wet Bulb Globe Temperature
 - Wet Bulb Globe Temperature (Liljegren method)
 - Heat Force (KNMI 0–10 heat-stress scale)
