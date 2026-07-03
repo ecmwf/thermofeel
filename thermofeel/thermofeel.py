@@ -986,6 +986,46 @@ def calculate_apparent_temperature(
     return at_k
 
 
+def calculate_apparent_temperature_radiation(
+    t2_k: ArrayLike, va: ArrayLike, rh: ArrayLike, q: ArrayLike
+) -> np.ndarray:
+    """
+    Apparent Temperature - version including radiation
+        :param t2_k: (float array) 2m temperature [K]
+        :param va: (float array) wind speed at 10 meters [m/s]
+        :param rh: (float array) relative humidity percentage [%]
+        :param q: (float array) net radiation absorbed per unit body-surface
+            area [W m-2]
+        returns apparent temperature [K]
+
+    The radiation-inclusive form of Steadman's apparent temperature, as
+    published operationally by the Australian Bureau of Meteorology:
+    ``AT = Ta + 0.348*e - 0.70*va + 0.70*q/(va + 10) - 4.25`` (Ta in degC),
+    with ``e`` the ambient water-vapour pressure in hPa. It shares the vapour
+    path of ``calculate_apparent_temperature`` via
+    ``calculate_nonsaturation_vapour_pressure`` (whose constants match BoM's
+    ``e = (rh/100)*6.105*exp(17.27*Ta/(237.7+Ta))``).
+
+    ``q`` is the net radiation absorbed per unit area of body surface. It is a
+    caller-supplied input (like ``cossza``), NOT an NWP surface flux and NOT the
+    mean radiant temperature; callers must supply their own ``q``.
+
+    Validity: an empirical estimate without sharply defined input bounds; the
+    result is not clamped.
+
+    Reference: Steadman, R.G. (1994) Norms of apparent temperature in Australia,
+    Aust. Met. Mag. 43:1-16.
+    https://doi.org/10.1071/es94001
+    See also: http://www.bom.gov.au/info/thermal_stress/#atapproximation
+    """
+    t2_c = kelvin_to_celsius(t2_k)
+    e = calculate_nonsaturation_vapour_pressure(t2_k, rh)
+    at = t2_c + 0.348 * e - 0.70 * va + 0.70 * q / (va + 10) - 4.25
+    at_k = celsius_to_kelvin(at)
+
+    return at_k
+
+
 def calculate_wind_chill(t2_k: ArrayLike, va: ArrayLike) -> np.ndarray:
     """
     Wind Chill

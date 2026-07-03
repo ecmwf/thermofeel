@@ -234,6 +234,89 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"at {at}")
         assert at == pytest.approx(299.86678322384626, abs=1e-6)
 
+    def test_apparent_temperature_radiation(self):
+        # Steadman (1994) / BoM radiation-inclusive Apparent Temperature:
+        #   AT = Ta + 0.348*e - 0.70*va + 0.70*q/(va + 10) - 4.25   [Ta in degC]
+        # with e the ambient vapour pressure (hPa) from the BoM approximation
+        #   e = (rh/100)*6.105*exp(17.27*Ta/(237.7 + Ta)).
+        # Each row's e and AT are hand-derived from those formulae (arithmetic
+        # shown) and pinned as Kelvin literals; the function is never used to
+        # generate its own expected value (no self-fulfilment).
+        #
+        # Row A: Ta=30, rh=50, va=2, q=100
+        #   e       = 0.50*6.105*exp(17.27*30/267.7)   = 21.1435807 hPa
+        #   0.348*e = 7.3579661 ; 0.70*va = 1.40 ; 0.70*100/12 = 5.8333333
+        #   AT_c    = 30 + 7.3579661 - 1.40 + 5.8333333 - 4.25 = 37.5412994
+        #   AT_K    = 310.6912994
+        # Row B: Ta=35, rh=60, va=5, q=200
+        #   e       = 0.60*6.105*exp(17.27*35/272.7)   = 33.6099046 hPa
+        #   0.348*e = 11.6962468 ; 0.70*va = 3.50 ; 0.70*200/15 = 9.3333333
+        #   AT_c    = 35 + 11.6962468 - 3.50 + 9.3333333 - 4.25 = 48.2795801
+        #   AT_K    = 321.4295801
+        # Row C: Ta=25, rh=40, va=0.5, q=0  (q=0 -> radiation term vanishes)
+        #   e       = 0.40*6.105*exp(17.27*25/262.7)   = 12.6331850 hPa
+        #   0.348*e = 4.3963484 ; 0.70*va = 0.35 ; qterm = 0
+        #   AT_c    = 25 + 4.3963484 - 0.35 + 0 - 4.25 = 24.7963484
+        #   AT_K    = 297.9463484
+        # Row D: Ta=20, rh=80, va=3, q=300
+        #   e       = 0.80*6.105*exp(17.27*20/257.7)   = 18.6581445 hPa
+        #   0.348*e = 6.4930343 ; 0.70*va = 2.10 ; 0.70*300/13 = 16.1538462
+        #   AT_c    = 20 + 6.4930343 - 2.10 + 16.1538462 - 4.25 = 36.2968805
+        #   AT_K    = 309.4468805
+        # Row E: Ta=40, rh=30, va=1, q=150
+        #   e       = 0.30*6.105*exp(17.27*40/277.7)   = 22.0367568 hPa
+        #   0.348*e = 7.6687914 ; 0.70*va = 0.70 ; 0.70*150/11 = 9.5454545
+        #   AT_c    = 40 + 7.6687914 - 0.70 + 9.5454545 - 4.25 = 52.2642459
+        #   AT_K    = 325.4142459
+        cases = [
+            (30.0, 50.0, 2.0, 100.0, 310.6912994),
+            (35.0, 60.0, 5.0, 200.0, 321.4295801),
+            (25.0, 40.0, 0.5, 0.0, 297.9463484),
+            (20.0, 80.0, 3.0, 300.0, 309.4468805),
+            (40.0, 30.0, 1.0, 150.0, 325.4142459),
+        ]
+        for t_c, rh_pc, va_ms, q_wm2, expected_k in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            va = np.array([va_ms])
+            rh = np.array([rh_pc])
+            q = np.array([q_wm2])
+            at = tmf.calculate_apparent_temperature_radiation(t2_k, va, rh, q)
+            assert at[0] == pytest.approx(expected_k, abs=1e-2)
+
+        # Vapour-path check (breaks circularity): assert the shared helper
+        # returns the hand-computed e for Row A independently of the AT value.
+        #   e = 0.50*6.105*exp(17.27*30/267.7) = 21.1435807 hPa
+        e_row_a = tmf.calculate_nonsaturation_vapour_pressure(
+            np.array([tmf.celsius_to_kelvin(30.0)]), np.array([50.0])
+        )
+        assert e_row_a[0] == pytest.approx(21.1435807, abs=1e-6)
+
+        # External anchor (independent MIT oracle, verified in Sprint 0):
+        #   Ta=23 degC (296.15 K), rh=70%, va=1, q=50 -> AT ~ 28.1 degC (301.25 K).
+        # Re-derived from the BoM formula:
+        #   e       = 0.70*6.105*exp(17.27*23/260.7) = 19.6104356 hPa
+        #   0.348*e = 6.8244316 ; 0.70*va = 0.70 ; 0.70*50/11 = 3.1818182
+        #   AT_c    = 23 + 6.8244316 - 0.70 + 3.1818182 - 4.25 = 28.0562498
+        #   AT_K    = 301.2062498  (within 0.044 K of the 301.25 K anchor).
+        at_anchor = tmf.calculate_apparent_temperature_radiation(
+            np.array([296.15]), np.array([1.0]), np.array([70.0]), np.array([50.0])
+        )
+        assert at_anchor[0] == pytest.approx(301.25, abs=0.1)
+
+        # Analytic identity (G2): at q=0 the radiation form differs from the
+        # non-radiation calculate_apparent_temperature only by its own constants,
+        #   AT_radiation - AT = (0.348 - 0.33)*e - (4.25 - 4.0) = 0.018*e - 0.25,
+        # elementwise (the -0.70*va terms cancel; the q term is 0). Encoded
+        # against the shipped non-radiation function.
+        t2_k = np.array([tmf.celsius_to_kelvin(c) for c in (18.0, 27.0, 33.0, 41.0)])
+        va = np.array([0.5, 2.0, 4.0, 6.0])
+        rh = np.array([35.0, 55.0, 75.0, 95.0])
+        q0 = np.zeros_like(t2_k)
+        at_rad0 = tmf.calculate_apparent_temperature_radiation(t2_k, va, rh, q0)
+        at_plain = tmf.calculate_apparent_temperature(t2_k, va, rh)
+        e = tmf.calculate_nonsaturation_vapour_pressure(t2_k, rh)
+        np.testing.assert_allclose(at_rad0 - at_plain, 0.018 * e - 0.25, atol=1e-9)
+
     def test_wind_chill(self):
         t2_k = np.array([270])
         va = np.array([10])
