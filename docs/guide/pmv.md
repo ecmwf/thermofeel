@@ -21,7 +21,7 @@ relative humidity in percent (`rh`) or the water-vapour pressure in hPa
 clothing insulation (`clo`), and any external work (`wme`).
 
 ```python
-calculate_pmv(
+pmv = calculate_pmv(
     2m_temperature,          # K
     mean_radiant_temperature,  # K
     relative_air_velocity,   # m/s, at the body (see note below)
