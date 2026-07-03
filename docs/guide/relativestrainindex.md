@@ -52,10 +52,10 @@ taken from Asghari et al. (2020), which states the formula with units and was
 read directly from the open-access source. The same thresholds
 (0.15 / 0.25 / 0.35 / 0.45) recur in the Romanian bioclimatology literature
 (Ciulache 2006; Ionac & Ciulache 2008). Some secondary sources attribute the
-level table to "Błażejczyk 2011"; that attribution could not be reconciled with a
-Błażejczyk 2011 publication that actually tabulates RSI (the 2011 *Miscellanea
-Geographica* paper under that citation defines the unrelated Bioclimatic Contrast
-Index), so this guide cites the verified Asghari (2020) tabulation instead.
+level table to "Błażejczyk 2011", but no Błażejczyk 2011 publication tabulating
+RSI could be found under that citation — the 2011 *Miscellanea Geographica* paper
+cited defines the unrelated Bioclimatic Contrast Index — so this guide cites the
+verified Asghari (2020) tabulation instead.
 
 A second, different closed form appears in the literature,
 `(10.7 + 0.74·(Ta − 35)) / (44 − Pa)`, where `Pa` is expressed in another unit
