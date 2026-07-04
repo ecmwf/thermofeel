@@ -13,8 +13,8 @@
   review Epstein & Moran (2006, https://doi.org/10.2486/indhealth.44.388), which
   uses a different wet-bulb formulation.
 - Added a batch of new thermal indices (all vectorised, SI in/out, each cited
-  and validated against published/independent references; see
-  `plans/NEW_INDICES.md`):
+  and validated against published/independent references; see the per-index
+  guide pages under `docs/guide/`):
   - `calculate_apparent_temperature_radiation`: the radiation-inclusive
     Steadman/BoM Apparent Temperature from 2 m temperature, 10 m wind, relative
     humidity and a caller-supplied body-absorbed net radiation `q`

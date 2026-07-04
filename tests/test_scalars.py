@@ -395,6 +395,11 @@ class TestThermalCalculator(unittest.TestCase):
         )
         assert at_anchor[0] == pytest.approx(301.25, abs=0.1)
 
+        # NB: a second dossier oracle value (Ta=25 degC, rh=30%, va=0.1, q=100
+        # -> 25.3 degC) does NOT reconcile with the BoM formula (hand-calc gives
+        # ~30.9 degC); it traces to a different tool/convention and is
+        # deliberately not pinned here.
+
         # Analytic identity (G2): at q=0 the radiation form differs from the
         # non-radiation calculate_apparent_temperature only by its own constants,
         #   AT_radiation - AT = (0.348 - 0.33)*e - (4.25 - 4.0) = 0.018*e - 0.25,
