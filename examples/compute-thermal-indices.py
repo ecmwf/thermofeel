@@ -6,654 +6,997 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-# Note: This script is intended only as example usage of thermofeel library.
-#       It is designed to be used with ECMWF forecast data.
-#       The function ifs_step_intervals() is used to calculate the time interval based on the forecast step.
-#       This is particular to the IFS model and ECMWF's NWP operational system.
+"""Compute thermofeel thermal-comfort indices from ECMWF forecast fields.
+
+This example modernises the original raw-``eccodes`` script to the **earthkit
+1.0** stack (``earthkit-data`` + ``earthkit-meteo``). It fetches ECMWF surface
+forecast fields from one of four selectable sources, computes thermofeel
+indices with vectorised NumPy, and writes the results to NetCDF and/or GRIB via
+``earthkit-data``.
+
+Sources (``--source``)
+----------------------
+opendata  ECMWF open data (no authentication, ``ecmwf-open-data``). The latest
+          run is auto-selected. Open data does **not** include direct solar
+          radiation (``fdir``), so the radiation indices (MRT / UTCI / WBGT /
+          BGT / PMV) are skipped -- unless ``--approximate-fdir`` is given,
+          which estimates ``fdir`` from ``ssrd`` via the Erbs decomposition
+          (a demonstration approximation, not validation-grade).
+file      A local GRIB file (``--input PATH``); the full index set is computed
+          when ``fdir`` is present.
+polytope  ECMWF Polytope (needs ``polytope-client`` + a Polytope key).
+mars      ECMWF MARS (needs ``ecmwf-api-client`` + ``~/.ecmwfapirc``).
+
+Unit contract (thermofeel is SI in / SI out)
+--------------------------------------------
+Temperatures are in kelvin, wind speed in m/s, relative humidity in %, radiation
+fluxes in W/m^2. thermofeel returns kelvin for every temperature-like index.
+
+Radiation accumulation simplification
+-------------------------------------
+ECMWF surface radiation fields (``ssrd``, ``ssr``, ``strd``, ``str``, ``fdir``)
+are **accumulated** from the start of the forecast (J/m^2). This example
+converts them to a step-mean flux (W/m^2) by dividing by ``step * 3600`` seconds
+and, consistently, uses the step-mean cosine of the solar zenith angle
+(``earthkit.meteo.solar.cos_solar_zenith_angle_integrated`` returns the *mean*
+over the interval in earthkit-meteo 1.0). This ignores the finer IFS
+accumulation-interval structure and is a deliberate simplification for the
+example. Radiation indices are skipped at step 0 (the window would be zero).
+"""
 
 import argparse
-import math
+import importlib.util
+import os
 import sys
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from typing import Callable, Optional
 
-import eccodes
+import earthkit.data as ekd
 import numpy as np
-from earthkit.meteo import solar
+from earthkit.meteo import solar, wind
 
-import thermofeel as thermofeel
-
-UTCI_MIN_VALUE = thermofeel.celsius_to_kelvin(-80)
-UTCI_MAX_VALUE = thermofeel.celsius_to_kelvin(90)
-MISSING_VALUE = -9999.0
+import thermofeel as tf
 
 ###########################################################################################################
+# Input fields requested from each source.
+#
+# Open data exposes fields by short name and does NOT include ``fdir``.
+OPENDATA_PARAMS = ["2t", "2d", "10u", "10v", "sp", "ssrd", "ssr", "strd", "str"]
+# MARS / Polytope are requested by paramId; 228021 == fdir (direct solar
+# radiation), which is what unlocks the radiation indices.
+#   167=2t 168=2d 165=10u 166=10v 134=sp 169=ssrd 176=ssr 175=strd 177=str
+MARS_PARAMS = "167/168/165/166/134/169/176/175/177/228021"
 
-lats = None
-lons = None
-
-results = {}
-misses = {}
+# GRIB2 local-use ranges (192-254 per WMO) used to encode the experimental
+# indices that have no WMO paramId. They round-trip as an ECMWF-local parameter
+# (paramId reads back as 0 / "unknown"); the nominal private paramId documented
+# alongside each index (261101...) is for human reference only.
+LOCAL_DISCIPLINE = 192
+LOCAL_CATEGORY = 192
+LOCAL_NUMBER_BASE = 191  # parameterNumber = LOCAL_NUMBER_BASE + local_number
+NOMINAL_PRIVATE_PARAMID_BASE = 261100  # nominal paramId = base + local_number
 
 ###########################################################################################################
 
 
 def field_stats(name, values):
-    if name in misses:
-        values[misses[name]] = np.nan
-
+    """Print min/max/mean/std/NaN-count for a field (kept from the original)."""
+    values = np.asarray(values, dtype=float)
+    n_nan = int(np.count_nonzero(np.isnan(values)))
+    if values.size == n_nan:
+        print(f"  {name:34s} all NaN ({values.size} points)")
+        return
     print(
-        f"{name} min {np.nanmin(values)} max {np.nanmax(values)} "
-        f"avg {np.nanmean(values)} stddev {np.nanstd(values, dtype=np.float64)} "
-        f"missing {np.count_nonzero(np.isnan(values))}"
+        f"  {name:34s} "
+        f"min {np.nanmin(values):+10.3f}  max {np.nanmax(values):+10.3f}  "
+        f"mean {np.nanmean(values):+10.3f}  "
+        f"std {np.nanstd(values, dtype=np.float64):8.3f}  nan {n_nan}"
     )
 
-    if name in misses:
-        values[misses[name]] = MISSING_VALUE
+
+def banner(lines):
+    """Print a prominent boxed warning/notice block."""
+    width = max(len(line) for line in lines)
+    bar = "!" * (width + 6)
+    print(bar)
+    for line in lines:
+        print(f"!! {line.ljust(width)} !!")
+    print(bar)
 
 
 ###########################################################################################################
+# fdir approximation (Erbs et al. 1982) -- demonstration only.
 
 
-def decode_grib(fpath):
-    print(f"decoding file {fpath}")
+def approximate_fdir_erbs(ssrd_wm2, cossza, solar_constant=1361.0, min_cossza=0.065):
+    """Approximate direct horizontal solar radiation (ECMWF fdir) from global
+    horizontal ssrd and cos(zenith) via the Erbs et al. (1982) decomposition.
+    Demonstration approximation only. Inputs/output in W/m^2.
 
-    prev_step = None
-    prev_number = None
+    The Erbs correlation splits global horizontal irradiance into its direct and
+    diffuse parts using the hourly clearness index kt = GHI / TOA. It is an
+    instantaneous/hourly empirical fit; applying it to step-mean fluxes and a
+    step-mean cosine of the zenith angle is a further simplification.
 
-    msgcount = 0
-    messages = {}
-
-    with open(fpath, "rb") as f:
-        while True:
-            msg = eccodes.codes_any_new_from_file(f)
-
-            if msg is None:  # end of file, stop iterating
-                # print(f"yielding {len(messages)} messages")
-                yield messages
-                for k, m in messages.items():
-                    grib = m["grib"]
-                    eccodes.codes_release(grib)
-                messages = {}
-                break
-
-            md = dict()
-            msgcount += 1
-
-            # loop metadata key-values
-            it = eccodes.codes_keys_iterator_new(msg, "mars")
-            while eccodes.codes_keys_iterator_next(it):
-                k = eccodes.codes_keys_iterator_get_name(it)
-                v = eccodes.codes_get_string(msg, k)
-                md[k] = v
-            eccodes.codes_keys_iterator_delete(it)
-
-            # change types
-            step = int(md["step"])
-            number = md.get("number", None)
-
-            # on new step or number, return/yield group of messages accumulated so far
-            # and ensure proper cleanup of memory
-
-            stop = (prev_step is not None and step != prev_step) or (
-                prev_number is not None and number != prev_number
-            )
-
-            if stop:
-                # print(f"yielding {len(messages)} messages")
-                yield messages
-                for k, m in messages.items():
-                    grib = m["grib"]
-                    eccodes.codes_release(grib)
-                messages = {}
-
-            prev_number = number
-            prev_step = step
-
-            # print(f"message {msgcount} mars metadata: {md}")
-
-            # aggregate messages on step, number, assuming they are contiguous
-
-            md["paramId"] = eccodes.codes_get_string(msg, "paramId")
-            md["shortName"] = eccodes.codes_get_string(msg, "shortName")
-
-            md["Ni"] = eccodes.codes_get_long(msg, "Ni")
-            md["Nj"] = eccodes.codes_get_long(msg, "Nj")
-
-            md["time"] = eccodes.codes_get_long(msg, "time")
-            md["date"] = eccodes.codes_get_string(msg, "date")
-            md["step"] = step
-
-            sname = md["shortName"]
-
-            # print(f"message {msgcount} step {step} number {number} param {sname}")
-
-            ldate = eccodes.codes_get_long(msg, "date")
-            yyyy = math.floor(ldate / 10000)
-            mm = math.floor((ldate - (yyyy * 10000)) / 100)
-            dd = ldate - (yyyy * 10000) - mm * 100
-
-            md["base_datetime"] = datetime(yyyy, mm, dd, tzinfo=timezone.utc)
-
-            forecast_datetime = (
-                datetime(yyyy, mm, dd, tzinfo=timezone.utc)
-                + timedelta(minutes=60 * md["time"] / 100)
-                + timedelta(minutes=60 * md["step"])
-            )
-
-            md["forecast_datetime"] = forecast_datetime
-
-            # decode data
-            # get the lats, lons, values
-            # md["lats"] = eccodes.codes_get_double_array(msg, "latitudes")
-            # print(lats)
-            # md["lons"] = eccodes.codes_get_double_array(msg, "longitudes")
-            # print(lons)
-            global lats
-            if lats is None:
-                lats = eccodes.codes_get_double_array(msg, "latitudes")
-            global lons
-            if lons is None:
-                lons = eccodes.codes_get_double_array(msg, "longitudes")
-
-            md["values"] = eccodes.codes_get_double_array(msg, "values")
-            # print(values)
-
-            md["grib"] = msg  # keep grib open
-
-            # assert sname not in messages
-
-            messages[sname] = md
-
-    f.close()
+    Reference: Erbs, Klein & Duffie (1982), Solar Energy 28(4):293-302,
+    https://doi.org/10.1016/0038-092X(82)90302-4
+    """
+    ssrd_wm2, cossza = np.broadcast_arrays(
+        np.asarray(ssrd_wm2, float), np.asarray(cossza, float)
+    )
+    day = (cossza > min_cossza) & (ssrd_wm2 > 0)
+    toa = solar_constant * np.maximum(cossza, min_cossza)
+    kt = np.clip(np.where(day, ssrd_wm2 / toa, 0.0), 0.0, 1.0)
+    kd = np.where(
+        kt <= 0.22,
+        1.0 - 0.09 * kt,
+        np.where(
+            kt <= 0.80,
+            0.9511 - 0.1604 * kt + 4.388 * kt**2 - 16.638 * kt**3 + 12.336 * kt**4,
+            0.165,
+        ),
+    )
+    fdir = np.where(day, ssrd_wm2 * (1.0 - kd), 0.0)
+    return np.clip(fdir, 0.0, ssrd_wm2)
 
 
 ###########################################################################################################
+# Computation context: raw fields + cached derived building blocks.
 
 
-def calc_cossza_int(messages):
-    # Solar geometry is no longer computed inside thermofeel (removed in 2.0);
-    # the caller supplies the cosine of the solar zenith angle. Here we use
-    # earthkit-meteo to integrate it over the forecast step's time window.
-    dt = messages["2t"]["base_datetime"]
-    time, step, begin, end = timestep_interval(messages)
+class Env:
+    """Holds the decoded input fields and derives (and caches) the shared
+    building blocks (wind speed, relative humidity, cossza, MRT, ...)."""
 
-    begin_date = dt + timedelta(hours=begin)
-    end_date = dt + timedelta(hours=end)
+    def __init__(
+        self, fields, template, lat, lon, base_time, valid_time, step, approximate_fdir
+    ):
+        self._f = fields  # shortName -> 2D ndarray of values
+        self.template = template  # a source Field, reused as GRIB clone template
+        self.lat = lat
+        self.lon = lon
+        self.base_time = base_time
+        self.valid_time = valid_time
+        self.step = int(step)
+        self.approximate_fdir = approximate_fdir
+        self._cache = {}
+        self.t2 = fields["2t"]
+        self.td = fields["2d"]
+        self.u10 = fields.get("10u")
+        self.v10 = fields.get("10v")
 
-    cossza = solar.cos_solar_zenith_angle_integrated(
-        begin_date=begin_date,
-        end_date=end_date,
-        latitudes=lats,
-        longitudes=lons,
-        integration_order=2,
+    def has(self, name):
+        return name in self._f
+
+    def get(self, name):
+        return self._f[name]
+
+    def _cached(self, key, fn):
+        if key not in self._cache:
+            self._cache[key] = fn()
+        return self._cache[key]
+
+    # --- derived building blocks -------------------------------------------
+    def ws(self):
+        return self._cached("ws", lambda: wind.speed(self.u10, self.v10))
+
+    def rh(self):
+        return self._cached(
+            "rh", lambda: tf.calculate_relative_humidity_percent(self.t2, self.td)
+        )
+
+    def cossza(self):
+        # Step-mean cosine of the solar zenith angle over [base_time, valid_time]
+        # (earthkit-meteo 1.0 returns the interval MEAN in [0, 1]).
+        return self._cached(
+            "cossza",
+            lambda: solar.cos_solar_zenith_angle_integrated(
+                self.base_time, self.valid_time, self.lat, self.lon
+            ),
+        )
+
+    def mean_flux(self, name):
+        """Accumulated J/m^2 -> step-mean flux W/m^2 (see module docstring)."""
+        return self.get(name) / (self.step * 3600.0)
+
+    def fdir_flux(self):
+        def _f():
+            if self.has("fdir"):
+                return self.mean_flux("fdir")
+            # Estimate fdir from ssrd + cossza (Erbs). Guarded by the caller so
+            # this only runs when --approximate-fdir was requested.
+            return approximate_fdir_erbs(self.mean_flux("ssrd"), self.cossza())
+
+        return self._cached("fdir_flux", _f)
+
+    def dsrp(self):
+        # Direct solar radiation perpendicular to the beam, approximated from
+        # fdir and cossza (thermofeel helper); no dsrp field is requested.
+        return self._cached(
+            "dsrp", lambda: tf.approximate_dsrp(self.fdir_flux(), self.cossza())
+        )
+
+    def mrt(self):
+        def _f():
+            return tf.calculate_mean_radiant_temperature(
+                self.mean_flux("ssrd"),
+                self.mean_flux("ssr"),
+                self.dsrp(),
+                self.mean_flux("strd"),
+                self.fdir_flux(),
+                self.mean_flux("str"),
+                self.cossza(),
+            )
+
+        return self._cached("mrt", _f)
+
+    def pmv(self):
+        return self._cached(
+            "pmv",
+            lambda: tf.calculate_pmv(
+                self.t2, self.mrt(), self.pmv_air_velocity(), rh=self.rh()
+            ),
+        )
+
+    def pmv_air_velocity(self):
+        # PMV wants the relative air velocity felt at the body, NOT the 10 m
+        # meteorological wind. There is no such NWP field, so the 10 m wind speed
+        # is used here as a coarse outdoor demonstration proxy.
+        return self.ws()
+
+    def body_net_radiation(self):
+        # Steadman's radiation apparent-temperature wants the net radiation
+        # absorbed per unit body-surface area (a caller-supplied quantity). Here
+        # we demonstrate with the surface net all-wave flux (ssr + str), which is
+        # only a rough proxy for the body-scale term.
+        return self.mean_flux("ssr") + self.mean_flux("str")
+
+
+###########################################################################################################
+# Index compute functions. Each takes an Env and returns a NumPy array.
+
+
+def _relative_humidity(env):
+    return tf.calculate_relative_humidity_percent(env.t2, env.td)
+
+
+def _heat_index(env):
+    return tf.calculate_heat_index_adjusted(env.t2, env.td)
+
+
+def _heat_index_simplified(env):
+    return tf.calculate_heat_index_simplified(env.t2, env.rh())
+
+
+def _humidex(env):
+    return tf.calculate_humidex(env.t2, env.td)
+
+
+def _apparent_temperature(env):
+    return tf.calculate_apparent_temperature(env.t2, env.ws(), env.rh())
+
+
+def _wind_chill(env):
+    return tf.calculate_wind_chill(env.t2, env.ws())
+
+
+def _normal_effective_temperature(env):
+    return tf.calculate_normal_effective_temperature(env.t2, env.ws(), env.rh())
+
+
+def _discomfort_index(env):
+    return tf.calculate_discomfort_index(env.t2, env.rh())
+
+
+def _summer_simmer_index(env):
+    return tf.calculate_summer_simmer_index(env.t2, env.rh())
+
+
+def _relative_strain_index(env):
+    return tf.calculate_relative_strain_index(env.t2, env.rh())
+
+
+def _cossza(env):
+    return env.cossza()
+
+
+def _mean_radiant_temperature(env):
+    return env.mrt()
+
+
+def _utci(env):
+    return tf.calculate_utci(t2_k=env.t2, va=env.ws(), mrt=env.mrt(), td_k=env.td)
+
+
+def _wet_bulb_temperature(env):
+    return tf.calculate_wbt(env.t2, env.rh())
+
+
+def _globe_temperature(env):
+    return tf.calculate_bgt(env.t2, env.mrt(), env.ws())
+
+
+def _wbgt(env):
+    return tf.calculate_wbgt(env.t2, env.mrt(), env.ws(), env.td)
+
+
+def _apparent_temperature_radiation(env):
+    return tf.calculate_apparent_temperature_radiation(
+        env.t2, env.ws(), env.rh(), env.body_net_radiation()
     )
 
-    return cossza
+
+def _pmv(env):
+    return env.pmv()
 
 
-def approximate_dsrp(messages):
+def _ppd(env):
+    return tf.calculate_ppd(env.pmv())
+
+
+###########################################################################################################
+# Index registry.
+#
+# category:  "basic"      -> needs only 2t/2d/10u/10v (computed for every source)
+#            "radiation"  -> needs the surface radiation fluxes (+ fdir, exact or
+#                            Erbs-approximated); skipped without radiation / at
+#                            step 0. Wet-bulb temperature is grouped here with the
+#                            WBGT family so plain open-data output matches the
+#                            documented non-radiation set.
+# GRIB code: ``paramid`` set  -> WMO/ECMWF paramId, clean encoding.
+#            ``local_number`` -> experimental local GRIB2 code (see constants).
+
+
+@dataclass(frozen=True)
+class IndexSpec:
+    key: str  # internal id + NetCDF variable name
+    long_name: str
+    units: str
+    category: str
+    compute: Callable
+    paramid: Optional[int] = None
+    local_number: Optional[int] = None
+
+    @property
+    def cli(self):
+        return "--" + self.key.replace("_", "-")
+
+    @property
+    def dest(self):
+        return self.key
+
+    @property
+    def experimental(self):
+        return self.paramid is None
+
+    @property
+    def parameter_number(self):
+        return (
+            None if self.local_number is None else LOCAL_NUMBER_BASE + self.local_number
+        )
+
+    @property
+    def nominal_paramid(self):
+        if self.local_number is None:
+            return None
+        return NOMINAL_PRIVATE_PARAMID_BASE + self.local_number
+
+
+INDEX_SPECS = [
+    # --- basic (non-radiation) indices -------------------------------------
+    IndexSpec(
+        "relative_humidity",
+        "Relative humidity",
+        "%",
+        "basic",
+        _relative_humidity,
+        paramid=260242,
+    ),
+    IndexSpec(
+        "heat_index", "Heat index (adjusted)", "K", "basic", _heat_index, paramid=260004
+    ),
+    IndexSpec(
+        "heat_index_simplified",
+        "Heat index (simplified)",
+        "K",
+        "basic",
+        _heat_index_simplified,
+        local_number=1,
+    ),
+    IndexSpec("humidex", "Humidex", "K", "basic", _humidex, paramid=261016),
+    IndexSpec(
+        "apparent_temperature",
+        "Apparent temperature",
+        "K",
+        "basic",
+        _apparent_temperature,
+        paramid=260255,
+    ),
+    IndexSpec("wind_chill", "Wind chill", "K", "basic", _wind_chill, paramid=260005),
+    IndexSpec(
+        "normal_effective_temperature",
+        "Normal effective temperature",
+        "K",
+        "basic",
+        _normal_effective_temperature,
+        paramid=261018,
+    ),
+    IndexSpec(
+        "discomfort_index",
+        "Discomfort index (Thom)",
+        "K",
+        "basic",
+        _discomfort_index,
+        local_number=2,
+    ),
+    IndexSpec(
+        "summer_simmer_index",
+        "Summer simmer index",
+        "K",
+        "basic",
+        _summer_simmer_index,
+        local_number=3,
+    ),
+    IndexSpec(
+        "relative_strain_index",
+        "Relative strain index",
+        "1",
+        "basic",
+        _relative_strain_index,
+        local_number=4,
+    ),
+    # --- radiation-dependent indices ---------------------------------------
+    IndexSpec(
+        "cossza",
+        "Cosine of solar zenith angle (step mean)",
+        "1",
+        "radiation",
+        _cossza,
+        paramid=214001,
+    ),
+    IndexSpec(
+        "mean_radiant_temperature",
+        "Mean radiant temperature",
+        "K",
+        "radiation",
+        _mean_radiant_temperature,
+        paramid=261002,
+    ),
+    IndexSpec(
+        "utci",
+        "Universal Thermal Climate Index",
+        "K",
+        "radiation",
+        _utci,
+        paramid=261001,
+    ),
+    IndexSpec(
+        "wet_bulb_temperature",
+        "Wet-bulb temperature",
+        "K",
+        "radiation",
+        _wet_bulb_temperature,
+        paramid=261022,
+    ),
+    IndexSpec(
+        "globe_temperature",
+        "Globe temperature",
+        "K",
+        "radiation",
+        _globe_temperature,
+        paramid=261015,
+    ),
+    IndexSpec(
+        "wbgt", "Wet-bulb globe temperature", "K", "radiation", _wbgt, paramid=261014
+    ),
+    IndexSpec(
+        "apparent_temperature_radiation",
+        "Apparent temperature (with radiation)",
+        "K",
+        "radiation",
+        _apparent_temperature_radiation,
+        local_number=5,
+    ),
+    IndexSpec("pmv", "Predicted mean vote", "1", "radiation", _pmv, local_number=6),
+    IndexSpec(
+        "ppd",
+        "Predicted percentage of dissatisfied",
+        "%",
+        "radiation",
+        _ppd,
+        local_number=7,
+    ),
+]
+
+SPECS_BY_KEY = {spec.key: spec for spec in INDEX_SPECS}
+
+
+###########################################################################################################
+# Field decoding / selection.
+
+
+def load_fields(fl, step):
+    """Index a fieldlist by GRIB shortName.
+
+    earthkit-data 1.0's ``FieldList.sel(param=...)`` / ``sel(shortName=...)`` is
+    unreliable across readers, so we index robustly on the ``shortName``
+    metadata. When a file carries several steps, the field matching ``step`` is
+    preferred. Returns ``(values_by_name, field_objs_by_name)``.
     """
-    In the absence of dsrp, approximate it with fdir and cossza.
-    Note this introduces some amount of error as cossza approaches zero
-    """
-    fdir = messages["fdir"]["values"]
-    cossza = calc_field("cossza", calc_cossza_int, messages)
-
-    dsrp = thermofeel.approximate_dsrp(fdir, cossza)
-
-    return dsrp
-
-
-def calc_heatx(messages):
-    t2m = messages["2t"]["values"]
-    td = messages["2d"]["values"]
-
-    heatx = thermofeel.calculate_heat_index_adjusted(t2_k=t2m, td_k=td)
-
-    return heatx
-
-
-def calc_aptmp(messages):
-    t2m = messages["2t"]["values"]
-
-    ws = calc_field("ws", calc_ws, messages)
-    rhp = calc_field("rhp", calc_rhp, messages)
-
-    aptmp = thermofeel.calculate_apparent_temperature(t2_k=t2m, va=ws, rh=rhp)
-
-    return aptmp
-
-
-def calc_humidex(messages):
-    t2m = messages["2t"]["values"]
-    td = messages["2d"]["values"]
-
-    humidex = thermofeel.calculate_humidex(t2_k=t2m, td_k=td)
-
-    return humidex
-
-
-def calc_rhp(messages):
-    t2m = messages["2t"]["values"]
-    td = messages["2d"]["values"]
-
-    rhp = thermofeel.calculate_relative_humidity_percent(t2_k=t2m, td_k=td)
-
-    return rhp
-
-
-def calc_mrt(messages):
-    time, step, begin, end = timestep_interval(messages)
-
-    assert begin < end
-
-    cossza = calc_field("cossza", calc_cossza_int, messages)
-
-    # will use dsrp if available, otherwise approximate it
-    dsrp = calc_field("dsrp", approximate_dsrp, messages)
-
-    seconds_in_time_step = (end - begin) * 3600  # steps are in hours
-
-    f = 1.0 / float(seconds_in_time_step)
-
-    ssrd = messages["ssrd"]["values"]
-    ssr = messages["ssr"]["values"]
-    fdir = messages["fdir"]["values"]
-    dsrp = messages["dsrp"]["values"]
-    strd = messages["strd"]["values"]
-    strr = messages["str"]["values"]
-
-    mrt = thermofeel.calculate_mean_radiant_temperature(
-        ssrd * f, ssr * f, dsrp * f, strd * f, fdir * f, strr * f, cossza * f
-    )
-
-    return mrt
-
-
-def calc_field(name, func, messages):
-    if name in results:
-        return results[name]
-
-    values = func(messages)
-
-    field_stats(name, values)
-    results[name] = values
-
-    return values
-
-
-def calc_ws(messages):
-    u10 = messages["10u"]["values"]
-    v10 = messages["10v"]["values"]
-
-    ws = np.sqrt(u10**2 + v10**2)
-
-    return ws
-
-
-def compute_ehPa_(rh_pc, svp):
-    return svp * rh_pc * 0.01  # / 100.0
-
-
-def compute_ehPa(t2m, t2d):
-    rh_pc = thermofeel.calculate_relative_humidity_percent(t2m, t2d)
-    svp = thermofeel.calculate_saturation_vapour_pressure(t2m)
-    ehPa = compute_ehPa_(rh_pc, svp)
-    return ehPa
-
-
-def compute_utci_in_kelvin(t2m, ws, mrt, ehPa):
-    # calculate_utci already returns Kelvin in the 2.x API.
-    return thermofeel.calculate_utci(t2_k=t2m, va=ws, mrt=mrt, ehPa=ehPa)
-
-
-def filter_utci(t2m, va, mrt, ehPa, utci):
-    e_mrt = np.subtract(mrt, t2m)
-
-    misses = np.where(t2m >= thermofeel.celsius_to_kelvin(70))
-    t = np.where(t2m <= thermofeel.celsius_to_kelvin(-70))
-    misses = np.union1d(t, misses)
-
-    t = np.where(va >= 25.0)  # 90kph
-    misses = np.union1d(t, misses)
-
-    t = np.where(ehPa > 50.0)
-    misses = np.union1d(t, misses)
-
-    t = np.where(e_mrt >= 100.0)
-    misses = np.union1d(t, misses)
-
-    t = np.where(e_mrt <= -30)
-    misses = np.union1d(t, misses)
-
-    return misses
-
-
-def validate_utci(utci, misses):
-    utci[misses] = np.nan
-
-    field_stats("utci", utci)
-
-    out_of_bounds = 0
-    for i in range(len(utci)):
-        v = utci[i]
-        if not np.isnan(v) and (v < UTCI_MIN_VALUE or v > UTCI_MAX_VALUE):
-            out_of_bounds += 1
-            print("UTCI [", i, "] = ", utci[i], " : lat/lon ", lats[i], lons[i])
-
-    nmisses = len(misses)
-    if nmisses > 0 or out_of_bounds > 0:
-        print(f"UTCI => MISS {nmisses} out_of_bounds {out_of_bounds}")
-
-    utci[misses] = MISSING_VALUE
-
-
-def calc_utci(messages):
-    t2m = messages["2t"]["values"]
-    t2d = messages["2d"]["values"]
-
-    ws = calc_field("ws", calc_ws, messages)
-    mrt = calc_field("mrt", calc_mrt, messages)
-
-    ehPa = compute_ehPa(t2m, t2d)
-    utci = compute_utci_in_kelvin(t2m, ws, mrt, ehPa)
-
-    missing = filter_utci(t2m, ws, mrt, ehPa, utci)
-    misses["utci"] = missing
-
-    # validate_utci(utci, missing)
-
-    return utci
-
-
-def calc_wbgt(messages):
-    t2m = messages["2t"]["values"]  # Kelvin
-    t2d = messages["2d"]["values"]
-
-    ws = calc_field("ws", calc_ws, messages)
-    mrt = calc_field("mrt", calc_mrt, messages)
-
-    # calculate_wbgt returns Kelvin in the 2.x API.
-    wbgt = thermofeel.calculate_wbgt(t2m, mrt, ws, t2d)
-
-    return wbgt
-
-
-def calc_bgt(messages):
-    t2m = messages["2t"]["values"]  # Kelvin
-
-    ws = calc_field("ws", calc_ws, messages)
-    mrt = calc_field("mrt", calc_mrt, messages)
-
-    # calculate_bgt returns Kelvin in the 2.x API.
-    bgt = thermofeel.calculate_bgt(t2m, mrt, ws)
-
-    return bgt
-
-
-def calc_wbt(messages):
-    t2m = messages["2t"]["values"]  # Kelvin
-
-    rhp = calc_field("rhp", calc_rhp, messages)
-
-    wbt = thermofeel.calculate_wbt(t2_k=t2m, rh=rhp)
-
-    return wbt
-
-
-def calc_net(messages):
-    t2m = messages["2t"]["values"]  # Kelvin
-
-    ws = calc_field("ws", calc_ws, messages)
-    rhp = calc_field("rhp", calc_rhp, messages)
-
-    # calculate_normal_effective_temperature takes relative humidity (not dew
-    # point) and returns Kelvin in the 2.x API.
-    net = thermofeel.calculate_normal_effective_temperature(t2m, ws, rhp)
-
-    return net
-
-
-def calc_windchill(messages):
-    t2m = messages["2t"]["values"]
-
-    ws = calc_field("ws", calc_ws, messages)
-
-    windchill = thermofeel.calculate_wind_chill(t2m, ws)
-
-    return windchill
-
-
-def check_messages(msgs):
-    assert "2t" in msgs
-    assert "2d" in msgs
-    assert "10u" in msgs
-    assert "10v" in msgs
-    assert "ssrd" in msgs
-    assert "ssr" in msgs
-    assert "fdir" in msgs
-    assert "str" in msgs
-    assert "strd" in msgs
-
-    assert lats.size == lons.size
-
-    ftime = msgs["2t"]["forecast_datetime"]
-
-    for k, m in msgs.items():
-        assert lats.size == m["values"].size
-        assert ftime == m["forecast_datetime"]
-
-
-def output_grib(output, msg, paramid, values, missing=None):
-    """Encode field in GRIB2"""
-    grib = msg["grib"]
-    handle = eccodes.codes_clone(grib)
-    eccodes.codes_set_long(handle, "edition", 2)
-    eccodes.codes_set_string(handle, "paramId", paramid)
-    eccodes.codes_set_values(handle, values)
-    if missing is not None:
-        eccodes.codes_set_double(handle, "missingValue", missing)
-    eccodes.codes_write(handle, output)
-    eccodes.codes_release(handle)
-
-
-def ifs_step_intervals(step):
-    """Computes the time integration interval for the IFS forecasting system given a forecast output step"""
-    # assert step != 0 and step is not None
-
-    # assert step > 0
-    assert step <= 360
-    if step > 0:
-        return step - 3
-    else:
-        return step
-    # if step <= 144:
-    #    assert step % 3 == 0
-    #   return step - 3
-    # else:
-    #    if step <= 360:
-    #        assert step % 6 == 0
-    #        return step - 6
-
-
-def timestep_interval(messages):
-    msg = messages["2t"]
-    step = msg["step"]  # end of the forecast integration
-    time = msg["time"]
-    ftime = int(time / 100)  # forecast time in hours
-    integration_start = ifs_step_intervals(step)  # start of forecast integration step
-    step_begin = ftime + integration_start
-    step_end = ftime + step
-    return time, step, step_begin, step_end
-
-
-def process_step(args, msgs, output):
-    check_messages(msgs)
-
-    # print(f"loaded {len(msgs)} parameters: {list(msgs.keys())}")
-    template = msgs["2t"]
-
-    dt = msgs["2t"]["base_datetime"]
-    time, step, step_begin, step_end = timestep_interval(msgs)
+    values = {}
+    field_objs = {}
+    for f in fl:
+        name = f.metadata("shortName")
+        try:
+            f_step = int(f.metadata("step"))
+        except Exception:
+            f_step = None
+        prefer = f_step == step
+        if name in field_objs and not prefer:
+            continue
+        values[name] = f.to_numpy()
+        field_objs[name] = f
+    return values, field_objs
+
+
+def build_env(fl, args):
+    values, field_objs = load_fields(fl, args.step)
+
+    missing = [p for p in ("2t", "2d") if p not in values]
+    if missing:
+        raise SystemExit(
+            f"ERROR: required field(s) {missing} not found in the source; "
+            f"available: {sorted(values)}"
+        )
+
+    template = field_objs.get("2t", next(iter(field_objs.values())))
+    lat, lon = template.geography.latlons()
+    base_time = template.metadata("base_datetime")
+    valid_time = template.metadata("valid_datetime")
+    step = int(template.metadata("step"))
+
+    print(f"\nDecoded {len(values)} field(s): {', '.join(sorted(values))}")
     print(
-        f"dt {dt.date().isoformat()} time {time} step {step} - [{step_begin},{step_end}]"
+        f"base time {base_time}  step {step} h  valid {valid_time}  "
+        f"grid {lat.shape[0]}x{lat.shape[1]}"
+    )
+    print("\nInput field stats:")
+    for name in sorted(values):
+        field_stats(name, values[name])
+
+    return Env(
+        values, template, lat, lon, base_time, valid_time, step, args.approximate_fdir
     )
 
-    global results
-    global misses
 
+###########################################################################################################
+# Source fetchers.
+
+
+def _require_backend(module, pip_name, source):
+    if importlib.util.find_spec(module) is None:
+        print(
+            f"ERROR: --source {source} needs the optional '{pip_name}' backend, "
+            f"which is not installed.\n"
+            f"       Install it with:  pip install {pip_name}"
+        )
+        return False
+    return True
+
+
+def parse_grid(grid):
+    parts = grid.replace(",", "/").split("/")
+    if len(parts) != 2:
+        raise SystemExit(
+            f"ERROR: --grid expects 'dx/dy' (e.g. 0.25/0.25), got {grid!r}"
+        )
+    return [float(parts[0]), float(parts[1])]
+
+
+def mars_request(args):
+    return {
+        "class": "od",
+        "stream": "oper",
+        "type": "fc",
+        "levtype": "sfc",
+        "date": args.date if args.date else -1,
+        "time": args.time if args.time is not None else "00",
+        "step": str(args.step),
+        "param": MARS_PARAMS,
+        "grid": parse_grid(args.grid),
+    }
+
+
+def fetch_opendata(args):
+    request = dict(
+        type="fc",
+        stream="oper",
+        levtype="sfc",
+        step=args.step,
+        param=OPENDATA_PARAMS,
+    )
+    if args.date:
+        request["date"] = args.date
+    if args.time is not None:
+        request["time"] = args.time
+    print(f"Fetching ECMWF open data (no authentication): {request}")
+    return ekd.from_source("ecmwf-open-data", request=request).to_fieldlist()
+
+
+def fetch_file(args):
+    if not args.input:
+        raise SystemExit("ERROR: --source file requires --input PATH")
+    if not os.path.exists(args.input):
+        raise SystemExit(f"ERROR: input file not found: {args.input}")
+    print(f"Reading GRIB file: {args.input}")
+    return ekd.from_source("file", args.input).to_fieldlist()
+
+
+def fetch_polytope(args):
+    if not _require_backend("polytope", "polytope-client", "polytope"):
+        raise SystemExit(2)
+    request = mars_request(args)
+    print(f"Requesting via ECMWF Polytope (ecmwf-mars): {request}")
+    try:
+        src = ekd.from_source(
+            "polytope",
+            "ecmwf-mars",
+            request=request,
+            stream=False,
+            address="polytope.ecmwf.int",
+        )
+        return src.to_fieldlist()
+    except Exception as exc:
+        print(
+            "ERROR: Polytope request failed. This usually means a missing or "
+            "invalid Polytope key.\n"
+            "       Obtain a key at https://polytope.ecmwf.int and store it in "
+            "~/.polytopeapirc\n"
+            f"       Underlying error: {exc}"
+        )
+        raise SystemExit(2) from exc
+
+
+def fetch_mars(args):
+    if not _require_backend("ecmwfapi", "ecmwf-api-client", "mars"):
+        raise SystemExit(2)
+    request = mars_request(args)
+    print(f"Requesting via ECMWF MARS: {request}")
+    try:
+        return ekd.from_source("mars", request=request).to_fieldlist()
+    except Exception as exc:
+        print(
+            "ERROR: MARS request failed. This usually means missing credentials.\n"
+            "       Create ~/.ecmwfapirc with your API key "
+            "(https://api.ecmwf.int/v1/key/)\n"
+            f"       Underlying error: {exc}"
+        )
+        raise SystemExit(2) from exc
+
+
+SOURCES = {
+    "opendata": fetch_opendata,
+    "file": fetch_file,
+    "polytope": fetch_polytope,
+    "mars": fetch_mars,
+}
+
+
+###########################################################################################################
+# Radiation availability + index selection.
+
+
+def radiation_status(env):
+    """Return (ok, mode, reason) describing whether the radiation indices can be
+    computed for this Env."""
+    if env.step == 0:
+        return False, None, "step 0 (radiation window is zero)"
+    fluxes = ("ssrd", "ssr", "strd", "str")
+    if not all(env.has(n) for n in fluxes):
+        have = [n for n in fluxes if env.has(n)]
+        return False, None, f"missing radiation fluxes (have only {have})"
+    if not (env.has("10u") and env.has("10v")):
+        return False, None, "missing 10 m wind components"
+    if env.has("fdir"):
+        return True, "exact", "fdir present"
+    if env.approximate_fdir:
+        return True, "approx", "fdir estimated from ssrd via Erbs (demonstration)"
+    return False, None, "no fdir in source (rerun with --approximate-fdir to estimate)"
+
+
+def select_specs(args, rad_ok, rad_reason):
+    """Resolve which index specs to compute from the CLI flags and the source's
+    radiation capability."""
+    chosen = [s for s in INDEX_SPECS if getattr(args, s.dest)]
+    explicit = bool(chosen)
+    if not explicit:
+        chosen = list(INDEX_SPECS)  # no flags -> everything possible
+
+    runnable = []
+    for spec in chosen:
+        if spec.category == "radiation" and not rad_ok:
+            if explicit:
+                print(f"  - skipping {spec.key}: radiation unavailable ({rad_reason})")
+            continue
+        runnable.append(spec)
+    return runnable
+
+
+###########################################################################################################
+# Compute + output.
+
+
+def compute_indices(env, specs):
+    print("\nComputed index stats:")
     results = {}
-    misses = {}
-
-    # Windspeed - shortName ws
-    if args.ws:
-        ws = calc_field("ws", calc_ws, msgs)
-        output_grib(output, template, "10", ws)
-
-    # Cosine of Solar Zenith Angle - shortName uvcossza - ECMWF product
-    # TODO: 214001 only exists for GRIB1 -- but here we use it for GRIB2 (waiting for WMO)
-    if args.cossza:
-        cossza = calc_field("cossza", calc_cossza_int, msgs)
-        output_grib(output, template, "214001", cossza)
-
-    # Mean Radiant Temperature - shortName mrt - ECMWF product
-    if args.mrt:
-        mrt = calc_field("mrt", calc_mrt, msgs)
-        output_grib(output, template, "261002", mrt)
-
-    # Univeral Thermal Climate Index - shortName utci - ECMWF product
-    if args.utci:
-        utci = calc_field("utci", calc_utci, msgs)
-        output_grib(output, template, "261001", utci, missing=MISSING_VALUE)
-
-    # Heat Index (adjusted) - shortName heatx - ECMWF product
-    if args.heatx:
-        heatx = calc_field("heatx", calc_heatx, msgs)
-        output_grib(output, template, "260004", heatx)
-
-    # Wind Chill factor - shortName wcf - ECMWF product
-    if args.windchill:
-        windchill = calc_field("windchill", calc_windchill, msgs)
-        output_grib(output, template, "260005", windchill)
-
-    # Apparent Temperature - shortName aptmp - ECMWF product
-    if args.aptmp:
-        aptmp = calc_field("aptmp", calc_aptmp, msgs)
-        output_grib(output, template, "260255", aptmp)
-
-    # Relative humidity percent at 2m - shortName 2r - ECMWF product
-    if args.rhp:
-        rhp = calc_field("rhp", calc_rhp, msgs)
-        output_grib(output, template, "260242", rhp)
-
-    # Humidex - shortName hx - TO BE RELEASED as ECMWF product
-    # TODO: 261016 is experimental GRIB code, update once WMO publishes
-    if args.humidex:
-        humidex = calc_field("hmdx", calc_humidex, msgs)
-        output_grib(output, template, "261016", humidex)
-
-    # Normal Effective Temperature - shortName nefft - TO BE RELEASED as ECMWF product
-    # TODO: 212002 is experimental GRIB code, update once WMO publishes
-    if args.net:
-        net = calc_field("net", calc_net, msgs)
-        output_grib(output, template, "261018", net)
-
-    # Globe Temperature - shortName gt
-    # TODO: 212003 is experimental GRIB code, update once WMO publishes
-    if args.bgt:
-        bgt = calc_field("bgt", calc_bgt, msgs)
-        output_grib(output, template, "261015", bgt)
-
-    # Wet-bulb potential temperature - shortName wbt - TO BE RELEASED as ECMWF product
-    # TODO: 212004 is experimental GRIB code, update once WMO publishes
-    if args.wbt:
-        wbt = calc_field("wbt", calc_wbt, msgs)
-        output_grib(output, template, "261022", wbt)
-
-    # Wet Bulb Globe Temperature - shortName wbgt - TO BE RELEASED as ECMWF product
-    if args.wbgt:  #
-        wbgt = calc_field("wbgt", calc_wbgt, msgs)
-        output_grib(output, template, "261014", wbgt)
-
-    # effective temperature 261017
-    # standard effective temperature 261019
-
-    return step
+    for spec in specs:
+        try:
+            values = np.asarray(spec.compute(env), dtype=float)
+        except Exception as exc:
+            print(f"  ! {spec.key}: computation failed: {exc}")
+            continue
+        results[spec.key] = values
+        field_stats(spec.key, values)
+    return results
 
 
-def command_line_options():
-    parser = argparse.ArgumentParser()
+def _is_regular_latlon(lat, lon):
+    return np.allclose(lat, lat[:, :1]) and np.allclose(lon, lon[:1, :])
 
-    parser.add_argument("input", help="input file with GRIB messages")
-    parser.add_argument("output", help="output file with GRIB messages")
 
-    parser.add_argument(
-        "--ws", help="compute wind speed from components", action="store_true"
+def write_netcdf(results, env, source, path):
+    import xarray as xr
+
+    lat, lon = env.lat, env.lon
+    if _is_regular_latlon(lat, lon):
+        coords = {"latitude": lat[:, 0], "longitude": lon[0, :]}
+        dims = ("latitude", "longitude")
+        data_vars = {
+            key: (
+                dims,
+                vals,
+                {
+                    "long_name": SPECS_BY_KEY[key].long_name,
+                    "units": SPECS_BY_KEY[key].units,
+                },
+            )
+            for key, vals in results.items()
+        }
+    else:
+        # Curvilinear / non-regular grid: store lat/lon as 2D coordinates.
+        coords = {
+            "latitude": (("y", "x"), lat),
+            "longitude": (("y", "x"), lon),
+        }
+        dims = ("y", "x")
+        data_vars = {
+            key: (
+                dims,
+                vals,
+                {
+                    "long_name": SPECS_BY_KEY[key].long_name,
+                    "units": SPECS_BY_KEY[key].units,
+                },
+            )
+            for key, vals in results.items()
+        }
+
+    ds = xr.Dataset(data_vars, coords=coords)
+    ds = ds.assign_coords(time=np.datetime64(env.valid_time))
+    ds.attrs.update(
+        title="thermofeel thermal-comfort indices",
+        institution="ECMWF",
+        source=f"thermofeel {tf.__version__} ({source})",
+        forecast_reference_time=str(env.base_time),
+        valid_time=str(env.valid_time),
+        forecast_step_hours=env.step,
+        comment=(
+            "Radiation accumulations converted to step-mean flux by dividing by "
+            "step*3600 s; see script docstring."
+        ),
+    )
+    ds.to_netcdf(path)
+    print(f"  wrote NetCDF: {path}  ({len(results)} variable(s))")
+
+
+def write_grib(results, env, path):
+    """Encode computed indices to GRIB2 by cloning a source field as template and
+    overriding paramId (WMO codes) or the local GRIB2 octets (experimental
+    codes) plus the data values."""
+    template = env.template
+    fields = []
+    experimental = []
+    for key, values in results.items():
+        spec = SPECS_BY_KEY[key]
+        vals = np.asarray(values, dtype=float)
+        meta = {}
+        if spec.paramid is not None:
+            meta["metadata.paramId"] = spec.paramid
+        else:
+            # Unknown paramIds are rejected by ecCodes' concept database, so
+            # experimental indices are encoded via the GRIB2 local-use octets.
+            meta["metadata.discipline"] = LOCAL_DISCIPLINE
+            meta["metadata.parameterCategory"] = LOCAL_CATEGORY
+            meta["metadata.parameterNumber"] = spec.parameter_number
+            experimental.append(spec)
+        if np.isnan(vals).any():
+            meta["metadata.bitmapPresent"] = 1
+        # set(values=...) keeps the raw metadata valid; the metadata override
+        # then needs sync() to rebuild the raw GRIB message.
+        field = template.set(values=vals).set(meta).sync()
+        fields.append(field)
+
+    ekd.FieldList.from_fields(fields).to_target("file", path)
+    print(f"  wrote GRIB: {path}  ({len(fields)} message(s))")
+
+    if experimental:
+        lines = [
+            "EXPERIMENTAL GRIB CODES - not registered with WMO.",
+            "The following indices have no WMO paramId and were encoded using",
+            "GRIB2 local-use octets (discipline/category/number in 192-254).",
+            "They read back as an ECMWF-local parameter (paramId 0 / unknown):",
+        ]
+        for spec in experimental:
+            lines.append(
+                f"  {spec.key}: local disc={LOCAL_DISCIPLINE} cat={LOCAL_CATEGORY} "
+                f"num={spec.parameter_number} (nominal private paramId "
+                f"{spec.nominal_paramid})"
+            )
+        banner(lines)
+
+
+def resolve_outputs(output, fmt):
+    """Map --output + --output-format to concrete {format: path} targets."""
+    if output is None:
+        return {}
+    root, ext = os.path.splitext(output)
+    if fmt == "both":
+        return {"grib": root + ".grib", "netcdf": root + ".nc"}
+    return {fmt: output}
+
+
+###########################################################################################################
+# CLI.
+
+
+def command_line_options(argv=None):
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "Compute thermofeel thermal-comfort indices from ECMWF forecast "
+            "fields (earthkit 1.0 stack)."
+        ),
+        epilog=(
+            "Index selection: pass one or more --<index> flags to compute a "
+            "subset, or omit them all to compute every index available for the "
+            "chosen source.\n\n"
+            "Examples:\n"
+            "  # open data (no auth): non-radiation indices to NetCDF\n"
+            "  compute-thermal-indices.py --source opendata --step 6 \\\n"
+            "      --output out.nc --output-format netcdf\n\n"
+            "  # open data + Erbs-approximated fdir: adds MRT/UTCI/WBGT\n"
+            "  compute-thermal-indices.py --source opendata --approximate-fdir \\\n"
+            "      --output out.nc\n\n"
+            "  # local GRIB file with fdir: full set to GRIB + NetCDF\n"
+            "  compute-thermal-indices.py --source file --input fc.grib \\\n"
+            "      --output out --output-format both"
+        ),
     )
     parser.add_argument(
-        "--cossza",
-        help="compute Cosine of Solar Zenith Angle (cossza)",
+        "--source",
+        choices=list(SOURCES),
+        default="opendata",
+        help="forecast data source (default: opendata)",
+    )
+    parser.add_argument("--input", help="input GRIB file (required for --source file)")
+    parser.add_argument(
+        "--step", type=int, default=6, help="forecast step in hours (default: 6)"
+    )
+    parser.add_argument(
+        "--date",
+        default=None,
+        help="forecast run date (YYYYMMDD or relative int; default: latest/-1)",
+    )
+    parser.add_argument(
+        "--time",
+        default=None,
+        help="forecast run time, e.g. 00/06/12/18 (default: latest for opendata, "
+        "00 for mars/polytope)",
+    )
+    parser.add_argument(
+        "--grid",
+        default="0.25/0.25",
+        help="output grid for mars/polytope, 'dx/dy' (default: 0.25/0.25)",
+    )
+    parser.add_argument(
+        "--approximate-fdir",
         action="store_true",
+        help="estimate fdir from ssrd via the Erbs decomposition to enable "
+        "APPROXIMATE MRT/UTCI/WBGT/... (mainly for open data, which lacks fdir)",
     )
-    parser.add_argument("--mrt", help="compute mrt", action="store_true")
+    parser.add_argument("--output", default=None, help="output file path")
     parser.add_argument(
-        "--utci",
-        help="compute UTCI Universal Thermal Climate Index",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--heatx", help="compute Heat Index (adjusted)", action="store_true"
-    )
-    parser.add_argument(
-        "--windchill", help="compute Windchill factor", action="store_true"
-    )
-    parser.add_argument(
-        "--aptmp", help="compute Apparent Temperature", action="store_true"
-    )
-    parser.add_argument(
-        "--rhp", help="compute relative humidity percent", action="store_true"
+        "--output-format",
+        choices=["grib", "netcdf", "both"],
+        default="netcdf",
+        help="output format (default: netcdf)",
     )
 
-    parser.add_argument("--humidex", help="compute humidex", action="store_true")
-    parser.add_argument(
-        "--net", help="compute net effective temperature", action="store_true"
+    selection = parser.add_argument_group(
+        "index selection", "compute only the given indices (default: all available)"
     )
+    for spec in INDEX_SPECS:
+        selection.add_argument(
+            spec.cli,
+            dest=spec.dest,
+            action="store_true",
+            help=f"compute {spec.long_name.lower()}",
+        )
 
-    # TODO: these outputs are not yet in WMO GRIB2 recognised parameters
-    parser.add_argument(
-        "--wbgt", help="compute Wet Bulb Globe Temperature", action="store_true"
-    )
-    parser.add_argument("--bgt", help="compute  Globe Temperature", action="store_true")
-    parser.add_argument(
-        "--wbt", help="compute Wet Bulb Temperature", action="store_true"
-    )
-
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args(argv)
 
 
-def main():
-    args = command_line_options()
+def main(argv=None):
+    args = command_line_options(argv)
 
-    print(f"Thermofeel version: {thermofeel.__version__}")
-    print(f"Python version: {sys.version}")
-    print(f"Numpy version: {np.version.version}")
-    # np.show_config()
+    print(f"thermofeel version : {tf.__version__}")
+    print(f"earthkit-data      : {ekd.__version__}")
+    print(f"python             : {sys.version.split()[0]}")
+    print(f"numpy              : {np.version.version}")
+    print("-" * 100)
 
-    output = open(args.output, "wb")
+    fl = SOURCES[args.source](args)
+    if len(fl) == 0:
+        raise SystemExit("ERROR: the source returned no fields.")
 
-    steps = []
+    env = build_env(fl, args)
 
-    print("----------------------------------------")
-    for msgs in decode_grib(args.input):
-        step = process_step(args, msgs, output)
-        steps.append(step)
-        print("----------------------------------------")
+    rad_ok, rad_mode, rad_reason = radiation_status(env)
+    print("-" * 100)
+    if rad_ok and rad_mode == "approx":
+        banner(
+            [
+                "APPROXIMATE RADIATION INDICES",
+                "fdir is estimated from ssrd with the Erbs (1982) decomposition.",
+                "MRT / UTCI / WBGT / BGT / PMV below are a DEMONSTRATION only and",
+                "are NOT validation-grade. Use a source with a real fdir field",
+                "(file / polytope / mars) for quantitative work.",
+            ]
+        )
+    elif rad_ok:
+        print(f"Radiation indices: ENABLED ({rad_reason}).")
+    else:
+        banner(
+            [
+                "RADIATION INDICES SKIPPED",
+                f"Reason: {rad_reason}.",
+                "MRT / UTCI / WBGT / BGT / PMV need direct solar radiation (fdir).",
+                "For open data, rerun with --approximate-fdir to estimate it.",
+            ]
+        )
 
-    print(f"\nProcessed steps: {steps}\n")
+    specs = select_specs(args, rad_ok, rad_reason)
+    if not specs:
+        raise SystemExit("ERROR: no indices to compute for this selection/source.")
 
-    output.close()
+    results = compute_indices(env, specs)
+    if not results:
+        raise SystemExit("ERROR: no indices were computed successfully.")
+
+    print("\nComputed indices:", ", ".join(results))
+
+    targets = resolve_outputs(args.output, args.output_format)
+    if not targets:
+        print("\nNo --output given: results computed but not written to disk.")
+    else:
+        print("\nWriting output:")
+        if "netcdf" in targets:
+            write_netcdf(results, env, args.source, targets["netcdf"])
+        if "grib" in targets:
+            write_grib(results, env, targets["grib"])
+
+    print("\nDone.")
+    return 0
 
 
 if __name__ == "__main__":
