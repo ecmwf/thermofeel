@@ -31,6 +31,13 @@
     Predicted Percentage of Dissatisfied (ISO 7730:2005; Fanger 1970), from air
     and mean-radiant temperature, body-level air velocity, humidity, metabolic
     rate and clothing insulation; validated against the ISO 7730 Annex D table.
+- Modernised the `examples/` scripts and notebook to the ECMWF **earthkit 1.0**
+  stack (earthkit-data / earthkit-meteo / earthkit-plots): `compute-thermal-indices.py`
+  now fetches gridded ECMWF forecasts online (open data, Polytope or MARS, or a
+  local file) and writes GRIB/NetCDF; `compute-obs.py` computes indices from
+  near-real-time station METARs; the notebook draws maps with earthkit-plots.
+  Removed orphaned example data files. Install with `pip install thermofeel[examples]`.
+  (Examples are not part of the shipped library.)
 
 ## 2.2.0
 
