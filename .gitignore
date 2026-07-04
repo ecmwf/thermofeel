@@ -14,6 +14,7 @@ site/
 uv.lock
 *.csv
 *.grib
+*.nc
 *.npz
 *.png
 *.sh

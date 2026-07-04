@@ -39,6 +39,20 @@ test = [
     "pytest",
     "pytest-cov",
 ]
+# Dependencies for the runnable scripts and notebook in examples/ (not part of
+# the shipped library). Install with: pip install thermofeel[examples]
+examples = [
+    "earthkit-data>=1.0",
+    "earthkit-meteo>=1.0",
+    "earthkit-plots>=1.0",
+    "ecmwf-opendata",
+    "requests",
+    "meteostat",
+]
+# Optional backends for the authenticated online sources of
+# examples/compute-thermal-indices.py (ECMWF Polytope / MARS); install only if
+# you use --source polytope or --source mars:
+#   pip install thermofeel[examples] polytope-client ecmwf-api-client
 
 [tool.setuptools]
 include-package-data = true
