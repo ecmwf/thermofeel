@@ -590,7 +590,13 @@ def parse_grid(grid):
         raise SystemExit(
             f"ERROR: --grid expects 'dx/dy' (e.g. 0.25/0.25), got {grid!r}"
         )
-    return [float(parts[0]), float(parts[1])]
+    float(parts[0])  # validate numeric
+    float(parts[1])
+    # Return the "dx/dy" STRING form (not a [dx, dy] list): both MARS and
+    # Polytope accept it, whereas Polytope rejects a two-element list with equal
+    # values ("Duplicate values found in list for key 'grid'"), which would
+    # break the common square-grid case (e.g. the 0.25/0.25 default).
+    return f"{parts[0]}/{parts[1]}"
 
 
 def mars_request(args):
@@ -809,7 +815,12 @@ def write_grib(results, env, path):
     for key, values in results.items():
         spec = SPECS_BY_KEY[key]
         vals = np.asarray(values, dtype=float)
-        meta = {}
+        # Force GRIB edition 2 FIRST (dict order is preserved and applied in
+        # order): MARS/Polytope operational surface fields are edition 1, on
+        # which setting a GRIB2 ECMWF-local paramId raises "Concept no match".
+        # Converting to edition 2 first makes both the WMO-code and local-octet
+        # paths work; for already-edition-2 templates (open data) it is a no-op.
+        meta = {"metadata.edition": 2}
         if spec.paramid is not None:
             meta["metadata.paramId"] = spec.paramid
         else:
