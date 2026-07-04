@@ -1,9 +1,9 @@
-# Programme: New Thermal Indices (target 2.4.0)
+# Programme: New Thermal Indices (target 2.3.0)
 
 Batch delivery of new indices promoted from the IDEAS assessment. The research
 phase (external provenance + validation) is **done**; the per-index findings
 are captured below. Implementation is **fanned out one agent per index** and
-**overlaid in a single PR** (target `2.4.0`). Each index must pass its own
+**overlaid in a single PR** (target `2.3.0`). Each index must pass its own
 validation gates (§3) independently; **any index that cannot clear its gates is
 dropped from the batch without blocking the others** and returned to `IDEAS.md`
 with a written reason.
@@ -14,8 +14,8 @@ with a written reason.
 
 ## 1. Scope & decisions
 
-- **Version:** one MINOR bump to `2.4.0` for the whole batch (new features;
-  never MAJOR). A single `## 2.4.0` `CHANGELOG.md` section; `__version__` bumped
+- **Version:** one MINOR bump to `2.3.0` for the whole batch (new features;
+  never MAJOR). A single `## 2.3.0` `CHANGELOG.md` section; `__version__` bumped
   once, by the orchestrator, at integration.
 - **Single PR**, on `feat/new-indices` (branched off `feat/discomfort-index`,
   i.e. stacked on the discomfort-index branch). It retargets to `main` as the
@@ -44,7 +44,7 @@ with a written reason.
 
 **Batch as approved: four indices** — Apparent Temperature (radiation),
 Relative Strain Index, Summer Simmer Index, PMV/PPD. **PET is deferred** to
-`IDEAS.md` (§6 decision 1); it is **not** part of the 2.4.0 delivery.
+`IDEAS.md` (§6 decision 1); it is **not** part of the 2.3.0 delivery.
 
 ## 3. Validation gates (every index must pass all four)
 
@@ -101,9 +101,9 @@ colliding on the same lines.
 - **Research** ✅ done (this document).
 - **Implementation — closed-form indices (parallel ×3):** AT-radiation, RSI, SSI.
 - **Implementation — PMV / PPD** (iterative; larger; richest validation table).
-- **PET** — **DEFERRED** (§5.5 / §6.1); not delivered in 2.4.0.
+- **PET** — **DEFERRED** (§5.5 / §6.1); not delivered in 2.3.0.
 - **Integration:** the orchestrator merges the sub-branches, reconciles the
-  shared lists, does the single `2.4.0` bump + CHANGELOG, runs `make all` +
+  shared lists, does the single `2.3.0` bump + CHANGELOG, runs `make all` +
   `make docs`, and opens the single PR.
 
 ## 5. Per-index specifications
@@ -211,7 +211,7 @@ colliding on the same lines.
   9`; … plus `(19,18,0.1,40,1.2,1.0) → −0.70, 15.3`. Pin all; also G2
   `PMV=0 ⇒ PPD=5`. Oracle: `pythermalcomfort.pmv_ppd_iso`.
 
-### 5.5 PET — Physiological Equivalent Temperature  ⚠️ DEFERRED (not in 2.4.0)
+### 5.5 PET — Physiological Equivalent Temperature  ⚠️ DEFERRED (not in 2.3.0)
 
 > **Decision (maintainer):** PET is **deferred to `IDEAS.md`** and is **not**
 > implemented in this batch. Reason: the full MEMI equations are not openly
@@ -237,7 +237,7 @@ colliding on the same lines.
   institutional access, *and* a set of published reference values (VDI examples /
   Höppe 1999 tables). If obtained → PET implementation proceeds with those as the
   cited source + G3 data. If not → **PET stays in `IDEAS.md`** (with this reason) and
-  the 2.4.0 batch ships the other four.
+  the 2.3.0 batch ships the other four.
 - **If unblocked, target:** the Walther & Goestchel corrected steady PET,
   implemented independently from the published equations (numpy-only, bounded
   deterministic iteration; no SciPy, no AGPL code), signature
@@ -246,7 +246,7 @@ colliding on the same lines.
 
 ## 6. Decisions (resolved with maintainer)
 
-1. **PET** → **DEFERRED** to `IDEAS.md`; not in 2.4.0 (never reverse-engineer the
+1. **PET** → **DEFERRED** to `IDEAS.md`; not in 2.3.0 (never reverse-engineer the
    AGPL impl). Batch = the other four.
 2. **SSI** → **ship** the common Pepi-1987 closed form, validated primarily by the
    affine-THI analytic identity, with an explicit provenance caveat in the
@@ -255,7 +255,7 @@ colliding on the same lines.
    (ISO 8996 sedentary), `clo=0.5` (light), `var` = body-level relative velocity
    (distinct from 10 m wind). Documented as broadening the "standard met inputs"
    premise for physiological indices.
-4. **Version/PR** → one `2.4.0` batch in a single PR on `feat/new-indices`
+4. **Version/PR** → one `2.3.0` batch in a single PR on `feat/new-indices`
    (stacked on the discomfort-index branch).
 
 ## 7. Risk register

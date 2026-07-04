@@ -15,14 +15,14 @@ mature and get decided move up to `TODO.md`.
   - **Standard Effective Temperature (SET)** — Gagge two-node model; heavy,
     overlaps PMV.
   - **Physiological Equivalent Temperature (PET)** — Höppe 1999. Assessed for the
-    2.4.0 batch but **deferred**: the full MEMI equations are not openly citable
+    2.3.0 batch but **deferred**: the full MEMI equations are not openly citable
     and no published `(inputs → PET)` validation rows were found; reference
     implementations are SciPy-based or AGPL. Revisit only with a fully-cited
     equation set (Walther & Goestchel 2018 `10.1016/j.buildenv.2018.03.054` /
     VDI 3787-2) **and** published reference values; never reverse-engineer the
     AGPL code. Retained spec: `plans/NEW_INDICES.md` §5.5.
 
-  *Promoted out of IDEAS into the 2.4.0 batch (`plans/NEW_INDICES.md`): Apparent
+  *Promoted out of IDEAS into the 2.3.0 batch (`plans/NEW_INDICES.md`): Apparent
   Temperature radiation form, Relative Strain Index, Summer Simmer Index,
   PMV/PPD.* (WBGT via the full Liljegren model is implemented as
   `calculate_wbgt_liljegren`; the Discomfort Index as `calculate_discomfort_index`.)

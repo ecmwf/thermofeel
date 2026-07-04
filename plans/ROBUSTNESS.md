@@ -1,6 +1,6 @@
 # Numerical Robustness & Failure Modes
 
-> **Status:** first hardening pass done (2.2.0); the 2.4.0 indices
+> **Status:** first hardening pass done (2.2.0); the 2.3.0 indices
 > (`calculate_discomfort_index`, `calculate_summer_simmer_index`,
 > `calculate_relative_strain_index`, `calculate_apparent_temperature_radiation`,
 > `calculate_pmv`/`calculate_ppd`) were folded into the same contract (§5,
@@ -87,7 +87,7 @@ robustness-specific guarantees this document tracks, layered on top, are:
   `test_bgt_negative_wind_is_nan`.
 - **R-2 — LOW — all public indices, `NaN` propagation.** A `NaN` input yields a
   `NaN` output element-wise; no function raises on finite, correctly-shaped
-  arrays. The 2.4.0 indices are included in the parametrised check. **Status:**
+  arrays. The 2.3.0 indices are included in the parametrised check. **Status:**
   confirmed and pinned. **Tests:** `test_nan_temperature_propagates`,
   `test_ppd_nan_propagates`.
 - **R-3 — LOW — `liljegren.solve_globe`/`solve_wetbulb` non-convergence.** Each
