@@ -19,9 +19,10 @@ Sources (``--source``)
 opendata  ECMWF open data (no authentication, ``ecmwf-open-data``). The latest
           run is auto-selected. Open data does **not** include direct solar
           radiation (``fdir``), so the radiation indices (MRT / UTCI / WBGT /
-          BGT / PMV) are skipped -- unless ``--approximate-fdir`` is given,
-          which estimates ``fdir`` from ``ssrd`` via the Erbs decomposition
-          (a demonstration approximation, not validation-grade).
+          BGT / PMV) are skipped -- unless ``--approximate-fdir[=erbs|disc]`` is
+          given, which estimates ``fdir`` from ``ssrd`` via the Erbs (1982) or
+          DISC (Maxwell 1987) model from ``thermofeel.approximations`` (a
+          demonstration approximation, not validation-grade).
 file      A local GRIB file (``--input PATH``); the full index set is computed
           when ``fdir`` is present.
 polytope  ECMWF Polytope (needs ``polytope-client`` + a Polytope key).
@@ -56,6 +57,7 @@ import numpy as np
 from earthkit.meteo import solar, wind
 
 import thermofeel as tf
+from thermofeel.approximations import approximate_fdir_disc, approximate_fdir_erbs
 
 ###########################################################################################################
 # Input fields requested from each source.
@@ -102,42 +104,6 @@ def banner(lines):
     for line in lines:
         print(f"!! {line.ljust(width)} !!")
     print(bar)
-
-
-###########################################################################################################
-# fdir approximation (Erbs et al. 1982) -- demonstration only.
-
-
-def approximate_fdir_erbs(ssrd_wm2, cossza, solar_constant=1361.0, min_cossza=0.065):
-    """Approximate direct horizontal solar radiation (ECMWF fdir) from global
-    horizontal ssrd and cos(zenith) via the Erbs et al. (1982) decomposition.
-    Demonstration approximation only. Inputs/output in W/m^2.
-
-    The Erbs correlation splits global horizontal irradiance into its direct and
-    diffuse parts using the hourly clearness index kt = GHI / TOA. It is an
-    instantaneous/hourly empirical fit; applying it to step-mean fluxes and a
-    step-mean cosine of the zenith angle is a further simplification.
-
-    Reference: Erbs, Klein & Duffie (1982), Solar Energy 28(4):293-302,
-    https://doi.org/10.1016/0038-092X(82)90302-4
-    """
-    ssrd_wm2, cossza = np.broadcast_arrays(
-        np.asarray(ssrd_wm2, float), np.asarray(cossza, float)
-    )
-    day = (cossza > min_cossza) & (ssrd_wm2 > 0)
-    toa = solar_constant * np.maximum(cossza, min_cossza)
-    kt = np.clip(np.where(day, ssrd_wm2 / toa, 0.0), 0.0, 1.0)
-    kd = np.where(
-        kt <= 0.22,
-        1.0 - 0.09 * kt,
-        np.where(
-            kt <= 0.80,
-            0.9511 - 0.1604 * kt + 4.388 * kt**2 - 16.638 * kt**3 + 12.336 * kt**4,
-            0.165,
-        ),
-    )
-    fdir = np.where(day, ssrd_wm2 * (1.0 - kd), 0.0)
-    return np.clip(fdir, 0.0, ssrd_wm2)
 
 
 ###########################################################################################################
@@ -203,9 +169,17 @@ class Env:
         def _f():
             if self.has("fdir"):
                 return self.mean_flux("fdir")
-            # Estimate fdir from ssrd + cossza (Erbs). Guarded by the caller so
-            # this only runs when --approximate-fdir was requested.
-            return approximate_fdir_erbs(self.mean_flux("ssrd"), self.cossza())
+            # Estimate fdir from ssrd via thermofeel.approximations. Guarded by
+            # the caller so this only runs when --approximate-fdir was requested;
+            # self.approximate_fdir holds the chosen method ("erbs" | "disc").
+            ssrd = self.mean_flux("ssrd")
+            doy = self.valid_time.timetuple().tm_yday
+            if self.approximate_fdir == "disc":
+                pressure_hpa = self.get("sp") / 100.0 if self.has("sp") else 1013.25
+                return approximate_fdir_disc(
+                    ssrd, self.cossza(), doy, pressure_hpa=pressure_hpa
+                )
+            return approximate_fdir_erbs(ssrd, self.cossza(), doy=doy)
 
         return self._cached("fdir_flux", _f)
 
@@ -706,7 +680,8 @@ def radiation_status(env):
     if env.has("fdir"):
         return True, "exact", "fdir present"
     if env.approximate_fdir:
-        return True, "approx", "fdir estimated from ssrd via Erbs (demonstration)"
+        method = str(env.approximate_fdir).upper()
+        return True, "approx", f"fdir estimated from ssrd via {method} (demonstration)"
     return False, None, "no fdir in source (rerun with --approximate-fdir to estimate)"
 
 
@@ -885,8 +860,11 @@ def command_line_options(argv=None):
             "  # open data (no auth): non-radiation indices to NetCDF\n"
             "  compute-thermal-indices.py --source opendata --step 6 \\\n"
             "      --output out.nc --output-format netcdf\n\n"
-            "  # open data + Erbs-approximated fdir: adds MRT/UTCI/WBGT\n"
+            "  # open data + approximated fdir (Erbs by default): adds MRT/UTCI/WBGT\n"
             "  compute-thermal-indices.py --source opendata --approximate-fdir \\\n"
+            "      --output out.nc\n\n"
+            "  # open data + DISC-approximated fdir\n"
+            "  compute-thermal-indices.py --source opendata --approximate-fdir disc \\\n"
             "      --output out.nc\n\n"
             "  # local GRIB file with fdir: full set to GRIB + NetCDF\n"
             "  compute-thermal-indices.py --source file --input fc.grib \\\n"
@@ -921,9 +899,16 @@ def command_line_options(argv=None):
     )
     parser.add_argument(
         "--approximate-fdir",
-        action="store_true",
-        help="estimate fdir from ssrd via the Erbs decomposition to enable "
-        "APPROXIMATE MRT/UTCI/WBGT/... (mainly for open data, which lacks fdir)",
+        nargs="?",
+        const="erbs",
+        default=None,
+        choices=["erbs", "disc"],
+        metavar="{erbs,disc}",
+        help="estimate fdir from ssrd to enable APPROXIMATE MRT/UTCI/WBGT/... "
+        "(mainly for open data, which lacks fdir). Bare flag uses 'erbs' "
+        "(Erbs et al. 1982); 'disc' selects the Maxwell (1987) DISC model. "
+        "Uses thermofeel.approximations; demonstration only, not "
+        "validation-grade.",
     )
     parser.add_argument("--output", default=None, help="output file path")
     parser.add_argument(
@@ -965,10 +950,14 @@ def main(argv=None):
     rad_ok, rad_mode, rad_reason = radiation_status(env)
     print("-" * 100)
     if rad_ok and rad_mode == "approx":
+        model = {"erbs": "Erbs et al. (1982)", "disc": "Maxwell (1987) DISC"}[
+            env.approximate_fdir
+        ]
         banner(
             [
                 "APPROXIMATE RADIATION INDICES",
-                "fdir is estimated from ssrd with the Erbs (1982) decomposition.",
+                f"fdir is estimated from ssrd via {model}",
+                "(thermofeel.approximations).",
                 "MRT / UTCI / WBGT / BGT / PMV below are a DEMONSTRATION only and",
                 "are NOT validation-grade. Use a source with a real fdir field",
                 "(file / polytope / mars) for quantitative work.",
