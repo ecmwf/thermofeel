@@ -311,12 +311,13 @@ def _ppd(env):
 ###########################################################################################################
 # Index registry.
 #
-# category:  "basic"      -> needs only 2t/2d/10u/10v (computed for every source)
-#            "radiation"  -> needs the surface radiation fluxes (+ fdir, exact or
-#                            Erbs-approximated); skipped without radiation / at
-#                            step 0. Wet-bulb temperature is grouped here with the
-#                            WBGT family so plain open-data output matches the
-#                            documented non-radiation set.
+# category:  "basic"      -> computable for every source (no fdir needed): the
+#                            2t/2d/10u/10v indices, plus cossza (pure solar
+#                            geometry) and wet-bulb temperature (2t + rh only).
+#            "radiation"  -> needs the surface radiation fluxes incl. fdir (exact
+#                            or Erbs/DISC-approximated); skipped without fdir / at
+#                            step 0: MRT, UTCI, WBGT, BGT, PMV and the radiation
+#                            apparent temperature.
 # GRIB code: ``paramid`` set  -> WMO/ECMWF paramId, clean encoding.
 #            ``local_number`` -> experimental local GRIB2 code (see constants).
 
@@ -419,15 +420,26 @@ INDEX_SPECS = [
         _relative_strain_index,
         local_number=4,
     ),
-    # --- radiation-dependent indices ---------------------------------------
+    # cossza is pure solar geometry (lat/lon/time) and wet-bulb temperature needs
+    # only 2t + relative humidity, so neither depends on fdir -- they are
+    # computable for every source, hence "basic".
     IndexSpec(
         "cossza",
         "Cosine of solar zenith angle (step mean)",
         "1",
-        "radiation",
+        "basic",
         _cossza,
         paramid=214001,
     ),
+    IndexSpec(
+        "wet_bulb_temperature",
+        "Wet-bulb temperature",
+        "K",
+        "basic",
+        _wet_bulb_temperature,
+        paramid=261022,
+    ),
+    # --- radiation-dependent indices ---------------------------------------
     IndexSpec(
         "mean_radiant_temperature",
         "Mean radiant temperature",
@@ -443,14 +455,6 @@ INDEX_SPECS = [
         "radiation",
         _utci,
         paramid=261001,
-    ),
-    IndexSpec(
-        "wet_bulb_temperature",
-        "Wet-bulb temperature",
-        "K",
-        "radiation",
-        _wet_bulb_temperature,
-        paramid=261022,
     ),
     IndexSpec(
         "globe_temperature",
