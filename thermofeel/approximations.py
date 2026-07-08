@@ -89,7 +89,7 @@ def approximate_fdir_erbs(
     ssrd: ArrayLike,
     cossza: ArrayLike,
     *,
-    doy: ArrayLike = None,
+    doy: ArrayLike | None = None,
     solar_constant: float = SOLAR_CONSTANT,
     min_cossza: float = 0.065,
 ) -> np.ndarray:

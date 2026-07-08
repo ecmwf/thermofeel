@@ -35,8 +35,8 @@ In support of the above, it also calculates:
 
 The [`thermofeel.approximations`](approximations.md) namespace additionally
 provides clearly-labelled estimators (currently the direct solar radiation
-`fdir` from global radiation) for datasets that lack an input a radiation index
-needs.
+`fdir` from global radiation) for datasets that lack an input that a radiation
+index needs.
 
 ## Calling convention
 

@@ -42,8 +42,8 @@ In support of the above indices, it also calculates:
 
 The `thermofeel.approximations` namespace additionally provides clearly-labelled
 estimators (currently the direct solar radiation `fdir` from global radiation,
-via the Erbs 1982 or DISC/Maxwell 1987 models) for datasets that lack an input a
-radiation index needs.
+via the Erbs 1982 or DISC/Maxwell 1987 models) for datasets that lack an input
+that a radiation index needs.
 
 ## PyPI
 

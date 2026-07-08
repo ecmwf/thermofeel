@@ -9,7 +9,7 @@ that carries the real field for quantitative work.
 
 ## Estimating direct solar radiation (`fdir`)
 
-The [mean radiant temperature](wbgt.md) — and hence UTCI, WBGT and PMV — needs
+The [mean radiant temperature](mrt.md) — and hence UTCI, WBGT and PMV — needs
 the direct (beam) solar radiation on a horizontal surface, ECMWF `fdir`. Some
 datasets (notably [ECMWF open data](https://www.ecmwf.int/en/forecasts/datasets/open-data))
 provide the global horizontal radiation `ssrd` but **not** `fdir`. The

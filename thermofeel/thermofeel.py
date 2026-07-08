@@ -38,7 +38,7 @@ thermofeel is a library to calculate human thermal comfort indexes.
 
   The thermofeel.approximations namespace additionally provides clearly-labelled
   estimators (currently the direct solar radiation fdir from global radiation)
-  for datasets that lack an input a radiation index needs.
+  for datasets that lack an input that a radiation index needs.
 
   To calculate the cos of the solar zenith angle, we suggest to use the
   earthkit-meteo library (github.com:ecmwf/earthkit-meteo.git)
