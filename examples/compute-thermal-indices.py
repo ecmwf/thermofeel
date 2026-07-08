@@ -563,13 +563,16 @@ def _require_backend(module, pip_name, source):
 
 
 def parse_grid(grid):
-    parts = grid.replace(",", "/").split("/")
-    if len(parts) != 2:
+    parts = [p.strip() for p in grid.replace(",", "/").split("/")]
+    try:
+        if len(parts) != 2:
+            raise ValueError
+        float(parts[0])  # validate numeric
+        float(parts[1])
+    except ValueError:
         raise SystemExit(
             f"ERROR: --grid expects 'dx/dy' (e.g. 0.25/0.25), got {grid!r}"
-        )
-    float(parts[0])  # validate numeric
-    float(parts[1])
+        ) from None
     # Return the "dx/dy" STRING form (not a [dx, dy] list): both MARS and
     # Polytope accept it, whereas Polytope rejects a two-element list with equal
     # values ("Duplicate values found in list for key 'grid'"), which would
@@ -679,8 +682,9 @@ def radiation_status(env):
     if not all(env.has(n) for n in fluxes):
         have = [n for n in fluxes if env.has(n)]
         return False, None, f"missing radiation fluxes (have only {have})"
-    if not (env.has("10u") and env.has("10v")):
-        return False, None, "missing 10 m wind components"
+    # Note: wind is NOT required here. Mean radiant temperature needs no wind;
+    # the wind-dependent radiation indices (UTCI/WBGT/BGT/PMV) fail individually
+    # (caught in compute_indices) if 10 m wind is absent.
     if env.has("fdir"):
         return True, "exact", "fdir present"
     if env.approximate_fdir:
