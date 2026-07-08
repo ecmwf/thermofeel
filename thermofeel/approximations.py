@@ -167,7 +167,10 @@ def approximate_fdir_disc(
             Earth-Sun distance correction of the extraterrestrial irradiance)
         :param pressure_hpa: (float array) surface pressure [hPa] for the
             pressure-corrected air mass (default 1013.25)
-        :param solar_constant: (float) solar constant [W m-2] (default 1361)
+        :param solar_constant: (float) solar constant [W m-2] (default 1361).
+            Maxwell derived the DISC coefficients with a solar constant of
+            ~1367-1370 W m-2, so pass ``solar_constant=1370`` to reproduce the
+            original model (and pvlib) exactly.
         :param min_cossza: (float) below this cos(zenith) the Sun is treated as
             below the horizon; ``fdir`` returns 0 there (default 0.065)
         :param max_airmass: (float) air mass is capped at this value in the Kn

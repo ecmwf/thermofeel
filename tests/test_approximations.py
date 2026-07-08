@@ -130,15 +130,24 @@ def test_disc_airmass_and_pressure():
 
 def test_nan_propagates():
     nan = np.array([np.nan])
+    # every input of each estimator propagates NaN to NaN
     assert np.isnan(
         ap.approximate_fdir_erbs(nan, np.array([0.5]), doy=np.array([100.0]))
     ).all()
     assert np.isnan(ap.approximate_fdir_erbs(np.array([500.0]), nan)).all()
     assert np.isnan(
+        ap.approximate_fdir_erbs(np.array([500.0]), np.array([0.5]), doy=nan)
+    ).all()
+    assert np.isnan(
         ap.approximate_fdir_disc(np.array([500.0]), nan, np.array([100.0]))
     ).all()
     assert np.isnan(
         ap.approximate_fdir_disc(np.array([500.0]), np.array([0.5]), nan)
+    ).all()
+    assert np.isnan(
+        ap.approximate_fdir_disc(
+            np.array([500.0]), np.array([0.5]), np.array([100.0]), pressure_hpa=nan
+        )
     ).all()
 
 
