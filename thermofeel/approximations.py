@@ -110,7 +110,7 @@ def approximate_fdir_erbs(
         :param min_cossza: (float) below this cos(zenith) the Sun is treated as
             below the horizon; ``fdir`` returns 0 there (default 0.065)
         returns the estimated direct horizontal radiation, in the same unit as
-        ``ssrd``, clipped to [0, ssrd]
+        ``ssrd``, clipped to [0, ssrd] (and to 0 where ``ssrd`` is negative)
 
     The Erbs correlation splits global horizontal radiation into its direct and
     diffuse parts from the clearness index ``kt = ssrd / TOA``. It is an
@@ -173,7 +173,7 @@ def approximate_fdir_disc(
         :param max_airmass: (float) air mass is capped at this value in the Kn
             fit, per the original model (default 12)
         returns the estimated direct horizontal radiation [W m-2], clipped to
-        [0, ssrd]
+        [0, ssrd] (and to 0 where ``ssrd`` is negative)
 
     DISC converts the global clearness index to a direct-beam clearness index
     ``Kn`` using empirical polynomials in ``kt`` and the (pressure-corrected
