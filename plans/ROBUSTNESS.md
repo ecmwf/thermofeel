@@ -141,6 +141,17 @@ robustness-specific guarantees this document tracks, layered on top, are:
   **Status:** by design, confirmed. **Tests:** `pmv` in
   `test_nan_temperature_propagates`, `test_pmv_humidity_contract`,
   `test_pmv_nonconvergence_returns_nan`.
+- **R-11 — LOW — `thermofeel.approximations` fdir estimators.** The
+  `approximate_fdir_erbs` / `approximate_fdir_disc` clearness-index estimators
+  divide by the extraterrestrial irradiance (`~S0·cossza`), which is
+  ill-conditioned at low sun. Guards: a night/low-sun cutoff (`cossza <=
+  min_cossza`, default 0.065 ≈ 86.3 deg zenith) returns 0; the clearness index
+  is clipped to `[0, 1]`; the air mass is clipped to a small positive
+  cos(zenith) and capped at `max_airmass`; the output is clipped to `[0, ssrd]`;
+  `NaN` inputs propagate to `NaN`. These are documented ESTIMATORS (namespace
+  `thermofeel.approximations`, not top-level), validated to machine precision
+  against pvlib. **Status:** by design, confirmed. **Tests:**
+  `test_nan_propagates`, `test_night_returns_zero`, the pvlib-oracle rows.
 
 ## 6. Severity definitions
 
