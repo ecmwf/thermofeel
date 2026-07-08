@@ -33,6 +33,11 @@ In support of the above, it also calculates:
 - Saturation Vapour Pressure
 - Wet Bulb Temperature
 
+The [`thermofeel.approximations`](approximations.md) namespace additionally
+provides clearly-labelled estimators (currently the direct solar radiation
+`fdir` from global radiation) for datasets that lack an input a radiation index
+needs.
+
 ## Calling convention
 
 Every function is **vectorised over NumPy** and works elementwise on arrays of

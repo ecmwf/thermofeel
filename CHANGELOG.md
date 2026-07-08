@@ -36,8 +36,17 @@
   now fetches gridded ECMWF forecasts online (open data, Polytope or MARS, or a
   local file) and writes GRIB/NetCDF; `compute-obs.py` computes indices from
   near-real-time station METARs; the notebook draws maps with earthkit-plots.
-  Removed orphaned example data files. Install with `pip install thermofeel[examples]`.
-  (Examples are not part of the shipped library.)
+   Removed orphaned example data files. Install with `pip install thermofeel[examples]`.
+   (Examples are not part of the shipped library.)
+- Added the `thermofeel.approximations` namespace (namespace-only, not
+  re-exported at the top level) with estimators of the direct solar radiation
+  `fdir` from global radiation `ssrd` + solar geometry, for datasets that lack
+  it: `approximate_fdir_erbs` (Erbs et al. 1982, with an optional Earth-Sun
+  distance correction) and `approximate_fdir_disc` (DISC; Maxwell 1987). Both
+  reproduce `pvlib` to machine precision (validation oracle only). The
+  `compute-thermal-indices.py` example exposes them via
+  `--approximate-fdir[=erbs|disc]`.
+
 
 ## 2.2.0
 

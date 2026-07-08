@@ -82,5 +82,6 @@ nav:
   - Supporting quantities:
       - Relative Humidity & Vapour Pressure: guide/relativehumidity.md
       - Mean Radiant Temperature: guide/mrt.md
+      - Approximations (fdir estimators): guide/approximations.md
   - API reference: api.md
   - Examples: examples.md

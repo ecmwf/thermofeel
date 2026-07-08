@@ -34,6 +34,22 @@ severity.
       show_root_toc_entry: false
       heading_level: 3
 
+## Approximations
+
+The `thermofeel.approximations` submodule provides clearly-labelled **estimators**
+(not validated index formulas), kept out of the top-level namespace so calling
+code always shows the `.approximations.` marker. It currently estimates the
+direct solar radiation `fdir` (needed for the mean radiant temperature, and hence
+UTCI / WBGT / PMV) from the global horizontal radiation `ssrd` and solar geometry,
+for datasets that lack `fdir`. These are demonstration/estimation grade — see the
+[Approximations guide](guide/approximations.md).
+
+::: thermofeel.approximations
+    options:
+      show_root_heading: false
+      show_root_toc_entry: false
+      heading_level: 3
+
 ## Unit converters
 
 ::: thermofeel.helpers

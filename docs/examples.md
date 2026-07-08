@@ -75,9 +75,11 @@ $ python examples/compute-thermal-indices.py --source opendata --step 6 \
   Open data does **not** include direct solar radiation (`fdir`), so the
   radiation-based indices (mean radiant temperature, UTCI, WBGT, PMV) are
   skipped with a warning; the temperature/humidity/wind indices are computed in
-  full. Pass `--approximate-fdir` to estimate `fdir` from global radiation with
-  an Erbs (1982) decomposition and obtain **approximate** MRT/UTCI/WBGT — a
-  demonstration only, not validation-grade.
+  full. Pass `--approximate-fdir[=erbs|disc]` to estimate `fdir` from global
+  radiation — via the Erbs (1982) decomposition (default) or the DISC (Maxwell
+  1987) model, from
+  [`thermofeel.approximations`](guide/approximations.md) — and obtain **approximate**
+  MRT/UTCI/WBGT (a demonstration only, not validation-grade).
 - `--source file --input FORECAST.grib` — a local GRIB that already contains the
   full field set (including `fdir`); computes every index exactly.
 - `--source polytope` and `--source mars` — near-real-time / archived ECMWF
