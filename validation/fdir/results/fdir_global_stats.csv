@@ -1,0 +1,2 @@
+comparison,N,mean_obs,mean_pred,MBE,rMBE_pct,MAE,RMSE,rRMSE_pct,R2
+"DISC vs Erbs, daytime, 2026-07-08 12:00:00",682913,126.5,137.4,10.94,8.651,21.91,27.81,21.99,0.9612

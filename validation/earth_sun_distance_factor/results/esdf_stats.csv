@@ -1,0 +1,2 @@
+comparison,max_abs_rel_err_pct,mean_abs_rel_err_pct,max_abs_TOA_err_Wm2,N,mean_obs,mean_pred,MBE,rMBE_pct,MAE,RMSE,rRMSE_pct,R2
+"factor vs SPA (1/R^2), daily 2015-2025",0.1043,0.05682,1.385,4018,1,1,-4.712e-06,-0.0004712,0.000568,0.0006288,0.06287,0.9999

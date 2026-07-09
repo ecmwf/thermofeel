@@ -1,0 +1,4 @@
+comparison,N,mean_obs,mean_pred,MBE,rMBE_pct,MAE,RMSE,rRMSE_pct,R2
+PMV grid vs pythermalcomfort (N=46800),46800,-0.6281,-0.6281,1.088e-05,0.001732,0.0004285,0.0006329,0.1008,1
+PPD grid vs pythermalcomfort,46800,57.89,57.89,4.487e-05,7.751e-05,0.0108,0.01964,0.03392,1
+PMV DB-II vs pythermalcomfort (N=58500),58500,-0.01252,-0.0125,1.589e-05,0.1269,0.0005401,0.000632,5.049,1

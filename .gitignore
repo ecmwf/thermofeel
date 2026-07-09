@@ -23,3 +23,9 @@ uv.lock
 *.egg-info/
 .vscode/
 thermofeel.code-workspace
+
+# validation campaign: version the generated result tables and plots
+# (overriding the blanket *.csv / *.png above), but never the data cache.
+validation/_cache/
+!validation/**/results/*.csv
+!validation/**/plots/*.png

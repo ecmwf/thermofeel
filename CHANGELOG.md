@@ -2,6 +2,16 @@
 
 ## 2.3.0
 
+- Added a scientific validation campaign under `validation/` for every method
+  new in this release: per-index methodology READMEs, runnable validation
+  scripts with pre-registered acceptance criteria, and versioned result tables
+  and plots. Evidence includes the ISO 7730:2005 Annex D table and 58k ASHRAE
+  Thermal Comfort Database II field records (PMV/PPD), NOAA SURFRAD ground
+  observations and the live IFS open-data pipeline (fdir estimators), the NREL
+  SPA ephemeris (Earth-Sun distance factor), and independent peer-reviewed
+  implementations/transcriptions (pythermalcomfort, pvlib, BoM/Asghari forms)
+  for the simple heat indices. Install `pip install thermofeel[validation]` to
+  run; see `validation/README.md` for the verdict table (all PASS).
 - Added `calculate_discomfort_index`: Thom's Discomfort Index (Temperature-
   Humidity Index) from 2 m temperature and relative humidity, returning Kelvin.
   Implements the Celsius/relative-humidity formulation of Thom's index given by
