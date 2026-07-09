@@ -11,14 +11,22 @@
 These assert *invariants* that must hold across the whole valid input domain,
 complementing the pinned pointwise/regression tests: physical bounds and
 edge behaviour of the fdir estimators, and a couple of index invariants.
+
+Hypothesis ships with the ``[test]`` extra and always runs in this repo's own
+CI; environments that install only the package plus bare pytest (e.g. the
+ecmwf downstream-ci matrix) skip this module rather than fail collection.
 """
 
 import numpy as np
-from hypothesis import given
-from hypothesis import strategies as st
+import pytest
 
-import thermofeel as tf
-from thermofeel import approximations as ap
+pytest.importorskip("hypothesis")
+
+from hypothesis import given  # noqa: E402
+from hypothesis import strategies as st  # noqa: E402
+
+import thermofeel as tf  # noqa: E402
+from thermofeel import approximations as ap  # noqa: E402
 
 _FINITE = {"allow_nan": False, "allow_infinity": False}
 ssrd_st = st.floats(min_value=0.0, max_value=1500.0, **_FINITE)
