@@ -1,5 +1,63 @@
 # ChangeLog
 
+## 2.3.0
+
+- Added a scientific validation campaign under `validation/` for every method
+  new in this release: per-index methodology READMEs, runnable validation
+  scripts with pre-registered acceptance criteria, and versioned result tables
+  and plots. Evidence includes the ISO 7730:2005 Annex D table and 58k ASHRAE
+  Thermal Comfort Database II field records (PMV/PPD), NOAA SURFRAD ground
+  observations and the live IFS open-data pipeline (fdir estimators), the NREL
+  SPA ephemeris (Earth-Sun distance factor), and independent peer-reviewed
+  implementations/transcriptions (pythermalcomfort, pvlib, BoM/Asghari forms)
+  for the simple heat indices. Install `pip install thermofeel[validation]` to
+  run; see `validation/README.md` for the verdict table (all PASS).
+- Added `calculate_discomfort_index`: Thom's Discomfort Index (Temperature-
+  Humidity Index) from 2 m temperature and relative humidity, returning Kelvin.
+  Implements the Celsius/relative-humidity formulation of Thom's index given by
+  Giles et al. (1990, https://doi.org/10.1007/BF01093455),
+  DI = T - 0.55 (1 - 0.01 RH)(T - 14.5); the index originates with Thom (1959,
+  https://doi.org/10.1080/00431672.1959.9926960). Validated against analytic
+  reference values (including the RH=100% -> DI=Ta and T=14.5 °C -> DI=14.5 °C
+  identities) and pinned by a regression CSV. Adds a guide page. See also the
+  review Epstein & Moran (2006, https://doi.org/10.2486/indhealth.44.388), which
+  uses a different wet-bulb formulation.
+- Added a batch of new thermal indices (all vectorised, SI in/out, each cited
+  and validated against published/independent references; see the per-index
+  guide pages under `docs/guide/`):
+  - `calculate_apparent_temperature_radiation`: the radiation-inclusive
+    Steadman/BoM Apparent Temperature from 2 m temperature, 10 m wind, relative
+    humidity and a caller-supplied body-absorbed net radiation `q`
+    (Steadman 1994, https://doi.org/10.1071/es94001; Australian BoM).
+  - `calculate_relative_strain_index`: the Relative Strain Index from 2 m
+    temperature and relative humidity (Lee & Henschel 1966,
+    https://doi.org/10.1111/j.1749-6632.1966.tb43059.x; hPa closed form and
+    bands from Asghari et al. 2020, https://doi.org/10.2174/1874213002013010011).
+  - `calculate_summer_simmer_index`: Pepi's Summer Simmer Index (common 1987
+    closed form, an affine transform of Thom's THI) from 2 m temperature and
+    relative humidity (Pepi 1987, https://doi.org/10.1080/00431672.1987.9933356;
+    equation reproduced from secondary sources — see the guide).
+  - `calculate_pmv` and `calculate_ppd`: Fanger's Predicted Mean Vote and
+    Predicted Percentage of Dissatisfied (ISO 7730:2005; Fanger 1970), from air
+    and mean-radiant temperature, body-level air velocity, humidity, metabolic
+    rate and clothing insulation; validated against the ISO 7730 Annex D table.
+- Modernised the `examples/` scripts and notebook to the ECMWF **earthkit 1.0**
+  stack (earthkit-data / earthkit-meteo / earthkit-plots): `compute-thermal-indices.py`
+  now fetches gridded ECMWF forecasts online (open data, Polytope or MARS, or a
+  local file) and writes GRIB/NetCDF; `compute-obs.py` computes indices from
+  near-real-time station METARs; the notebook draws maps with earthkit-plots.
+   Removed orphaned example data files. Install with `pip install thermofeel[examples]`.
+   (Examples are not part of the shipped library.)
+- Added the `thermofeel.approximations` namespace (namespace-only, not
+  re-exported at the top level) with estimators of the direct solar radiation
+  `fdir` from global radiation `ssrd` + solar geometry, for datasets that lack
+  it: `approximate_fdir_erbs` (Erbs et al. 1982, with an optional Earth-Sun
+  distance correction) and `approximate_fdir_disc` (DISC; Maxwell 1987). Both
+  reproduce `pvlib` to machine precision (validation oracle only). The
+  `compute-thermal-indices.py` example exposes them via
+  `--approximate-fdir[=erbs|disc]`.
+
+
 ## 2.2.0
 
 - Added inline type hints across the public API and a `py.typed` marker

@@ -19,15 +19,20 @@ Currently calculates the thermal indices:
 
 - Universal Thermal Climate Index
 - Apparent Temperature
+- Apparent Temperature (radiation)
 - Heat Index Adjusted
 - Heat Index Simplified
 - Humidex
+- Discomfort Index
+- Summer Simmer Index
 - Normal Effective Temperature
+- Relative Strain Index
 - Wet Bulb Globe Temperature
 - Wet Bulb Globe Temperature Simple
 - Wet Bulb Globe Temperature (Liljegren method)
 - Heat Force (KNMI 0–10 heat-stress scale)
 - Excess Heat Factor and Excess Cold Factor
+- Predicted Mean Vote and Predicted Percentage of Dissatisfied (PMV/PPD)
 - Wind Chill
 
 In support of the above indices, it also calculates:
@@ -38,6 +43,11 @@ In support of the above indices, it also calculates:
 - Relative Humidity Percentage
 - Saturation vapour pressure
 - Wet Bulb Temperature
+
+The `thermofeel.approximations` namespace additionally provides clearly-labelled
+estimators (currently the direct solar radiation `fdir` from global radiation,
+via the Erbs 1982 or DISC/Maxwell 1987 models) for datasets that lack an input
+that a radiation index needs.
 
 ## PyPI
 

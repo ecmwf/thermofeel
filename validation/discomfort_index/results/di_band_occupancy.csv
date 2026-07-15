@@ -1,0 +1,13 @@
+band,category,pct,station
+"[-inf, 21.0)",no discomfort,4.082,gwn
+"[21.0, 24.0)",<50% feel discomfort,27.1,gwn
+"[24.0, 27.0)",>50% feel discomfort,45.41,gwn
+"[27.0, 29.0)",most feel discomfort,21.37,gwn
+"[29.0, 32.0)",everyone feels severe stress,2.043,gwn
+"[32.0, inf)",state of medical emergency,0,gwn
+"[-inf, 21.0)",no discomfort,9.431,dra
+"[21.0, 24.0)",<50% feel discomfort,35.07,dra
+"[24.0, 27.0)",>50% feel discomfort,47.68,dra
+"[27.0, 29.0)",most feel discomfort,7.823,dra
+"[29.0, 32.0)",everyone feels severe stress,0,dra
+"[32.0, inf)",state of medical emergency,0,dra

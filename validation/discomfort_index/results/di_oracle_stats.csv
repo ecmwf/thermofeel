@@ -1,0 +1,3 @@
+comparison,N,mean_obs,mean_pred,MBE,rMBE_pct,MAE,RMSE,rRMSE_pct,R2
+"DI vs pythermalcomfort, grid",12221,18.49,18.49,-2.148e-05,-0.0001162,0.02472,0.02874,0.1555,1
+"DI vs pythermalcomfort, SURFRAD obs Jul 2023",89280,24.63,24.63,6.014e-05,0.0002441,0.025,0.0289,0.1173,0.9998

@@ -138,6 +138,46 @@ Useful focused targets (run `make help` for the complete list):
   raw tool commands so there is one source of truth — see the *Building* and
   *Testing* sections of `CONTRIBUTING.md`.
 
+# Development workflow
+
+The lifecycle below maps each phase to a bundled slash-command in
+`.opencode/command/` (opencode discovers them automatically as `/<name>`).
+Humans follow the same phases, just without the `/`-commands.
+
+1. **Onboard** — `/onboard` reads the docs and surveys the code to build a
+   mental model of the library.
+2. **Pick work** — take an item from `plans/TODO.md` (the accepted backlog).
+   `plans/IDEAS.md` is speculative and is NOT committed direction.
+3. **Plan** — before writing code, say how you will verify it, plan the TDD
+   tests (this repo has both array-regression and pointwise-scalar suites — add
+   to both where it makes sense, plus `tests/test_robustness.py` for edge /
+   `NaN` behaviour), take a behaviour-driven approach, ask clarifying questions,
+   and summarise the design + implementation plan (see *Guidelines* above).
+4. **Branch** — branch off `main` using `<type>/<kebab-summary>`, where
+   `<type>` is one of `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `ci`,
+   `perf`, `build`.
+5. **Develop** — follow the conventions here and in `plans/DESIGN.md` (the SI
+   in/out contract; every formula cited; vectorised over NumPy). Document new
+   features under `docs/` and add a runnable `examples/` script for any new
+   public API. Record every user-facing change in `CHANGELOG.md` under the
+   current release section as you go.
+6. **Quality passes** — `/make-further-pass` (strictness-graded), plus, as
+   needed, `/improve-code-coverage`, `/improve-edge-cases`,
+   `/improve-error-handling`, and `/doc-fact-check`. (There is no mutation-
+   testing gate in this repo.)
+7. **Gate** — `make all` must be green (the single pre-commit gate; see
+   *Build / lint / test* above).
+8. **Open the PR** — `/prepare-make-pr` runs `make all`, then commits on the
+   feature branch, pushes, and opens the PR. Only commit / push / open a PR when
+   the user has asked you to.
+9. **Review loop** — `/copilot-review-loop` drives the Copilot reviewer to
+   convergence; `/address-pr-comments` resolves human review threads and waits
+   on CI (`gh pr checks --watch`).
+10. **Release** — `/make-release`; full contract in *Version control* below.
+
+`main` is the single integration branch; agents NEVER push, merge, or open a PR
+without explicit user approval.
+
 # Version control
 
 - Git project at github.com/ecmwf/thermofeel; single `main` branch.

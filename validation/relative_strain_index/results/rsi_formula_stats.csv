@@ -1,0 +1,2 @@
+comparison,N,mean_obs,mean_pred,MBE,rMBE_pct,MAE,RMSE,rRMSE_pct,R2
+"RSI (BoM Magnus) vs Asghari-printed Magnus, in-domain",4617,0.2229,0.2226,-0.0002947,-0.1322,0.0002947,0.0008314,0.373,1

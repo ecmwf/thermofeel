@@ -10,11 +10,51 @@ mature and get decided move up to `TODO.md`.
 
 ## Indices and physics
 
-- [ ] **More thermal indices.** Candidates frequently requested in
-  biometeorology: Physiological Equivalent Temperature (PET), Standard Effective
-  Temperature (SET), Discomfort Index (Thom). Each needs a citation and reference
-  values before it can leave IDEAS. (WBGT via the full Liljegren model is now
-  implemented as `calculate_wbgt_liljegren`.)
+- [ ] **More thermal indices.** Speculative candidates that need a citable
+  equation set + reference values before they can leave IDEAS. **Standard
+  Effective Temperature (SET)** — Gagge two-node model; heavy, and overlaps PMV.
+
+  *Already implemented in 2.3.0 (see `CHANGELOG.md` and the per-index guide pages
+  under `docs/guide/`): Apparent Temperature radiation form, Relative Strain
+  Index, Summer Simmer Index, PMV/PPD. WBGT via the full Liljegren model is
+  `calculate_wbgt_liljegren`; the Discomfort Index is `calculate_discomfort_index`.*
+
+- [ ] **Physiological Equivalent Temperature (PET).** Höppe (1999),
+  DOI `10.1007/s004840050118`. The outdoor "gold-standard" companion to UTCI:
+  PET is the air temperature of a reference indoor setting (MRT = Ta, still air
+  v = 0.1 m/s, vapour pressure = 12 hPa) in which a reference person reaches the
+  same core and skin temperature as in the actual environment, solved from the
+  MEMI human energy-balance model (Mayer & Höppe 1987). Assessed for the 2.3.0
+  batch and **deferred**; the full details are retained below so it can be picked
+  up directly.
+  - **Inputs (SI):** `t2_k` (K), `mrt_k` (K), 10 m wind (m/s), relative humidity
+    (%), plus a standardised reference person (Höppe uses ~35-yr male, 1.75 m,
+    75 kg, ~80 W work metabolism, 0.9 clo — verify each value against a primary
+    source). Output is an equivalent temperature in °C → return **Kelvin**.
+    Proposed signature:
+    `calculate_pet(t2_k, mrt_k, va, rh, *, pressure_hpa=1013.25, met=…, clo=0.9, …)`.
+  - **Why it is deferred (the blocker):** the full MEMI energy-balance equations
+    are **not visible in open primary sources**, and **no published verbatim
+    `(inputs → PET)` validation rows** were found during research. The only
+    available implementations are `pythermalcomfort.pet_steady` (MIT, but SciPy
+    `fsolve` — not numpy-only) and Ladybug (**AGPL — must not be copied**).
+    Shipping now would mean transcribing equations we cannot cite and validating
+    only against another implementation's output, which fails `DESIGN.md` §5
+    ("a formula with no citation is not ready to merge") and this file's own gate.
+  - **Unblock condition:** obtain a fully-cited equation set — **Walther &
+    Goestchel (2018)** `10.1016/j.buildenv.2018.03.054` ("first exhaustive
+    explanation of PET"; the corrected steady-state model) and/or **VDI 3787
+    Part 2** — via ECMWF institutional access, **and** a set of published
+    reference values (VDI worked examples / Höppe 1999 or Matzarakis et al. 1999
+    tables). Then implement **independently** from those equations: numpy-only,
+    bounded deterministic iteration (mirror the `liljegren.py` solver),
+    non-convergence → `NaN`; no SciPy, no AGPL code.
+  - **Categories (docs):** the PET thermal-perception / physiological-stress
+    bands are from Matzarakis & Mayer (1996).
+  - **Pitfalls:** PET vs. mPET (modified PET) are different indices; RayMan and
+    `pythermalcomfort` are documented to disagree numerically — pin the *cited*
+    equation set, not a tool's output. `pythermalcomfort.pet_steady` may be used
+    as a development cross-check oracle only, never a runtime dependency.
 - [ ] **Validity-range helpers.** Several indices are only defined over a range
   (Wind Chill, Heat Index). A small companion that returns a validity mask for a
   given index + inputs would let pipelines blank out-of-range points cleanly

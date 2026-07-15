@@ -199,6 +199,82 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"hu {hu}")
         assert hu == pytest.approx(318.47466703, abs=1e-6)
 
+    def test_discomfort_index(self):
+        # Reference values derived analytically from Thom's relative-humidity
+        # form DI = T - 0.55 (1 - 0.01 RH)(T - 14.5) [T in degC], returned in K.
+        # The last two are exact identities of the formula (independent of the
+        # implementation): RH=100% -> DI equals air temperature; T=14.5 degC ->
+        # DI = 14.5 degC for any RH.
+        cases = [
+            (30.0, 70.0, 300.5925),
+            (40.0, 40.0, 304.735),
+            (25.0, 50.0, 295.2625),
+            (28.0, 100.0, 301.15),
+            (14.5, 35.0, 287.65),
+        ]
+        for t_c, rh_pc, expected_k in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            di = tmf.calculate_discomfort_index(t2_k, rh)
+            assert di[0] == pytest.approx(expected_k, abs=1e-6)
+
+    def test_summer_simmer_index(self):
+        # PRIMARY gate (G2 affine-THI identity). By definition the common 1987
+        # SSI is an affine transform of Thom's Fahrenheit Temperature-Humidity
+        # Index: SSI_F = 1.98*THI_F - 56.83 with THI_F = Tf - (0.55 - 0.0055*RH)
+        # (Tf - 58). Rebuild that whole chain independently and require the
+        # function to reproduce it exactly. This proves the implemented formula
+        # matches its stated definition (only the *provenance* of that formula is
+        # secondary-source; the maths is pinned here).
+        identity_points = [
+            (33.0, 55.0),
+            (18.0, 90.0),
+            (37.5, 15.0),
+            (10.0, 100.0),
+            (28.2, 47.5),
+        ]
+        for t_c, rh_pc in identity_points:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            tf = tmf.kelvin_to_fahrenheit(t2_k)
+            thi_f = tf - (0.55 - 0.0055 * rh) * (tf - 58.0)
+            expected_ssi_f = 1.98 * thi_f - 56.83
+            expected_k = tmf.fahrenheit_to_kelvin(expected_ssi_f)
+            ssi = tmf.calculate_summer_simmer_index(t2_k, rh)
+            assert ssi[0] == pytest.approx(expected_k[0], abs=1e-6)
+
+        # Hand-derived exact evaluations. Every Tf is an integer so the whole
+        # chain is checkable by hand. Notation: coeff = 0.55 - 0.0055*RH,
+        # THI_F = Tf - coeff*(Tf - 58), SSI_F = 1.98*THI_F - 56.83,
+        # SSI_K = (SSI_F + 459.67)*5/9.
+        cases = [
+            # T=30C -> Tf=86; coeff=0.55-0.275=0.275; THI_F=86-0.275*28=78.3;
+            # SSI_F=1.98*78.3-56.83=98.204; SSI_K=(98.204+459.67)*5/9=309.930.
+            # (Task worked example quotes SSI_F~=98.20 -> SSI_K~=309.928; the
+            # unrounded value is 309.930 and both sit inside the 1e-2 gate.)
+            (30.0, 50.0, 309.930),
+            # T=25C -> Tf=77; coeff=0.55-0.22=0.33; THI_F=77-0.33*19=70.73;
+            # SSI_F=1.98*70.73-56.83=83.2154; SSI_K=(83.2154+459.67)*5/9=301.603.
+            (25.0, 40.0, 301.603),
+            # T=35C -> Tf=95; coeff=0.55-0.33=0.22; THI_F=95-0.22*37=86.86;
+            # SSI_F=1.98*86.86-56.83=115.1528; SSI_K=(115.1528+459.67)*5/9=319.346.
+            (35.0, 60.0, 319.346),
+            # T=20C -> Tf=68; coeff=0.55-0.44=0.11; THI_F=68-0.11*10=66.9;
+            # SSI_F=1.98*66.9-56.83=75.632; SSI_K=(75.632+459.67)*5/9=297.390.
+            (20.0, 80.0, 297.390),
+            # T=15C, RH=100 -> Tf=59; coeff=0 so THI_F=Tf=59 (RH=100 identity);
+            # SSI_F=1.98*59-56.83=59.99; SSI_K=(59.99+459.67)*5/9=288.700.
+            (15.0, 100.0, 288.700),
+            # T=40C -> Tf=104; coeff=0.55-0.11=0.44; THI_F=104-0.44*46=83.76;
+            # SSI_F=1.98*83.76-56.83=109.0148; SSI_K=(109.0148+459.67)*5/9=315.936.
+            (40.0, 20.0, 315.936),
+        ]
+        for t_c, rh_pc, expected_k in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            ssi = tmf.calculate_summer_simmer_index(t2_k, rh)
+            assert ssi[0] == pytest.approx(expected_k, abs=1e-2)
+
     def test_normal_effective_temperature(self):
         t2_k = np.array([307])
         va = np.array([4])
@@ -207,6 +283,41 @@ class TestThermalCalculator(unittest.TestCase):
         # print(f"net {net}")
         assert net == pytest.approx(304.13650125, abs=1e-6)
 
+    def test_relative_strain_index(self):
+        # G2 analytic identity: at Ta = 21 degC the numerator (Ta - 21) is exactly
+        # 0, so RSI == 0 for any relative humidity (independent of the vapour
+        # pressure e). Encoded for several rh values.
+        for rh_pc in (10.0, 30.0, 50.0, 73.74, 90.0, 100.0):
+            t2_k = np.array([tmf.celsius_to_kelvin(21.0)])
+            rh = np.array([rh_pc])
+            rsi = tmf.calculate_relative_strain_index(t2_k, rh)
+            assert rsi[0] == 0.0
+
+        # G3 external reference: Asghari et al. (2020) Table 4, 15-yr summer
+        # monthly means (DOI 10.2174/1874213002013010011). Each row is re-derived
+        # here with thermofeel's non-saturation vapour pressure e(Ta, rh) via the
+        # hPa closed form RSI = (Ta - 21) / (58 - e). computed vs source (delta):
+        #   (34.27, 66.50) -> 0.59710 vs 0.600  (-0.00290), e = 35.7758 hPa
+        #   (28.12, 22.95) -> 0.14444 vs 0.151  (-0.00656), e =  8.7074 hPa
+        #   (27.54, 73.70) -> 0.21120 vs 0.210  (+0.00120), e = 27.0339 hPa
+        #   (33.73, 60.30) -> 0.48003 vs 0.480  (+0.00003), e = 31.4807 hPa
+        #   (27.00, 73.74) -> 0.18873 vs 0.190  (-0.00127), e = 26.2079 hPa
+        # All residuals are within abs=0.02 (max |delta| = 0.0066, mixed signs so
+        # no systematic bias); the spread reflects source rounding (2-3 dp) plus a
+        # mean-of-RSI vs RSI-of-means (Jensen) offset, not a formula mismatch.
+        cases = [
+            (34.27, 66.5, 0.60),
+            (28.12, 22.95, 0.151),
+            (27.54, 73.7, 0.21),
+            (33.73, 60.3, 0.48),
+            (27.00, 73.74, 0.19),
+        ]
+        for t_c, rh_pc, expected in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            rh = np.array([rh_pc])
+            rsi = tmf.calculate_relative_strain_index(t2_k, rh)
+            assert rsi[0] == pytest.approx(expected, abs=0.02)
+
     def test_apparent_temperature(self):
         t2_k = np.array([tmf.celsius_to_kelvin(25.0)])
         va = np.array([3])
@@ -214,6 +325,94 @@ class TestThermalCalculator(unittest.TestCase):
         at = np.array([tmf.calculate_apparent_temperature(t2_k, va, rh)])
         # print(f"at {at}")
         assert at == pytest.approx(299.86678322384626, abs=1e-6)
+
+    def test_apparent_temperature_radiation(self):
+        # Steadman (1994) / BoM radiation-inclusive Apparent Temperature:
+        #   AT = Ta + 0.348*e - 0.70*va + 0.70*q/(va + 10) - 4.25   [Ta in degC]
+        # with e the ambient vapour pressure (hPa) from the BoM approximation
+        #   e = (rh/100)*6.105*exp(17.27*Ta/(237.7 + Ta)).
+        # Each row's e and AT are hand-derived from those formulae (arithmetic
+        # shown) and pinned as Kelvin literals; the function is never used to
+        # generate its own expected value (no self-fulfilment).
+        #
+        # Row A: Ta=30, rh=50, va=2, q=100
+        #   e       = 0.50*6.105*exp(17.27*30/267.7)   = 21.1435807 hPa
+        #   0.348*e = 7.3579661 ; 0.70*va = 1.40 ; 0.70*100/12 = 5.8333333
+        #   AT_c    = 30 + 7.3579661 - 1.40 + 5.8333333 - 4.25 = 37.5412994
+        #   AT_K    = 310.6912994
+        # Row B: Ta=35, rh=60, va=5, q=200
+        #   e       = 0.60*6.105*exp(17.27*35/272.7)   = 33.6099046 hPa
+        #   0.348*e = 11.6962468 ; 0.70*va = 3.50 ; 0.70*200/15 = 9.3333333
+        #   AT_c    = 35 + 11.6962468 - 3.50 + 9.3333333 - 4.25 = 48.2795801
+        #   AT_K    = 321.4295801
+        # Row C: Ta=25, rh=40, va=0.5, q=0  (q=0 -> radiation term vanishes)
+        #   e       = 0.40*6.105*exp(17.27*25/262.7)   = 12.6331850 hPa
+        #   0.348*e = 4.3963484 ; 0.70*va = 0.35 ; qterm = 0
+        #   AT_c    = 25 + 4.3963484 - 0.35 + 0 - 4.25 = 24.7963484
+        #   AT_K    = 297.9463484
+        # Row D: Ta=20, rh=80, va=3, q=300
+        #   e       = 0.80*6.105*exp(17.27*20/257.7)   = 18.6581445 hPa
+        #   0.348*e = 6.4930343 ; 0.70*va = 2.10 ; 0.70*300/13 = 16.1538462
+        #   AT_c    = 20 + 6.4930343 - 2.10 + 16.1538462 - 4.25 = 36.2968805
+        #   AT_K    = 309.4468805
+        # Row E: Ta=40, rh=30, va=1, q=150
+        #   e       = 0.30*6.105*exp(17.27*40/277.7)   = 22.0367568 hPa
+        #   0.348*e = 7.6687914 ; 0.70*va = 0.70 ; 0.70*150/11 = 9.5454545
+        #   AT_c    = 40 + 7.6687914 - 0.70 + 9.5454545 - 4.25 = 52.2642459
+        #   AT_K    = 325.4142459
+        cases = [
+            (30.0, 50.0, 2.0, 100.0, 310.6912994),
+            (35.0, 60.0, 5.0, 200.0, 321.4295801),
+            (25.0, 40.0, 0.5, 0.0, 297.9463484),
+            (20.0, 80.0, 3.0, 300.0, 309.4468805),
+            (40.0, 30.0, 1.0, 150.0, 325.4142459),
+        ]
+        for t_c, rh_pc, va_ms, q_wm2, expected_k in cases:
+            t2_k = np.array([tmf.celsius_to_kelvin(t_c)])
+            va = np.array([va_ms])
+            rh = np.array([rh_pc])
+            q = np.array([q_wm2])
+            at = tmf.calculate_apparent_temperature_radiation(t2_k, va, rh, q)
+            assert at[0] == pytest.approx(expected_k, abs=1e-2)
+
+        # Vapour-path check (breaks circularity): assert the shared helper
+        # returns the hand-computed e for Row A independently of the AT value.
+        #   e = 0.50*6.105*exp(17.27*30/267.7) = 21.1435807 hPa
+        e_row_a = tmf.calculate_nonsaturation_vapour_pressure(
+            np.array([tmf.celsius_to_kelvin(30.0)]), np.array([50.0])
+        )
+        assert e_row_a[0] == pytest.approx(21.1435807, abs=1e-6)
+
+        # External anchor (independent MIT oracle, verified during research):
+        #   Ta=23 degC (296.15 K), rh=70%, va=1, q=50 -> AT ~ 28.1 degC (301.25 K).
+        # Re-derived from the BoM formula:
+        #   e       = 0.70*6.105*exp(17.27*23/260.7) = 19.6104356 hPa
+        #   0.348*e = 6.8244316 ; 0.70*va = 0.70 ; 0.70*50/11 = 3.1818182
+        #   AT_c    = 23 + 6.8244316 - 0.70 + 3.1818182 - 4.25 = 28.0562498
+        #   AT_K    = 301.2062498  (within 0.044 K of the 301.25 K anchor).
+        at_anchor = tmf.calculate_apparent_temperature_radiation(
+            np.array([296.15]), np.array([1.0]), np.array([70.0]), np.array([50.0])
+        )
+        assert at_anchor[0] == pytest.approx(301.25, abs=0.1)
+
+        # NB: a second dossier oracle value (Ta=25 degC, rh=30%, va=0.1, q=100
+        # -> 25.3 degC) does NOT reconcile with the BoM formula (hand-calc gives
+        # ~30.9 degC); it traces to a different tool/convention and is
+        # deliberately not pinned here.
+
+        # Analytic identity (G2): at q=0 the radiation form differs from the
+        # non-radiation calculate_apparent_temperature only by its own constants,
+        #   AT_radiation - AT = (0.348 - 0.33)*e - (4.25 - 4.0) = 0.018*e - 0.25,
+        # elementwise (the -0.70*va terms cancel; the q term is 0). Encoded
+        # against the shipped non-radiation function.
+        t2_k = np.array([tmf.celsius_to_kelvin(c) for c in (18.0, 27.0, 33.0, 41.0)])
+        va = np.array([0.5, 2.0, 4.0, 6.0])
+        rh = np.array([35.0, 55.0, 75.0, 95.0])
+        q0 = np.zeros_like(t2_k)
+        at_rad0 = tmf.calculate_apparent_temperature_radiation(t2_k, va, rh, q0)
+        at_plain = tmf.calculate_apparent_temperature(t2_k, va, rh)
+        e = tmf.calculate_nonsaturation_vapour_pressure(t2_k, rh)
+        np.testing.assert_allclose(at_rad0 - at_plain, 0.018 * e - 0.25, atol=1e-9)
 
     def test_wind_chill(self):
         t2_k = np.array([270])
@@ -249,6 +448,72 @@ class TestThermalCalculator(unittest.TestCase):
         hia = np.array([tmf.calculate_heat_index_adjusted(t2_k, td_k)])
         # print(f"hia {hia}")
         assert hia[0] == pytest.approx(295.15355699, abs=1e-6)
+
+    def test_pmv(self):
+        # G3 - ISO 7730:2005 Annex D Table D.1: (ta, tr, v, rh, met, clo) -> PMV.
+        # Every row was re-derived from the Annex D fixed-point algorithm and
+        # cross-checked against the MIT oracle pythermalcomfort.pmv_ppd_iso
+        # (7730-2005 model). 12 of the 13 rows reproduce the printed PMV to
+        # <0.008. Row 7 (23.5, 23.5, 0.1, 40 %, 1.2 met, 1.0 clo) is a known
+        # ISO Table D.1 misprint: the standard prints PMV 0.50 / PPD 10, but the
+        # Annex D algorithm AND the oracle both give PMV 0.36 / PPD 7.7. The
+        # formula-reconciling value is pinned (the same policy the programme
+        # applied to the non-reconciling apparent-temperature dossier row), so
+        # the tolerance stays uniform at 0.02 with no per-row weakening.
+        ta = np.array([22, 27, 27, 23.5, 23.5, 19, 23.5, 23.5, 23, 23, 22, 27, 27])
+        tr = np.array([22, 27, 27, 25.5, 25.5, 19, 23.5, 23.5, 21, 21, 22, 27, 27])
+        v = np.array([0.1, 0.1, 0.3, 0.1, 0.3, 0.1, 0.1, 0.3, 0.1, 0.3, 0.1, 0.1, 0.3])
+        rh = np.array([60, 60, 60, 60, 60, 40, 40, 40, 40, 40, 60, 60, 60])
+        met = np.array(
+            [1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.6, 1.6, 1.6]
+        )
+        clo = np.array(
+            [0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 0.5]
+        )
+        # Row 7 uses the algorithm/oracle value (0.36), not the misprint (0.50).
+        pmv_expected = np.array(
+            [
+                -0.75,
+                0.77,
+                0.44,
+                -0.01,
+                -0.55,
+                -0.60,
+                0.36,
+                0.12,
+                0.05,
+                -0.16,
+                0.05,
+                1.17,
+                0.95,
+            ]
+        )
+        # Row 7 PPD pinned to the reconciling 8 (not the misprinted 10).
+        ppd_expected = np.array([17, 17, 9, 5, 11, 13, 8, 5, 5, 6, 5, 34, 24])
+        pmv = tmf.calculate_pmv(
+            tmf.celsius_to_kelvin(ta),
+            tmf.celsius_to_kelvin(tr),
+            v,
+            rh=rh,
+            met=met,
+            clo=clo,
+        )
+        assert not np.isnan(pmv).any()  # every ISO row converges
+        np.testing.assert_allclose(pmv, pmv_expected, atol=0.02)
+        ppd = tmf.calculate_ppd(pmv)
+        np.testing.assert_allclose(ppd, ppd_expected, atol=0.5)
+
+    def test_ppd(self):
+        # G2 identities: PPD is exactly 5% at thermal neutrality (PMV = 0) and is
+        # an even function of PMV (equal warm/cold deviations give equal PPD).
+        assert tmf.calculate_ppd(0.0) == 5.0
+        x = np.array([-2.4, -1.3, -0.5, 0.7, 1.6, 2.9])
+        np.testing.assert_array_equal(tmf.calculate_ppd(x), tmf.calculate_ppd(-x))
+        # Reference points on the ISO 7730 PPD(PMV) curve (PMV +-0.5 -> 10 %,
+        # +-1 -> 26 %, +-2 -> 77 %).
+        pmv = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0])
+        expected = np.array([76.8, 26.1, 10.2, 5.0, 10.2, 26.1, 76.8])
+        np.testing.assert_allclose(tmf.calculate_ppd(pmv), expected, atol=0.1)
 
 
 if __name__ == "__main__":

@@ -28,8 +28,9 @@ PYTHON  ?= $(VENV)/bin/python
 # pyproject.toml under [tool.ruff].
 RUFF    ?= $(UV) run --no-project --with ruff ruff
 
-# Code that the QA tools operate on (the package, its tests, and helper scripts).
-PY_SRC  ?= thermofeel tests scripts
+# Code that the QA tools operate on (the package, its tests, helper scripts,
+# and the validation campaign).
+PY_SRC  ?= thermofeel tests scripts validation
 
 # ── Defaults ──────────────────────────────────────────────────────────────
 

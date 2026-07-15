@@ -55,13 +55,18 @@ class TestThermalCalculator(unittest.TestCase):
         self.wbgt_liljegren = np.loadtxt(data_file("wbgt_liljegren.csv"))
         self.heat_force = np.loadtxt(data_file("heat_force.csv"))
         self.humidex = np.loadtxt(data_file("humidex.csv"))
+        self.di = np.loadtxt(data_file("di.csv"))
+        self.ssi = np.loadtxt(data_file("ssi.csv"))
         self.net = np.loadtxt(data_file("net.csv"))
+        self.rsi = np.loadtxt(data_file("rsi.csv"))
         self.at = np.loadtxt(data_file("at.csv"))
+        self.at_radiation = np.loadtxt(data_file("at_radiation.csv"))
         self.windchill = np.loadtxt(data_file("windchill.csv"))
         self.heatindex = np.loadtxt(data_file("heatindex.csv"))
         self.heatindexadjusted = np.loadtxt(data_file("hia.csv"))
         self.mrtr = np.loadtxt(data_file("mrtr.csv"))
         self.mrt_from_bgt = np.loadtxt(data_file("mrt_from_bgt.csv"))
+        self.pmv = np.loadtxt(data_file("pmv.csv"))
 
         self.dsrp = tmf.approximate_dsrp(self.fdir, self.cossza)
 
@@ -174,17 +179,47 @@ class TestThermalCalculator(unittest.TestCase):
         # np.savetxt("humidex.csv", humidex)
         self.assert_equal(self.humidex, humidex)
 
+    def test_discomfort_index(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        di = tmf.calculate_discomfort_index(self.t2m, rh_pc)
+        # np.savetxt("di.csv", di)
+        self.assert_equal(self.di, di)
+
+    def test_summer_simmer_index(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        ssi = tmf.calculate_summer_simmer_index(self.t2m, rh_pc)
+        # np.savetxt("ssi.csv", ssi)
+        self.assert_equal(self.ssi, ssi)
+
     def test_normal_effective_temperature(self):
         rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
         net = tmf.calculate_normal_effective_temperature(self.t2m, self.va, rh_pc)
         # np.savetxt("net.csv", net)
         self.assert_equal(self.net, net)
 
+    def test_relative_strain_index(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        rsi = tmf.calculate_relative_strain_index(self.t2m, rh_pc)
+        # np.savetxt("rsi.csv", rsi)
+        self.assert_equal(self.rsi, rsi)
+
     def test_apparent_temperature(self):
         rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
         at = tmf.calculate_apparent_temperature(self.t2m, self.va, rh_pc)
         # np.savetxt("at.csv", at)
         self.assert_equal(self.at, at)
+
+    def test_apparent_temperature_radiation(self):
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        # q is the caller-supplied net radiation absorbed per unit body-surface
+        # area (W m-2), NOT an NWP surface flux; fixed at 400 W m-2 here purely
+        # as a drift-guard regression driver.
+        q = np.full_like(self.t2m, 400.0)
+        at_radiation = tmf.calculate_apparent_temperature_radiation(
+            self.t2m, self.va, rh_pc, q
+        )
+        # np.savetxt("at_radiation.csv", at_radiation)
+        self.assert_equal(self.at_radiation, at_radiation)
 
     def test_wind_chill(self):
         windchill = tmf.calculate_wind_chill(self.t2m, self.va)
@@ -201,6 +236,16 @@ class TestThermalCalculator(unittest.TestCase):
         hia = tmf.calculate_heat_index_adjusted(self.t2m, self.td)
         # np.savetxt("hia.csv", hia)
         self.assert_equal(self.heatindexadjusted, hia)
+
+    def test_pmv(self):
+        # Drift guard for the vectorised ISO 7730 iteration. self.va is reused as
+        # the body-level relative air velocity driver (var); this exercises the
+        # whole-array fixed point and is not a claim that the 10 m wind equals
+        # body-level velocity. Every row converges (no NaN in pmv.csv).
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        pmv = tmf.calculate_pmv(self.t2m, self.mrt, self.va, rh=rh_pc)
+        # np.savetxt("pmv.csv", pmv)
+        self.assert_equal(self.pmv, pmv)
 
 
 if __name__ == "__main__":

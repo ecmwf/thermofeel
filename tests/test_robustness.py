@@ -26,6 +26,7 @@ TD = np.array([290.0])
 RH = np.array([50.0])
 VA = np.array([3.0])
 MRT = np.array([310.0])
+Q = np.array([100.0])  # body-absorbed net radiation [W m-2]
 NAN = np.array([np.nan])
 
 # Each entry maps a NaN temperature through one public index.
@@ -47,6 +48,13 @@ NAN_CASES = {
     "wbgt_simple": lambda x: tmf.calculate_wbgt_simple(x, RH),
     "wbgt": lambda x: tmf.calculate_wbgt(x, MRT, VA, TD),
     "utci": lambda x: tmf.calculate_utci(x, VA, MRT, td_k=TD),
+    "discomfort_index": lambda x: tmf.calculate_discomfort_index(x, RH),
+    "summer_simmer_index": lambda x: tmf.calculate_summer_simmer_index(x, RH),
+    "relative_strain_index": lambda x: tmf.calculate_relative_strain_index(x, RH),
+    "apparent_temperature_radiation": (
+        lambda x: tmf.calculate_apparent_temperature_radiation(x, VA, RH, Q)
+    ),
+    "pmv": lambda x: tmf.calculate_pmv(x, MRT, VA, rh=RH),
 }
 
 
@@ -71,6 +79,38 @@ def test_wbgt_liljegren_nan_element_propagates():
     out = tmf.calculate_wbgt_liljegren(t2, rh, pressure, va, ssrd, fdir, cossza)
     assert np.isfinite(out[0])
     assert np.isnan(out[1])
+
+
+def test_ppd_nan_propagates():
+    # calculate_ppd is a pure map of PMV; a NaN vote (e.g. a non-converged PMV
+    # element) propagates to NaN rather than raising or returning a spurious %.
+    assert np.isnan(tmf.calculate_ppd(NAN)).all()
+
+
+def test_relative_strain_index_singularity_and_sign_flip():
+    # RSI = (Ta - 21) / (58 - e). Near saturation around 35-36 degC the vapour
+    # pressure e approaches, then exceeds, 58 hPa: the denominator shrinks to zero
+    # and flips sign, so RSI blows up and then turns negative. This pins the
+    # documented, deliberately-unclamped out-of-domain edge (ROBUSTNESS.md R-9).
+    hot_saturated = tmf.celsius_to_kelvin(np.array([35.0, 36.0]))
+    rh = np.array([100.0, 100.0])
+    with np.errstate(divide="ignore", invalid="ignore"):
+        rsi = tmf.calculate_relative_strain_index(hot_saturated, rh)
+    assert rsi[0] > 5.0  # 35 degC / 100% RH: e ~ 56 hPa -> large positive RSI
+    assert rsi[1] < 0.0  # 36 degC / 100% RH: e ~ 59 hPa > 58 -> spurious negative
+
+
+def test_pmv_nonconvergence_returns_nan():
+    # A NaN element never satisfies the convergence test, so the vectorised fixed
+    # point runs to its iteration cap and returns NaN for it (the documented
+    # non-convergence behaviour), while a finite neighbour still converges.
+    t2 = tmf.celsius_to_kelvin(np.array([22.0, np.nan]))
+    tr = tmf.celsius_to_kelvin(np.array([22.0, 22.0]))
+    var = np.array([0.1, 0.1])
+    rh = np.array([60.0, 60.0])
+    pmv = tmf.calculate_pmv(t2, tr, var, rh=rh)
+    assert np.isfinite(pmv[0])
+    assert np.isnan(pmv[1])
 
 
 def test_bgt_zero_wind_returns_mrt():
@@ -100,6 +140,26 @@ def test_bgt_negative_wind_is_nan():
 def test_utci_requires_ehpa_or_td():
     with pytest.raises(ValueError):
         tmf.calculate_utci(T, VA, MRT)
+
+
+def test_pmv_humidity_contract():
+    # Exactly one humidity input is required (mirrors calculate_utci).
+    t = tmf.celsius_to_kelvin(np.array([22.0]))
+    v = np.array([0.1])
+    with pytest.raises(ValueError):
+        tmf.calculate_pmv(t, t, v)  # neither rh nor vapour_pressure_hpa
+    with pytest.raises(ValueError):
+        tmf.calculate_pmv(
+            t, t, v, rh=np.array([60.0]), vapour_pressure_hpa=np.array([14.0])
+        )  # both
+    # Passing vapour pressure (converted from an RH row with the same ISO relation
+    # the function uses internally) reproduces the rh-driven PMV.
+    ta_c, rh = 22.0, 60.0
+    pa_pa = rh * 10.0 * np.exp(16.6536 - 4030.183 / (ta_c + 235.0))
+    vp_hpa = np.array([pa_pa / 100.0])
+    pmv_rh = tmf.calculate_pmv(t, t, v, rh=np.array([rh]))
+    pmv_vp = tmf.calculate_pmv(t, t, v, vapour_pressure_hpa=vp_hpa)
+    np.testing.assert_allclose(pmv_vp, pmv_rh)
 
 
 def test_wbgt_liljegren_rejects_unknown_wind_scaling():

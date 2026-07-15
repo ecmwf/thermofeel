@@ -1,8 +1,12 @@
 # Numerical Robustness & Failure Modes
 
-> **Status:** first hardening pass done (2.2.0). The `np.log`/`np.sqrt`/
-> `np.power`/division domains were audited, the guards confirmed, and
-> `NaN`/`Inf` behaviour pinned by `tests/test_robustness.py`. Findings are in §5.
+> **Status:** first hardening pass done (2.2.0); the 2.3.0 indices
+> (`calculate_discomfort_index`, `calculate_summer_simmer_index`,
+> `calculate_relative_strain_index`, `calculate_apparent_temperature_radiation`,
+> `calculate_pmv`/`calculate_ppd`) were folded into the same contract (§5,
+> R-9/R-10). The `np.log`/`np.sqrt`/`np.power`/division domains were audited, the
+> guards confirmed, and `NaN`/`Inf` behaviour pinned by
+> `tests/test_robustness.py`. Findings are in §5.
 > This document records how thermofeel behaves under bad, edge, or out-of-domain
 > input: the failure modes to guard against, plus the checklist and findings log.
 
@@ -83,8 +87,9 @@ robustness-specific guarantees this document tracks, layered on top, are:
   `test_bgt_negative_wind_is_nan`.
 - **R-2 — LOW — all public indices, `NaN` propagation.** A `NaN` input yields a
   `NaN` output element-wise; no function raises on finite, correctly-shaped
-  arrays. **Status:** confirmed and pinned. **Test:**
-  `test_nan_temperature_propagates`.
+  arrays. The 2.3.0 indices are included in the parametrised check. **Status:**
+  confirmed and pinned. **Tests:** `test_nan_temperature_propagates`,
+  `test_ppd_nan_propagates`.
 - **R-3 — LOW — `liljegren.solve_globe`/`solve_wetbulb` non-convergence.** Each
   element that does not converge within `MAX_ITER` (e.g. a `NaN` input, which
   never satisfies the tolerance) returns `NaN`; converging neighbours are
@@ -117,6 +122,36 @@ robustness-specific guarantees this document tracks, layered on top, are:
   array contract is now stated prominently (docs "Calling convention" + the
   relevant docstrings). Uniform scalar acceptance via input coercion is a
   possible follow-up (see `IDEAS.md`).
+- **R-9 — MEDIUM — `calculate_relative_strain_index` `(58 - e)` denominator.**
+  RSI is `(Ta - 21) / (58 - e)`, with `e` the ambient vapour pressure in hPa.
+  `e` reaches ~58 hPa near saturation at ~35-36 degC (a plausible extreme-heat
+  input), where the denominator vanishes: RSI diverges to `+/-inf`, and for
+  `e > 58` (above the ~35 degC validity range) the denominator turns negative so
+  RSI returns a spurious *negative* magnitude for what is a heat-strain index.
+  **Status:** documented (docstring + guide) and deliberately not clamped
+  (validity ranges are documented, not enforced — the caller masks `Ta > 35 degC`
+  / near-saturated inputs). **Test:**
+  `test_relative_strain_index_singularity_and_sign_flip`.
+- **R-10 — LOW — `calculate_pmv` non-convergence and humidity contract.** The
+  ISO 7730 clothing-surface fixed point is swept over the whole array; any element
+  not converged within the 150-sweep cap (e.g. a `NaN` input) is returned as `NaN`
+  while converging neighbours are unaffected (cf. R-3). `calculate_pmv` also
+  raises `ValueError` unless exactly one of `rh` / `vapour_pressure_hpa` is given
+  (cf. R-1's explicit-contract clause), and `calculate_ppd` propagates `NaN`.
+  **Status:** by design, confirmed. **Tests:** `pmv` in
+  `test_nan_temperature_propagates`, `test_pmv_humidity_contract`,
+  `test_pmv_nonconvergence_returns_nan`.
+- **R-11 — LOW — `thermofeel.approximations` fdir estimators.** The
+  `approximate_fdir_erbs` / `approximate_fdir_disc` clearness-index estimators
+  divide by the extraterrestrial irradiance (`~S0·cossza`), which is
+  ill-conditioned at low sun. Guards: a night/low-sun cutoff (`cossza <=
+  min_cossza`, default 0.065 ≈ 86.3 deg zenith) returns 0; the clearness index
+  is clipped to `[0, 1]`; the air mass is clipped to a small positive
+  cos(zenith) and capped at `max_airmass`; the output is clipped to `[0, ssrd]`;
+  `NaN` inputs propagate to `NaN`. These are documented ESTIMATORS (namespace
+  `thermofeel.approximations`, not top-level), validated to machine precision
+  against pvlib. **Status:** by design, confirmed. **Tests:**
+  `test_nan_propagates`, `test_night_returns_zero`, the pvlib-oracle rows.
 
 ## 6. Severity definitions
 
