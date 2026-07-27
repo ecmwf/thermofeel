@@ -26,7 +26,7 @@ PYTHON  ?= $(VENV)/bin/python
 # ruff (linter + formatter) runs in an ephemeral uv environment (`--no-project`
 # so uv does not build thermofeel just to run a linter). Config lives in
 # pyproject.toml under [tool.ruff].
-RUFF    ?= $(UV) run --no-project --with ruff ruff
+RUFF    ?= $(UV) run --no-project --with ruff==0.15.0 ruff
 
 # Code that the QA tools operate on (the package, its tests, helper scripts,
 # and the validation campaign).
