@@ -71,6 +71,12 @@ LSRDT = np.array(
 URBAN_EXP = np.array([0.15, 0.15, 0.20, 0.25, 0.30, 0.30])
 
 
+def _finite_mask(*values: ArrayLike) -> np.ndarray:
+    return np.logical_and.reduce(
+        np.broadcast_arrays(*(np.isfinite(value) for value in values))
+    )
+
+
 def esat(tk: ArrayLike) -> np.ndarray:
     """Saturation vapour pressure over liquid water [hPa], Buck (1981)."""
     y = (tk - 273.15) / (tk - 32.18)
@@ -166,7 +172,9 @@ def solve_globe(
 
     tg_prev = np.array(ta, dtype=float, copy=True)
     result = np.full(np.shape(ta), np.nan, dtype=float)
-    converged = np.zeros(np.shape(ta), dtype=bool)
+    pending = _finite_mask(ta, rh, pair, speed, solar, fdir, cza)
+    if not pending.any():
+        return result
     for _ in range(MAX_ITER):
         tref = 0.5 * (tg_prev + ta)
         h = h_sphere_in_air(tref, pair, speed)
@@ -178,11 +186,11 @@ def solve_globe(
             * (1.0 - ALB_GLOBE)
             * (beam + 1.0 + ALB_SFC)
         ) ** 0.25
-        now = (~converged) & (np.abs(tg_new - tg_prev) < CONVERGENCE)
+        now = pending & (np.abs(tg_new - tg_prev) < CONVERGENCE)
         result = np.where(now, tg_new - 273.15, result)
-        converged = converged | now
-        tg_prev = np.where(converged, tg_prev, 0.9 * tg_prev + 0.1 * tg_new)
-        if converged.all():
+        pending &= ~now
+        tg_prev = np.where(pending, 0.9 * tg_prev + 0.1 * tg_new, tg_prev)
+        if not pending.any():
             break
     return result
 
@@ -213,7 +221,9 @@ def solve_wetbulb(
 
     tw_prev = dew_point(eair)
     result = np.full(np.shape(ta), np.nan, dtype=float)
-    converged = np.zeros(np.shape(ta), dtype=bool)
+    pending = _finite_mask(ta, rh, pair, speed, solar, fdir, cza, rad)
+    if not pending.any():
+        return result
     for _ in range(MAX_ITER):
         tref = 0.5 * (tw_prev + ta)
         h = h_cylinder_in_air(tref, pair, speed)
@@ -232,11 +242,11 @@ def solve_wetbulb(
             - evap(tref) / RATIO * (ewick - eair) / (pair - ewick) * (PR / sc) ** 0.56
             + (fatm / h) * rad
         )
-        now = (~converged) & (np.abs(tw_new - tw_prev) < CONVERGENCE)
+        now = pending & (np.abs(tw_new - tw_prev) < CONVERGENCE)
         result = np.where(now, tw_new - 273.15, result)
-        converged = converged | now
-        tw_prev = np.where(converged, tw_prev, 0.9 * tw_prev + 0.1 * tw_new)
-        if converged.all():
+        pending &= ~now
+        tw_prev = np.where(pending, 0.9 * tw_prev + 0.1 * tw_new, tw_prev)
+        if not pending.any():
             break
     return result
 
