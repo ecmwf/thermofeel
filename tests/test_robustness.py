@@ -18,6 +18,8 @@ import numpy as np
 import pytest
 
 import thermofeel as tmf
+from thermofeel import liljegren
+from thermofeel import thermofeel as thermofeel_module
 from thermofeel.helpers import fahrenheit_to_celsius
 
 # Representative finite inputs (Kelvin / m s-1 / % / hPa).
@@ -28,6 +30,15 @@ VA = np.array([3.0])
 MRT = np.array([310.0])
 Q = np.array([100.0])  # body-absorbed net radiation [W m-2]
 NAN = np.array([np.nan])
+
+
+def _solve_globe(inputs):
+    return liljegren.solve_globe(*inputs)
+
+
+def _solve_wetbulb(inputs):
+    return liljegren.solve_wetbulb(*inputs, 1.0)
+
 
 # Each entry maps a NaN temperature through one public index.
 NAN_CASES = {
@@ -81,6 +92,56 @@ def test_wbgt_liljegren_nan_element_propagates():
     assert np.isnan(out[1])
 
 
+@pytest.mark.parametrize(
+    ("solver", "convection", "expected"),
+    [
+        (_solve_globe, "h_sphere_in_air", 35.96840506),
+        (_solve_wetbulb, "h_cylinder_in_air", 19.95920111),
+    ],
+)
+def test_liljegren_solvers_skip_nan_rows_without_extra_iterations(
+    monkeypatch, solver, convection, expected
+):
+    finite_inputs = (
+        np.array([298.15]),
+        np.array([0.5]),
+        np.array([1013.0]),
+        np.array([2.0]),
+        np.array([500.0]),
+        np.array([0.5]),
+        np.array([0.5]),
+    )
+    original_convection = getattr(liljegren, convection)
+    calls = 0
+
+    def count_iterations(*args):
+        nonlocal calls
+        calls += 1
+        return original_convection(*args)
+
+    monkeypatch.setattr(liljegren, convection, count_iterations)
+
+    finite = solver(finite_inputs)
+    finite_calls = calls
+    np.testing.assert_allclose(finite, [expected], rtol=1e-8)
+
+    calls = 0
+    mixed_inputs = tuple(
+        np.array([values[0], np.nan if index == 0 else values[0]])
+        for index, values in enumerate(finite_inputs)
+    )
+    mixed = solver(mixed_inputs)
+    assert calls == finite_calls
+    np.testing.assert_allclose(mixed[0], finite[0])
+    assert np.isnan(mixed[1])
+
+    calls = 0
+    all_invalid_inputs = (np.array([np.nan]), *finite_inputs[1:])
+    all_invalid = solver(all_invalid_inputs)
+    assert calls == 0
+    assert np.isnan(all_invalid).all()
+
+
 def test_ppd_nan_propagates():
     # calculate_ppd is a pure map of PMV; a NaN vote (e.g. a non-converged PMV
     # element) propagates to NaN rather than raising or returning a spurious %.
@@ -100,17 +161,47 @@ def test_relative_strain_index_singularity_and_sign_flip():
     assert rsi[1] < 0.0  # 36 degC / 100% RH: e ~ 59 hPa > 58 -> spurious negative
 
 
-def test_pmv_nonconvergence_returns_nan():
-    # A NaN element never satisfies the convergence test, so the vectorised fixed
-    # point runs to its iteration cap and returns NaN for it (the documented
-    # non-convergence behaviour), while a finite neighbour still converges.
-    t2 = tmf.celsius_to_kelvin(np.array([22.0, np.nan]))
-    tr = tmf.celsius_to_kelvin(np.array([22.0, 22.0]))
-    var = np.array([0.1, 0.1])
-    rh = np.array([60.0, 60.0])
-    pmv = tmf.calculate_pmv(t2, tr, var, rh=rh)
-    assert np.isfinite(pmv[0])
-    assert np.isnan(pmv[1])
+def test_pmv_skips_nan_rows_without_extra_iterations(monkeypatch):
+    finite_inputs = (
+        tmf.celsius_to_kelvin(np.array([22.0])),
+        tmf.celsius_to_kelvin(np.array([22.0])),
+        np.array([0.1]),
+        np.array([60.0]),
+    )
+    original_maximum = thermofeel_module.np.maximum
+    calls = 0
+
+    def count_iterations(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_maximum(*args, **kwargs)
+
+    monkeypatch.setattr(thermofeel_module.np, "maximum", count_iterations)
+
+    finite = tmf.calculate_pmv(*finite_inputs[:3], rh=finite_inputs[3])
+    finite_calls = calls
+    np.testing.assert_allclose(finite, [-0.75256792], rtol=1e-8)
+
+    calls = 0
+    mixed = tmf.calculate_pmv(
+        tmf.celsius_to_kelvin(np.array([22.0, np.nan])),
+        tmf.celsius_to_kelvin(np.array([22.0, 22.0])),
+        np.array([0.1, 0.1]),
+        rh=np.array([60.0, 60.0]),
+    )
+    assert calls == finite_calls
+    np.testing.assert_allclose(mixed[0], finite[0])
+    assert np.isnan(mixed[1])
+
+    calls = 0
+    all_invalid = tmf.calculate_pmv(
+        tmf.celsius_to_kelvin(np.array([np.nan])),
+        finite_inputs[1],
+        finite_inputs[2],
+        rh=finite_inputs[3],
+    )
+    assert calls == 0
+    assert np.isnan(all_invalid).all()
 
 
 def test_bgt_zero_wind_returns_mrt():

@@ -1275,9 +1275,9 @@ def calculate_pmv(
 
     Fanger's steady-state heat-balance comfort equation as standardised in
     ISO 7730:2005. The clothing-surface temperature is obtained by the Annex D
-    fixed-point iteration (tolerance 0.00015, capped at 150 sweeps). The whole
-    array is iterated together (mirroring the Liljegren energy-balance solvers)
-    and any element that has not converged within the cap is returned as NaN.
+    fixed-point iteration (tolerance 0.00015, capped at 150 sweeps). Finite
+    rows are iterated together and any element that has not converged within
+    the cap is returned as NaN.
 
     ``met`` and ``clo`` are exposed as parameters because PMV is only defined for
     a stated activity and clothing level; the defaults (1.2 met, 0.5 clo) are
@@ -1341,18 +1341,27 @@ def calculate_pmv(
     xf = xn
     hc = np.zeros(bshape, dtype=float)
     converged = np.zeros(bshape, dtype=bool)
+    pending = (
+        np.isfinite(xn)
+        & np.isfinite(hcf)
+        & np.isfinite(p2)
+        & np.isfinite(p3)
+        & np.isfinite(p4)
+        & np.isfinite(p5)
+    )
     for _ in range(150):
+        if not pending.any():
+            break
         xf_new = (xf + xn) / 2.0
         hcn = 2.38 * np.abs(100.0 * xf_new - taa) ** 0.25
         hc_new = np.maximum(hcf, hcn)
         xn_new = (p5 + p4 * hc_new - p2 * xf_new**4) / (100.0 + p3 * hc_new)
-        update = ~converged
-        xf = np.where(update, xf_new, xf)
-        xn = np.where(update, xn_new, xn)
-        hc = np.where(update, hc_new, hc)
-        converged = converged | (np.abs(xn_new - xf_new) <= eps)
-        if converged.all():
-            break
+        xf = np.where(pending, xf_new, xf)
+        xn = np.where(pending, xn_new, xn)
+        hc = np.where(pending, hc_new, hc)
+        now = pending & (np.abs(xn_new - xf_new) <= eps)
+        converged |= now
+        pending &= ~now
 
     tcl = 100.0 * xn - 273.0  # clothing-surface temperature [degC]
 
