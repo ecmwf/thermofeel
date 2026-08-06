@@ -53,11 +53,15 @@ jobs:
       - name: Install ruff
         run: |
           python -m pip install --upgrade pip
-          pip install ruff
+          # Pinned: ruff's default rule set changes between releases, so an
+          # unpinned linter silently redefines the gate. Keep in sync with
+          # RUFF_VERSION in the Makefile.
+          pip install ruff==0.16.1
+      # Paths must match PY_SRC in the Makefile so `make lint` and CI agree.
       - name: Ruff lint (config in pyproject.toml)
-        run: ruff check thermofeel tests scripts
+        run: ruff check thermofeel tests scripts validation
       - name: Ruff format check
-        run: ruff format --check --diff thermofeel tests scripts
+        run: ruff format --check --diff thermofeel tests scripts validation
 
   # Run the test suite with coverage and upload to Codecov
   coverage:
