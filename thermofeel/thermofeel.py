@@ -63,6 +63,9 @@ from .helpers import (
 from .liljegren import MIN_WIND_10M as _LILJEGREN_MIN_WIND_10M
 from .liljegren import wbgt as _liljegren_wbgt
 from .liljegren import wind_speed_2m as _liljegren_wind_speed_2m
+from .pet import REF_CLO as _PET_REF_CLO
+from .pet import REF_M_ACT as _PET_REF_M_ACT
+from .pet import pet as _pet
 
 to_radians = math.pi / 180.0
 
@@ -1387,3 +1390,137 @@ def calculate_ppd(pmv: ArrayLike) -> np.ndarray:
     """
     pmv = np.asarray(pmv, dtype=float)
     return 100.0 - 95.0 * np.exp(-0.03353 * pmv**4 - 0.2179 * pmv**2)
+
+
+def calculate_pet(
+    t2_k: ArrayLike,
+    mrt_k: ArrayLike,
+    va: ArrayLike,
+    rh: ArrayLike | None = None,
+    vapour_pressure_hpa: ArrayLike | None = None,
+    m_act_w: ArrayLike = _PET_REF_M_ACT,
+    clo: ArrayLike = _PET_REF_CLO,
+    height: ArrayLike = 1.80,
+    mass: ArrayLike = 75.0,
+    age: ArrayLike = 35.0,
+    sex: str = "male",
+    p_atm_hpa: ArrayLike = 1013.25,
+    f_eff: ArrayLike = 0.725,
+) -> np.ndarray:
+    """
+    PET - Physiological Equivalent Temperature
+        :param t2_k: (float array) 2m air temperature [K]
+        :param mrt_k: (float array) mean radiant temperature [K]
+        :param va: (float array) air velocity at the body [m/s]. This is the
+            air movement felt at the body, NOT the 10 m meteorological wind
+            speed - do not pass the model wind field; scale it first with
+            ``scale_windspeed``.
+        :param rh: (float array) relative humidity [%]. Provide exactly one of
+            ``rh`` or ``vapour_pressure_hpa``.
+        :param vapour_pressure_hpa: (float array) water vapour pressure [hPa].
+            Provide exactly one of ``rh`` or ``vapour_pressure_hpa``.
+        :param m_act_w: (float array) activity metabolism [W], WHOLE BODY (not
+            per unit area, and not ISO met units); default 80 W, the value that
+            defines PET.
+        :param clo: (float array) clothing insulation [clo] (1 clo = 0.155
+            m2 K W-1); default 0.9, the value that defines PET.
+        :param height: (float array) body height [m]; default 1.80.
+        :param mass: (float array) body mass [kg]; default 75.
+        :param age: (float array) age [years]; default 35.
+        :param sex: ("male" | "female") sex of the reference subject, which
+            selects the basal-metabolism relation; default "male".
+        :param p_atm_hpa: (float array) atmospheric pressure [hPa]; default
+            1013.25.
+        :param f_eff: (float array) effective radiative area fraction [-];
+            default 0.725 (standing/sitting per the reference implementations).
+        returns physiological equivalent temperature [K]. Elements that cannot
+        be evaluated - non-finite inputs, ``clo <= 0`` (the clothing cylinder
+        geometry is singular there), negative ``va``, or a heat balance with no
+        root inside the solver bracket - are returned as NaN.
+
+    PET is the air temperature of a standard indoor reference environment at
+    which the human heat balance closes with the *same core and skin
+    temperature* as in the outdoor environment being assessed, solved from the
+    MEMI two-node model (Hoeppe 1999). The reference environment is
+    ``mrt = t2``, ``va = 0.1 m/s``, ``vapour pressure = 12 hPa``, ``clo = 0.9``
+    and ``m_act_w = 80 W``; consequently ``calculate_pet(t, t, 0.1,
+    vapour_pressure_hpa=12)`` returns ``t`` exactly, which the test suite pins.
+
+    Because activity and clothing are fixed by the definition, PET depends only
+    on the meteorological inputs, which is what makes it a climatic index rather
+    than a behavioural one.
+
+    Interpretation: PET is a *comparator*, not an absolute measure of thermal
+    strain - Hoeppe notes that a person at PET = 20 degC is cold in swimming
+    trunks and sweating in a coat. Read it against the published thermal-stress
+    classes, with the caveat in "Model variant" below.
+
+    Validity: an empirical steady-state model without sharply defined input
+    bounds; the result is not clamped.
+
+    Model variant. The published sources disagree in several places; the
+    choices here follow the VDI/Walther reference implementations, which are
+    what the published PET tables and stress classes were generated with:
+
+    - The clothing temperature is FROZEN at its actual-environment value while
+      the reference air temperature is solved. The prose of both papers says
+      the clothing temperature is adjusted alongside the air temperature, but
+      every released implementation (VDI, Walther, LadyBug, pythermalcomfort)
+      freezes it, and re-solving it moves PET by up to 24 K in hot, high
+      radiant-load conditions. This is recorded so the choice is auditable.
+    - Evaporation uses the Woodcock clothing-aware resistance. The original
+      Hoeppe/VDI constant skin-diffusion resistance is a documented alternative
+      that moves PET by -7 to +2.6 K; it is deliberately NOT implemented here,
+      because it could not be verified against a primary source. Note that the
+      widely-cited Matzarakis/Mayer stress classes were derived with the
+      original diffusion model, so class boundaries carry that uncertainty.
+    - The body-temperature weighting is the constant ``alpha = 0.1`` (VDI),
+      not Gagge's blood-flow-dependent form.
+    - ``m_act_w`` is whole-body watts, matching the source model. This differs
+      from ``pythermalcomfort.pet_steady``, whose ``met`` argument is
+      effectively activity watts / 58.2 and is therefore not the ISO met unit
+      used by ``calculate_pmv``.
+    - The effective volumetric heat capacity of blood is 3640 J L-1 K-1, as
+      applied by every reference implementation, although the source paper's
+      own nomenclature would give ~4431.
+
+    The 3x3 non-linear system is solved as two nested 1-D monotone root finds
+    (see ``thermofeel.pet``), vectorised over the whole array, so no per-point
+    solver and no SciPy dependency is required.
+
+    Reference: Hoeppe, P. (1999) The physiological equivalent temperature - a
+    universal index for the biometeorological assessment of the thermal
+    environment, Int J Biometeorol 43:71-75
+    https://doi.org/10.1007/s004840050118
+    See also (equation set, corrections and the model critique): Walther, E. and
+    Goestchel, Q. (2018) The P.E.T. comfort index: Questioning the model,
+    Building and Environment 137:1-10
+    https://doi.org/10.1016/j.buildenv.2018.03.054
+    """
+    if sex not in ("male", "female"):
+        raise ValueError('sex must be "male" or "female"')
+
+    t2_k = np.asarray(t2_k, dtype=float)
+    if rh is not None and vapour_pressure_hpa is None:
+        vpa = calculate_nonsaturation_vapour_pressure(t2_k, rh)
+    elif vapour_pressure_hpa is not None and rh is None:
+        vpa = np.asarray(vapour_pressure_hpa, dtype=float)
+    else:
+        raise ValueError("Provide exactly one of rh (%) or vapour_pressure_hpa (hPa)")
+
+    pet_c = _pet(
+        kelvin_to_celsius(t2_k),
+        kelvin_to_celsius(np.asarray(mrt_k, dtype=float)),
+        va,
+        vpa,
+        m_act_w,
+        clo,
+        height,
+        mass,
+        age,
+        sex,
+        p_atm_hpa,
+        f_eff,
+    )
+
+    return celsius_to_kelvin(pet_c)
