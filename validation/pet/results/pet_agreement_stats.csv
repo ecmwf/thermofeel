@@ -1,0 +1,2 @@
+comparison,N,mean_obs,mean_pred,MBE,rMBE_pct,MAE,RMSE,rRMSE_pct,R2
+PET vs pythermalcomfort (N=500),500,14.12,14.18,0.05507,0.3899,0.154,0.1808,1.28,1
