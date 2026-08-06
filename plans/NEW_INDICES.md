@@ -442,7 +442,34 @@ then Adapter A verbatim, with `c = tcc` for the longwave cloud modifier.
 
 ## 3.7 MENEX_2005 — legacy only
 
-Ship under a clearly-namespaced `legacy.` prefix for reproducing BioKlima-based
+**Decision: `legacy` is its own submodule, `thermofeel.legacy`**, namespace-only
+and not re-exported at the top level — the same device already used for
+`thermofeel.approximations`, and for the same reason: the call site should carry
+the marker so the choice stays visible in the code that makes it.
+
+The word "legacy" needs to be unambiguous, because it could be misread as
+"deprecated thermofeel API scheduled for removal", which is *not* what it means
+here. Proposed module docstring, to be used verbatim (**phrasing needs
+maintainer sign-off**):
+
+> **Historical models, retained for reproducibility.**
+>
+> `thermofeel.legacy` holds complete, faithful implementations of published
+> human-biometeorology models that thermofeel does **not** recommend for new
+> work, but which are needed to reproduce existing literature and to compare
+> against results produced by older tooling.
+>
+> "Legacy" describes the **model**, not thermofeel's own API: nothing in this
+> submodule is deprecated thermofeel code, and nothing here is scheduled for
+> removal. These functions are supported, tested and documented to the same
+> standard as the rest of the library — the difference is in what we recommend,
+> not in what we maintain.
+>
+> Like `thermofeel.approximations`, this submodule is namespace-only and is not
+> re-exported at the top level, so calling code always carries the `legacy.`
+> marker. Each function's docstring states what supersedes it, and why.
+
+Consequences for MENEX_2005: ship it there for reproducing BioKlima-based
 literature, with the defects documented in the docstring and **no default use**:
 
 - SolAlt bands cloudiness into four steps, so oktas 2/3/4 give *identical* MRT
@@ -513,6 +540,15 @@ Adopted from the brief, at Ta = 25 °C / RH = 50 %:
 | Skin-temperature scheme | up to 4.6 K |
 | Geometry convention (two-hemisphere vs six-directional) | ~3 K |
 
+**Decision: the adapters return bare arrays, like every other thermofeel
+function.** The source brief recommended emitting an uncertainty estimate
+alongside MRT; we are not doing that. Every public function in the library
+returns a plain `np.ndarray`, and returning a tuple or dataclass here would
+fork the API contract for one family of functions. The uncertainty is handled
+by *documentation* instead — a stated tolerance class per adapter, plus the two
+statements below. If a machine-readable uncertainty is ever wanted, it belongs
+in a separate function, not in the return value of these.
+
 Two statements must appear in user-facing docs:
 
 1. **Adapter B returns a conditional mean, not an instantaneous estimate.** An
@@ -573,22 +609,28 @@ that already exist (`validation/vlib/surfrad.py`, `validation/fdir/`).
 | R4 | Duplicating shipped Erbs/dsrp code | §3.3 — reuse, do not reimplement |
 | R5 | Silent σ change would shift every existing MRT/UTCI value | §3.4 — separate, flagged change if done at all |
 
-Open questions for the maintainers:
+Resolved (2026-07-31):
 
-- **Should the adapters return an uncertainty estimate?** The brief recommends
-  it. Every thermofeel function currently returns a bare array; returning a
-  tuple/dataclass would break that contract. Options: documented tolerance class
-  only (cheapest, consistent), or a separate `*_uncertainty` function.
+- **Uncertainty is not returned.** Bare arrays, as everywhere else in the
+  library; tolerance class documented instead — see §3.9.
+- **`legacy` is its own submodule**, `thermofeel.legacy`, namespace-only —
+  see §3.7 for the agreed rationale and the proposed module docstring.
+
+Still open:
+
 - Adapter B validation source (see §3.10 open item).
-- Does `legacy.` warrant a new submodule, or should MENEX live in
-  `thermofeel.legacy` alongside any future deprecated code?
+- Sign-off on the exact `thermofeel.legacy` docstring wording in §3.7.
 
 ## 3.12 Definition of done
 
 - [ ] Adapters emit the **seven** kernel arguments; kernel unchanged
+- [ ] Every public function returns a bare `np.ndarray` (no uncertainty tuple)
 - [ ] Shortwave path reuses `approximate_fdir_*` and `approximate_dsrp`
 - [ ] Longwave helpers added with cited schemes and strategy parameters
-- [ ] MENEX under `legacy.`, 0.5-weighted form, erratum documented, defects in docstring
+- [ ] `thermofeel.legacy` created: namespace-only, not re-exported at top level,
+      module docstring per §3.7
+- [ ] MENEX in `thermofeel.legacy`, 0.5-weighted form, erratum documented,
+      defects and superseding function named in its docstring
 - [ ] Seam test (A fed B's GHI == B) passes to machine precision
 - [ ] SURFRAD degradation study produces a published bias/RMSE table
 - [ ] Tolerance class and conditional-mean caveat in the guide page
