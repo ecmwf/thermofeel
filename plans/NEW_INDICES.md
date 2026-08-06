@@ -243,10 +243,31 @@ Open questions for the maintainers:
 
 ---
 
-# 2. PET — Höppe (1999)
+# 2. PET — Höppe (1999) — IMPLEMENTED
 
-**Plan pending:** an external analysis is being supplied and will be folded in
-here. Recorded now so the context is not lost:
+**Status: shipped** (`thermofeel.calculate_pet`, this PR). The citation blocker
+below was cleared by an external implementation brief that supplied the
+reconciled equation set from Höppe (1999) and Walther & Goestchel (2018),
+cross-checked against the authors' own released code. Validation lives in
+`validation/pet/`; the model decisions (frozen clothing temperature, Woodcock
+diffusion, constant alpha, whole-body activity watts, blood heat capacity) are
+recorded in the function docstring and the CHANGELOG.
+
+Delivered against the brief: identity to 3.6e-06 K, rms 1.00 K against Höppe's
+published Table 1 (the two source papers differ by up to 1.31 K on those same
+cases), rms 0.181 K against `pythermalcomfort.pet_steady`, and a 308x
+throughput gain from the triangularised two-stage bisection — numpy-only, no
+SciPy. The original Höppe skin-diffusion variant is deliberately **not**
+implemented: the brief marked its own port UNVERIFIED, and shipping unverified
+physics would breach `DESIGN.md` §5. The guide page carries the consequence,
+that the Matzarakis/Mayer stress classes derive from that variant.
+
+Remaining follow-ups: obtain **VDI 3787 Part 2** (still not held) to settle the
+normative diffusion model, the blood heat capacity and the posture labelling;
+and the §9 performance items beyond cache blocking (hoisting the stage-B
+invariants, in-place residual arithmetic, an optional float32 path).
+
+Original assessment, retained as the record of why it was deferred for 2.3.0:
 
 - **Motivation (measured):** `pythermalcomfort.pet_steady` is a pure Python loop
   — 2.4 ms/point, i.e. **~41 minutes for one 0.25° global field**. thermofeel's
@@ -589,11 +610,41 @@ that already exist (`validation/vlib/surfrad.py`, `validation/fdir/`).
   fluxes are blackbody emission at `T_a`; **seam test** — Adapter A fed with
   Adapter B's own GHI must reproduce Adapter B to machine precision.
 - **Tier 2 (fixtures):** the SURFRAD degradation study above.
-- **Open item — Adapter B needs an independent cloud observation.** SURFRAD does
-  not report oktas, so validating B requires pairing SURFRAD radiation with
-  co-located METAR/ASOS sky cover (`examples/compute-obs.py` already fetches
-  METARs) — or deriving `c` from the measured clear-sky ratio, which is
-  partly circular. Decide before implementing B.
+- **Adapter B cloud source — RESOLVED (feasibility verified 2026-07-31).**
+  SURFRAD reports no cloud amount, so Adapter B must be validated against an
+  independent observation. Deriving `c` from the measured clear-sky ratio is
+  partly circular and is rejected. Use **METAR/ASOS sky cover from the Iowa
+  State ASOS archive** (`mesonet.agron.iastate.edu`, public, no
+  authentication, hourly, historical). Note this is *not* the same source as
+  `examples/compute-obs.py`, which uses the NOAA Aviation Weather API — that is
+  near-real-time only and cannot serve a 2023 validation period.
+
+  Verified pairings (hourly sky cover successfully retrieved for all three):
+
+  | SURFRAD site | ASOS | separation |
+  |---|---|---:|
+  | Desert Rock, NV | `DRA` | **0.8 km — effectively co-located** |
+  | Bondville, IL | `CMI` (Champaign) | 8.2 km |
+  | Goodwin Creek, MS | `UOX` (Oxford) | 34.0 km |
+
+  Design consequences:
+
+  - **Desert Rock is the primary validation site**, being co-located; the other
+    two are supporting. Cloud cover is spatially variable, so the 34 km
+    separation at Goodwin Creek is a genuine limitation and must be reported
+    alongside its statistics, not buried.
+  - METAR reports sky *condition codes*, not oktas. Use the standard mapping
+    `CLR/SKC -> 0, FEW -> 2, SCT -> 4, BKN -> 6, OVC -> 8` oktas, and document
+    that this quantisation is itself an error source on top of the ±2 okta
+    observation uncertainty already in §3.9.
+  - `VV` (vertical visibility, sky obscured) is the METAR analogue of WMO okta
+    code 9: **reject it**, consistent with §3.6. Do not coerce it to 8.
+  - METARs are reported near HH:53; aggregate SURFRAD to the same hour and
+    match on the hour, reusing the existing hourly aggregation.
+  - `tcc_source` for this data is `automatic` (ASOS ceilometer), which per §3.6
+    is exactly the population that over-reports both 0 and 8 oktas — so the
+    validation must state it, and the resulting error statistics are *not*
+    transferable to human-observed SYNOP cloud cover.
 - Worth stating in release notes: the ERA5-HEAT validation itself used exactly
   Adapter B's information content (Ta, Td, u10, TCC at 177 SYNOP stations, via
   RayMan Pro), i.e. the reference implementation being replaced here is a
