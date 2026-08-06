@@ -75,6 +75,7 @@ nav:
       - Relative Strain Index: guide/relativestrainindex.md
       - Universal Thermal Climate Index: guide/utci.md
       - Predicted Mean Vote & PPD: guide/pmv.md
+      - Physiological Equivalent Temperature: guide/pet.md
       - Wet Bulb Globe Temperature: guide/wbgt.md
       - Heat Force (Liljegren WBGT): guide/heatforce.md
       - Excess Heat & Cold Factors: guide/excessheat.md
