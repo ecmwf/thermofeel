@@ -8,10 +8,11 @@ For speculative, not-yet-accepted ideas, see `IDEAS.md`.
 
 ## Features
 
-- [ ] **DIRINT (Perez et al. 1992) and PET (Höppe 1999)**, plus a supporting
-    benchmark suite — accepted 2026-07-31. The design detail is large enough to
-    live in its own document: see **`NEW_INDICES.md`**. DIRINT is unblocked and
-    specified end-to-end; the PET plan is pending an incoming analysis.
+- [ ] **DIRINT (Perez et al. 1992), PET (Höppe 1999), and the MRT observation
+    adapters**, plus a supporting benchmark suite — accepted 2026-07-31. The
+    design detail is large enough to live in its own document: see
+    **`NEW_INDICES.md`**. DIRINT and the MRT adapters are unblocked and specified
+    end-to-end; the PET plan is pending an incoming analysis.
 
 - [ ] **Output-unit mode** (the long-standing units-of-output request)
     Add a mode to control the units of the returned values. Today every index

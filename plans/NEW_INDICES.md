@@ -1,15 +1,16 @@
-# New Indices: DIRINT and PET
+# New Indices and Adapters: DIRINT, PET, MRT observation adapters
 
-> **Status:** both **accepted** for implementation (decided 2026-07-31), promoted
+> **Status:** all **accepted** for implementation (decided 2026-07-31), promoted
 > out of `IDEAS.md`. This file carries the design detail; `TODO.md` remains the
 > canonical list of accepted work and points here.
 
-Two additions are planned:
+Three additions are planned:
 
 | Item | What | Blocker status | Where the value is |
 |---|---|---|---|
 | **DIRINT** (Perez et al. 1992) | A correction on top of the existing `approximate_fdir_disc` | **None** — primary source is open access (verified) | Only with the stability index, on <= 1 h data (measured: −11.4 % RMSE) |
 | **PET** (Höppe 1999) | Physiological Equivalent Temperature, the outdoor companion to UTCI | Citable equation set (see §2) | Vectorisation: pythermalcomfort is ~2700x slower than thermofeel's comparable solver (measured) |
+| **MRT observation adapters** (§3) | Reconstruct the kernel's flux inputs from station GHI or cloud cover | **None** | MRT (and hence UTCI) at stations that lack the full flux set, through the *same* kernel as ERA5-HEAT |
 
 ---
 
@@ -270,7 +271,330 @@ here. Recorded now so the context is not lost:
 
 ---
 
-# 3. Supporting: benchmark suite
+# 3. MRT observation adapters (GHI and cloud-cover routes)
+
+Source: an external implementation brief ("MRT observation adapters for
+thermofeel", July 2026), reviewed and corrected against the code below. The
+brief's physics, literature survey and uncertainty budget are adopted; three
+factual corrections and one significant scope reduction are recorded here.
+
+## 3.1 Decision
+
+Add two **observation adapters** that reconstruct the radiative inputs
+`calculate_mean_radiant_temperature` already consumes, and leave the MRT kernel
+untouched:
+
+| Adapter | Required inputs | Optional |
+|---|---|---|
+| **A — GHI** | global horizontal irradiance, 2 m temperature, humidity, `cossza`, day of year | albedo, skin temperature, cloud fraction |
+| **B — cloud cover** | total cloud cover, 2 m temperature, humidity, `cossza`, day of year | albedo, skin temperature |
+
+Adapter B is Adapter A prefixed by a cloud -> irradiance step, so they share the
+whole downstream path. The architectural value is that station MRT stays
+**definitionally comparable** with ERA5-HEAT and operational MRT: same kernel,
+same angle factors, same `fp`, same `a_ir/eps_p`.
+
+MENEX_2005 is implemented separately as a **legacy-compatibility function**
+(§3.7), not as a default — the brief's §6 analysis of its defects is convincing
+and is adopted.
+
+**Wind is not an input.** Neither route needs it: it never appears in the
+flux-reconstruction route, and in MENEX it appears only inside `Irc`, which
+cancels in the MRT inversion. Wind remains a downstream UTCI input. The adapter
+signatures must not demand it.
+
+## 3.2 Correction 1 (blocking): the kernel signature is not what the brief assumes
+
+The brief states that its `FluxSet` "mirrors the ERA5 names already in the
+library (`ssrd`, `fdir`, `ssru`, `strd`, `stru`) so that
+`calculate_mean_radiant_temperature` is reused with no change". **It does not.**
+The shipped signature is seven arguments and takes **net** fluxes:
+
+```python
+calculate_mean_radiant_temperature(ssrd, ssr, dsrp, strd, fdir, strr, cossza)
+```
+
+and derives the upward components internally:
+
+```python
+dsw = ssrd - fdir      # diffuse down      rsw = ssrd - ssr    # reflected (up)
+lur = strd - strr      # longwave up       Istar = dsrp        # direct normal
+```
+
+There is no `ssru`/`stru` in the API. An adapter emitting the brief's `FluxSet`
+literally would not plug in. Required mapping:
+
+| Brief | thermofeel | Conversion |
+|---|---|---|
+| `S↓` | `ssrd` | identity |
+| `S↓_dir` (horizontal) | `fdir` | identity |
+| `S↑` (upward SW) | `ssr` | `ssr = ssrd - S↑ = (1 - albedo)·ssrd` |
+| `I*` (normal to beam) | `dsrp` | 7th kernel input; `approximate_dsrp(fdir, cossza)` |
+| `L↓` | `strd` | identity |
+| `L↑` (upward LW) | `strr` | `strr = strd - L↑` |
+| `S↓_diffuse` | — | **not an adapter output**; the kernel computes `ssrd - fdir` itself |
+
+The `FluxSet` container must therefore carry the seven kernel arguments (or be
+dropped in favour of returning them directly). Suggest naming it after what it
+is — the kernel's input tuple — rather than after ERA5 upward fluxes.
+
+## 3.3 Correction 2: the shortwave path already exists (major scope reduction)
+
+Adapter A's entire shortwave chain is already shipped and validated in 2.3.0:
+
+| Brief proposes | Already in thermofeel |
+|---|---|
+| `kt = GHI/(E₀·f_ecc·sin γ)` | computed inside `approximations.approximate_fdir_erbs` (identical: `ssrd / (solar_constant · e0 · max(cossza, min_cossza))`) |
+| `kd = Erbs(kt)`, `S↓_dir = (1−kd)·GHI` | **is** `approximate_fdir_erbs(ssrd, cossza, doy=doy)`, which returns `fdir` directly. Coefficients verified identical to the brief's transcription |
+| `calculate_diffuse_fraction(kt, model="erbs")` | **not needed** — the kernel computes `dsw = ssrd - fdir` internally |
+| `I* = S↓_dir / sin γ`, guarded | **is** `approximate_dsrp(fdir, cossza, threshold=0.1)`, shipped with the low-sun guard |
+
+So **the only genuinely new physics is the longwave pair** (`strd`, `strr`) plus
+Adapter B's cloud -> GHI step. That is a much smaller change than the brief
+implies, and it means the shortwave side inherits the SURFRAD/pvlib validation
+already done.
+
+Two consequences:
+
+- **`sin γ` is `cossza`.** Solar elevation and zenith are complementary
+  (`sin(elevation) = cos(zenith)`), so the adapters take `cossza` like every
+  other thermofeel function. Do **not** add a separate solar-elevation argument;
+  the kernel already derives `gamma` internally for `fp`.
+- **Default separation model should be DISC, not Erbs.** Our own SURFRAD
+  validation (§1.2 harness) measured DISC at 43.1 W m⁻² hourly RMSE against
+  Erbs's 54.0 — ~20 % better at every station. Better `fdir` means a better
+  direct/diffuse split into the kernel. Expose
+  `separation_model="disc"|"erbs"|"dirint"` (mapping onto shipped code, plus
+  §1), default `"disc"`, with `"erbs"` retained for literature reproduction.
+  The brief's suggestion to add Yang4 for sub-hourly use is noted but deferred:
+  no implementation exists in-repo and it would need its own validation.
+
+## 3.4 Correction 3: the kernel's Stefan-Boltzmann constant is not CODATA
+
+The brief states the kernel uses "σ = CODATA". It does not — the shipped code
+hard-codes `0.0000000567` (5.67e-8) against CODATA's 5.670374419e-8. The effect
+is ~0.005 K at 300 K (MRT scales as σ^-0.25), i.e. negligible, but the brief's
+§6.6 criticism of MENEX for using 5.667e-8 applies in weaker form to thermofeel
+itself. Either state the constant honestly in the docs or promote it to a named
+CODATA constant as a separate, clearly-flagged change — **not** silently inside
+this work, since it would shift every existing MRT/UTCI regression value.
+
+## 3.5 Adapter A — GHI available
+
+```
+fdir  = approximate_fdir_<separation>(ssrd, cossza, doy)      # existing
+dsrp  = approximate_dsrp(fdir, cossza)                        # existing
+ssr   = (1 - albedo) * ssrd                                   # trivial
+strd  = eps_all * SIGMA * t2m**4                              # NEW
+L_up  = eps_g * SIGMA * t_skin**4 + (1 - eps_g) * strd        # NEW
+strr  = strd - L_up                                           # NEW
+```
+
+**Longwave down.** Clear-sky emissivity Brutsaert (1975),
+`eps_c = 1.24·(e/T_a)^(1/7)` with `e` in hPa, `T_a` in K; cloud modifier
+Unsworth & Monteith (1975), `eps_all = (1 − 0.84c)·eps_c + 0.84c`, clamped to
+<= 1. `e` comes from the existing helpers — either
+`calculate_saturation_vapour_pressure(td_k)` (exact: `e = e_s(T_d)`) or
+`calculate_nonsaturation_vapour_pressure(t2_k, rh)`; pick one, document it, and
+do not introduce a third vapour-pressure formula (see `IDEAS.md`, "vapour-pressure
+formula audit").
+
+Expose `clear_sky_emissivity="brutsaert"|"prata"|"dilley_obrien"` and
+`cloud_emissivity="unsworth_monteith"`. When GHI is available, prefer
+Crawford & Duchon (1999) for `c` — derived from the observed/clear-sky solar
+ratio rather than an okta count (Staiger & Matzarakis 2010 evaluate exactly
+this for human-biometeorology use).
+
+**Skin temperature.** `t_skin = t2m` is the documented cheap default; accept an
+optional `skin_temperature` so ERA5 `skt`, a station sensor or satellite LST can
+be substituted. `eps_g` default 0.95, exposed.
+
+## 3.6 Adapter B — cloud cover only
+
+Prefix Adapter A with Kasten & Czeplak (1980):
+
+```
+G_cs = 910·sin γ − 30          W m-2, valid γ > 5 deg     ->  910·cossza − 30
+K_c  = 1 − 0.75·(N/8)^3.4                                 ->  1 − 0.75·tcc^3.4
+ssrd = K_c · G_cs
+```
+
+then Adapter A verbatim, with `c = tcc` for the longwave cloud modifier.
+
+- **`G_cs` must be swappable.** The `910·sin γ − 30` fit is Hamburg-specific with
+  no turbidity, water-vapour, altitude or aerosol dependence. Expose
+  `clear_sky_model`; recommend CAMS **McClear** for production (already
+  Copernicus infrastructure, keeps aerosol treatment consistent with the ECMWF
+  chain) as an optional external source, never a hard dependency.
+- **The 0.75 coefficient is a cloud-type average** (0.39 cirriform -> 0.84
+  nimbostratus). Expose it; it is the dominant term in the uncertainty budget
+  (§3.9).
+- **Public boundary is a fraction 0–1**, with an okta helper. **WMO okta code 9**
+  (sky obscured) is not a cloud amount: reject it or map to a documented
+  sentinel; never coerce to 8.
+- **`tcc_source` (`human`|`automatic`|`model`|`unknown`) is carried as metadata
+  and must not branch the computation.** Adopted from the brief: automated
+  systems report 0 oktas in 14–19 % of hours vs 1 % for human observers and
+  8 oktas in 33–40 % vs 19–24 % (Smith, Bright & Crook 2017, 1.12 M
+  station-hours); human/automated pairs agree exactly in only 39 % of hours
+  (Wauben et al. 2006). The code path is identical; the error distribution is
+  not.
+
+## 3.7 MENEX_2005 — legacy only
+
+Ship under a clearly-namespaced `legacy.` prefix for reproducing BioKlima-based
+literature, with the defects documented in the docstring and **no default use**:
+
+- SolAlt bands cloudiness into four steps, so oktas 2/3/4 give *identical* MRT
+  and the band edges are discontinuous — ~16 K step for a one-okta change at
+  40 deg elevation.
+- The nocturnal cloud sign is **inverted**: `L_a` is a clear-sky formula with no
+  cloud term, so MENEX makes overcast nights *cooler* than clear ones. Nocturnal
+  heat stress is where a heat index carries epidemiological weight; do not use
+  MENEX at night.
+- `T_g = 1.25·t` is dimensionally unprincipled (multiplicative on a Celsius
+  value; pins `T_g = T_a` at 0 °C, warms ground below freezing), worth +4.6 K at
+  40 °C.
+- **Implement the 0.5-weighted MRT form**, and record the published-source
+  erratum: the PDF prints the MRT equation without the 0.5 weights, which
+  contradicts its own net-longwave equation and yields ~67 °C on a 15 °C day.
+  The 0.5-weighted form is what the derived literature implements, and it makes
+  MENEX two-hemisphere — convention-compatible with our kernel.
+- Use MENEX's own constants verbatim (`sigma = 5.667e-8`, `0 °C = 273.0`) for
+  bit-reproducibility, and say so; do not mix MENEX `K_t` with Kasten-Czeplak
+  `G_cs` (they differ by 6–15 % and cross over near 35 deg, worth up to 10.4 K).
+
+## 3.8 API sketch (corrected)
+
+SI throughout: Kelvin in/out, irradiance W m⁻², cloud cover a 0–1 fraction at
+the public boundary.
+
+```python
+# building blocks
+calculate_clear_sky_ghi(cossza, model="kasten_czeplak")                  -> W m-2
+calculate_ghi_from_cloud_cover(tcc, cossza, attenuation=0.75, ...)       -> W m-2
+calculate_downward_longwave(t2m, vapour_pressure_hpa, cloud_fraction,
+                            clear_sky="brutsaert",
+                            cloud="unsworth_monteith")                   -> W m-2
+calculate_upward_longwave(skin_temperature, lw_down, emissivity=0.95)    -> W m-2
+
+# adapters -> the SEVEN kernel arguments (see 3.2)
+reconstruct_mrt_inputs_from_ghi(ssrd, t2m, td2m, cossza, doy, *,
+                                albedo=0.20, skin_temperature=None,
+                                cloud_fraction=None,
+                                separation_model="disc", ...)
+reconstruct_mrt_inputs_from_cloud_cover(tcc, t2m, td2m, cossza, doy, *,
+                                        albedo=0.20, skin_temperature=None,
+                                        tcc_source="unknown", ...)
+
+# convenience: adapter + existing kernel, unchanged
+calculate_mean_radiant_temperature_from_ghi(...)                         -> K
+calculate_mean_radiant_temperature_from_cloud_cover(...)                 -> K
+
+# legacy, namespaced
+legacy.menex2005_mrt_solalt(t2m, vapour_pressure_hpa, tcc, cossza)       -> K
+legacy.menex2005_mrt_solglob(t2m, vapour_pressure_hpa, ghi, cossza)      -> K
+```
+
+Guards: reuse the existing `cossza` floor conventions; clamp `eps_all <= 1`;
+clamp `kt` per standard hourly QC; reject okta code 9. NaN propagation and the
+array contract follow `ROBUSTNESS.md` §5 like every other function.
+
+## 3.9 Uncertainty — and what we must not claim
+
+Adopted from the brief, at Ta = 25 °C / RH = 50 %:
+
+| Source | MRT impact |
+|---|---|
+| Cloud type at fixed N | **12.6 K at γ=30°, 18.5 K at γ=60°** |
+| ±2 okta observation uncertainty | up to 16 K (flux route) |
+| Solar disc obscured or not | 20–30 K at intermediate N |
+| Clear-sky model choice | ~10–15 % in GHI |
+| Skin-temperature scheme | up to 4.6 K |
+| Geometry convention (two-hemisphere vs six-directional) | ~3 K |
+
+Two statements must appear in user-facing docs:
+
+1. **Adapter B returns a conditional mean, not an instantaneous estimate.** An
+   okta count cannot say whether the solar disc is obscured; at N = 4 the beam is
+   either near-full or near-zero. Adequate for climatology and gap-filling, not
+   for instantaneous values. If stations report **sunshine duration**, that is a
+   far stronger beam constraint (WMO: direct normal >= 120 W m⁻²) and is worth a
+   third adapter later.
+2. **Adapter B cannot be represented as meeting the ISO 7726 ±2 °C comfort
+   tolerance.** State the tolerance class per adapter.
+
+The two-hemisphere convention carries a documented ~−3 K offset against
+six-directional measurement (Holmer et al. 2018). That is a property of the
+convention, not of the adapters, and any validation against six-directional or
+globe-thermometer data must account for it.
+
+## 3.10 Validation plan
+
+**We already have the ideal dataset cached.** SURFRAD (used for the 2.3.0 fdir
+campaign) measures every component the kernel needs:
+
+| Kernel argument | SURFRAD column |
+|---|---|
+| `ssrd` | `dw_solar` |
+| `ssr` | `netsolar` (measured) |
+| `dsrp` | `direct_n` (measured, not approximated) |
+| `strd` | `dw_ir` (measured) |
+| `strr` | `netir` (measured) |
+| `fdir` | `direct_n · cossza` |
+
+So: compute a **reference MRT from fully measured fluxes** through the unmodified
+kernel, then degrade the inputs to GHI-only (Adapter A) and record bias/RMSE per
+station and per solar-elevation band — the brief's Tier 2, on data and a harness
+that already exist (`validation/vlib/surfrad.py`, `validation/fdir/`).
+
+- **Tier 1 (unit):** `fp` against VDI at γ = 0/45/90°; `K_c = 1` at N = 0 and
+  `0.25` at N = 8; Erbs continuity at kt = 0.22 and 0.80; MRT -> `T_a` when all
+  fluxes are blackbody emission at `T_a`; **seam test** — Adapter A fed with
+  Adapter B's own GHI must reproduce Adapter B to machine precision.
+- **Tier 2 (fixtures):** the SURFRAD degradation study above.
+- **Open item — Adapter B needs an independent cloud observation.** SURFRAD does
+  not report oktas, so validating B requires pairing SURFRAD radiation with
+  co-located METAR/ASOS sky cover (`examples/compute-obs.py` already fetches
+  METARs) — or deriving `c` from the measured clear-sky ratio, which is
+  partly circular. Decide before implementing B.
+- Worth stating in release notes: the ERA5-HEAT validation itself used exactly
+  Adapter B's information content (Ta, Td, u10, TCC at 177 SYNOP stations, via
+  RayMan Pro), i.e. the reference implementation being replaced here is a
+  closed-source Windows GUI.
+
+## 3.11 Risks and open questions
+
+| | Risk | Mitigation |
+|---|---|---|
+| R1 | `FluxSet` as specified does not fit the kernel | §3.2 mapping is mandatory; seam test enforces it |
+| R2 | Adapter B error is large (12–18 K cloud-type term) | Tolerance class in docs; conditional-mean framing; no ISO 7726 claim |
+| R3 | Strategy-parameter sprawl (4+ pluggable schemes) | Keep the *default* path fixed and validated; strategies documented as opt-in |
+| R4 | Duplicating shipped Erbs/dsrp code | §3.3 — reuse, do not reimplement |
+| R5 | Silent σ change would shift every existing MRT/UTCI value | §3.4 — separate, flagged change if done at all |
+
+Open questions for the maintainers:
+
+- **Should the adapters return an uncertainty estimate?** The brief recommends
+  it. Every thermofeel function currently returns a bare array; returning a
+  tuple/dataclass would break that contract. Options: documented tolerance class
+  only (cheapest, consistent), or a separate `*_uncertainty` function.
+- Adapter B validation source (see §3.10 open item).
+- Does `legacy.` warrant a new submodule, or should MENEX live in
+  `thermofeel.legacy` alongside any future deprecated code?
+
+## 3.12 Definition of done
+
+- [ ] Adapters emit the **seven** kernel arguments; kernel unchanged
+- [ ] Shortwave path reuses `approximate_fdir_*` and `approximate_dsrp`
+- [ ] Longwave helpers added with cited schemes and strategy parameters
+- [ ] MENEX under `legacy.`, 0.5-weighted form, erratum documented, defects in docstring
+- [ ] Seam test (A fed B's GHI == B) passes to machine precision
+- [ ] SURFRAD degradation study produces a published bias/RMSE table
+- [ ] Tolerance class and conditional-mean caveat in the guide page
+- [ ] `make all` green at 100 % coverage
+
+# 4. Supporting: benchmark suite
 
 Accepted alongside the above (previously `IDEAS.md` "Performance"). Needed to
 hold DIRINT and PET to their performance targets rather than asserting them.
