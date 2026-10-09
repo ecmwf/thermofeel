@@ -1,5 +1,13 @@
 # ChangeLog
 
+## 2.3.1
+
+- Corrected the example notes: `compute-obs.py` computes only the
+  temperature/humidity/wind indices from METAR or Meteostat observations (not
+  MRT/UTCI/WBGT), and the earthkit-data comments now say that 1.x selects by
+  component keys (`sel({"parameter.variable": "2t"})`) while the 0.x
+  `sel(param=...)` form returns nothing. Behaviour is unchanged.
+
 ## 2.3.0
 
 - Added a scientific validation campaign under `validation/` for every method
