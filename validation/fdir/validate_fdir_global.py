@@ -84,8 +84,9 @@ def main() -> int:
     plt = style.use_style()
     failures = []
 
-    # index by shortName metadata (FieldList.sel is unreliable across readers;
-    # same approach as examples/compute-thermal-indices.py)
+    # index by shortName metadata: earthkit-data 1.x selects by component keys
+    # (sel({"parameter.variable": ...})) and the 0.x sel(param=...) returns
+    # nothing; same approach as examples/compute-thermal-indices.py
     fields = {
         f.metadata("shortName"): f
         for f in ekd.from_source("file", str(fetch())).to_fieldlist()

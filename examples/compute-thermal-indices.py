@@ -496,10 +496,11 @@ SPECS_BY_KEY = {spec.key: spec for spec in INDEX_SPECS}
 def load_fields(fl, step):
     """Index a fieldlist by GRIB shortName.
 
-    earthkit-data 1.0's ``FieldList.sel(param=...)`` / ``sel(shortName=...)`` is
-    unreliable across readers, so we index robustly on the ``shortName``
-    metadata. When a file carries several steps, the field matching ``step`` is
-    preferred. Returns ``(values_by_name, field_objs_by_name)``.
+    earthkit-data 1.x selects by component keys, e.g.
+    ``fl.sel({"parameter.variable": "2t"})``; the 0.x keyword form
+    ``sel(param=...)`` / ``sel(shortName=...)`` returns nothing. Indexing on the
+    ``shortName`` metadata works with either. When a file carries several steps,
+    the field matching ``step`` is preferred. Returns ``(values_by_name, field_objs_by_name)``.
     """
     values = {}
     field_objs = {}
