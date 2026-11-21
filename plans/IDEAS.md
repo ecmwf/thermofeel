@@ -19,7 +19,11 @@ mature and get decided move up to `TODO.md`.
   Index, Summer Simmer Index, PMV/PPD. WBGT via the full Liljegren model is
   `calculate_wbgt_liljegren`; the Discomfort Index is `calculate_discomfort_index`.*
 
-- [ ] **Physiological Equivalent Temperature (PET).** Höppe (1999),
+- [x] **Physiological Equivalent Temperature (PET).** **Promoted — accepted
+  2026-07-31; the plan now lives in `NEW_INDICES.md` §2** (an incoming external
+  analysis is expected to clear the citation blocker described below). The
+  assessment that follows is retained as the record of why it was deferred for
+  2.3.0. Höppe (1999),
   DOI `10.1007/s004840050118`. The outdoor "gold-standard" companion to UTCI:
   PET is the air temperature of a reference indoor setting (MRT = Ta, still air
   v = 0.1 m/s, vapour pressure = 12 hPa) in which a reference person reaches the
@@ -84,7 +88,8 @@ mature and get decided move up to `TODO.md`.
 
 ## Performance
 
-- [ ] **Benchmark suite.** A small reproducible benchmark over a global-grid-sized
+- [x] **Benchmark suite.** **Promoted — accepted 2026-07-31; see
+  `NEW_INDICES.md` §3.** A small reproducible benchmark over a global-grid-sized
   array per index, to catch performance regressions and to justify (or retire)
   the closed-form `bgt` vs. iterative trade-off quantitatively.
 - [ ] **Optional acceleration.** If a hot path appears, evaluate an optional

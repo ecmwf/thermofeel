@@ -67,6 +67,7 @@ class TestThermalCalculator(unittest.TestCase):
         self.mrtr = np.loadtxt(data_file("mrtr.csv"))
         self.mrt_from_bgt = np.loadtxt(data_file("mrt_from_bgt.csv"))
         self.pmv = np.loadtxt(data_file("pmv.csv"))
+        self.pet = np.loadtxt(data_file("pet.csv"))
 
         self.dsrp = tmf.approximate_dsrp(self.fdir, self.cossza)
 
@@ -246,6 +247,16 @@ class TestThermalCalculator(unittest.TestCase):
         pmv = tmf.calculate_pmv(self.t2m, self.mrt, self.va, rh=rh_pc)
         # np.savetxt("pmv.csv", pmv)
         self.assert_equal(self.pmv, pmv)
+
+    def test_pet(self):
+        # Drift guard for the vectorised MEMI solver. self.va is reused as the
+        # body-level air velocity driver; this exercises both bisection stages
+        # over a full field and is not a claim that the 10 m wind equals the
+        # velocity at the body. Every row is bracketed (no NaN in pet.csv).
+        rh_pc = tmf.calculate_relative_humidity_percent(self.t2m, self.td)
+        pet = tmf.calculate_pet(self.t2m, self.mrt, self.va, rh=rh_pc)
+        # np.savetxt("pet.csv", pet)
+        self.assert_equal(self.pet, pet)
 
 
 if __name__ == "__main__":

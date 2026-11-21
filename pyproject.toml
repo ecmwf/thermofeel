@@ -93,9 +93,16 @@ line-length = 88
 target-version = "py310"
 
 [tool.ruff.lint]
-# Default rules (Pyflakes "F" + pycodestyle "E4"/"E7"/"E9") plus import sorting
-# ("I"), which together cover what flake8 + isort previously enforced.
-extend-select = ["I"]
+# Pyflakes ("F") + pycodestyle ("E4"/"E7"/"E9") + import sorting ("I"), which
+# together cover what flake8 + isort previously enforced.
+#
+# Declared with `select` (not `extend-select`) so the enforced set is explicit
+# rather than inherited from ruff's defaults: those defaults change between
+# ruff releases, and relying on them silently altered this repo's gate once
+# already. Adding a rule family here is a deliberate decision, never an
+# upgrade side effect. Keep the ruff version pinned too (Makefile
+# RUFF_VERSION, mirrored in .github/workflows/ci.yml).
+select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.coverage.run]
 source = ["thermofeel"]

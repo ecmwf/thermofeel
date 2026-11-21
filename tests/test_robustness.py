@@ -176,6 +176,64 @@ def test_wbgt_liljegren_rejects_unknown_wind_scaling():
         )
 
 
+def test_pet_nan_propagates():
+    # A NaN in any driving input yields NaN, never an exception.
+    assert np.isnan(tmf.calculate_pet(NAN, MRT, VA, rh=RH)).all()
+    assert np.isnan(tmf.calculate_pet(T, NAN, VA, rh=RH)).all()
+    assert np.isnan(tmf.calculate_pet(T, MRT, NAN, rh=RH)).all()
+    assert np.isnan(tmf.calculate_pet(T, MRT, VA, rh=NAN)).all()
+
+
+def test_pet_undefined_inputs_return_nan():
+    # clo <= 0 is a genuine singularity of the model: the clothing cylinder
+    # radii collapse and the reference implementations divide by zero there.
+    # Negative air velocity is not physical. Both are reported as NaN rather
+    # than as a spurious number.
+    assert np.isnan(tmf.calculate_pet(T, MRT, VA, rh=RH, clo=np.array([0.0]))).all()
+    assert np.isnan(tmf.calculate_pet(T, MRT, VA, rh=RH, clo=np.array([-0.5]))).all()
+    assert np.isnan(tmf.calculate_pet(T, MRT, np.array([-1.0]), rh=RH)).all()
+    # a valid neighbour in the same array is unaffected
+    mixed = tmf.calculate_pet(
+        np.array([300.0, 300.0]),
+        np.array([305.0, 305.0]),
+        np.array([1.0, 1.0]),
+        rh=np.array([50.0, 50.0]),
+        clo=np.array([0.9, 0.0]),
+    )
+    assert np.isfinite(mixed[0]) and np.isnan(mixed[1])
+
+
+def test_pet_humidity_contract():
+    # Exactly one of rh / vapour_pressure_hpa, mirroring calculate_pmv.
+    with pytest.raises(ValueError):
+        tmf.calculate_pet(T, MRT, VA)
+    with pytest.raises(ValueError):
+        tmf.calculate_pet(T, MRT, VA, rh=RH, vapour_pressure_hpa=np.array([12.0]))
+    # either one alone is accepted and they agree when consistent
+    from_rh = tmf.calculate_pet(T, MRT, VA, rh=RH)
+    vpa = tmf.calculate_nonsaturation_vapour_pressure(T, RH)
+    from_vpa = tmf.calculate_pet(T, MRT, VA, vapour_pressure_hpa=vpa)
+    np.testing.assert_allclose(from_rh, from_vpa, atol=1e-9)
+
+
+def test_pet_rejects_unknown_sex():
+    with pytest.raises(ValueError):
+        tmf.calculate_pet(T, MRT, VA, rh=RH, sex="other")
+
+
+def test_pet_unbracketed_balance_returns_nan(monkeypatch):
+    # The solver reports NaN rather than a bracket edge when the heat balance
+    # has no root inside its search interval. Forced here by shrinking the
+    # bracket, since the shipped one is wide enough to cover the whole
+    # operational envelope.
+    monkeypatch.setattr("thermofeel.pet.TSK_BRACKET", (33.9, 34.0))
+    assert np.isnan(tmf.calculate_pet(T, MRT, VA, rh=RH)).all()
+
+    monkeypatch.undo()
+    monkeypatch.setattr("thermofeel.pet.TX_BRACKET", (-90.0, -89.0))
+    assert np.isnan(tmf.calculate_pet(T, MRT, VA, rh=RH)).all()
+
+
 def test_fahrenheit_to_celsius():
     assert tmf.fahrenheit_to_celsius(32.0) == pytest.approx(0.0)
     assert fahrenheit_to_celsius(212.0) == pytest.approx(100.0)

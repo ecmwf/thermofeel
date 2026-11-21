@@ -318,6 +318,113 @@ class TestThermalCalculator(unittest.TestCase):
             rsi = tmf.calculate_relative_strain_index(t2_k, rh)
             assert rsi[0] == pytest.approx(expected, abs=0.02)
 
+    def test_pet_reference_environment_identity(self):
+        # PRIMARY gate. PET is DEFINED as the air temperature of the reference
+        # environment (mrt = ta, v = 0.1 m/s, vpa = 12 hPa, clo = 0.9,
+        # m_act = 80 W) reproducing the body state. Feeding the reference
+        # environment to itself must therefore return the air temperature
+        # exactly. This single property pins the reference environment, the
+        # clothing convention AND the whole-body activity-unit convention at
+        # once, so it is the highest-value test for this function.
+        t_c = np.arange(-10.0, 41.0, 2.5)
+        t2_k = tmf.celsius_to_kelvin(t_c)
+        pet = tmf.calculate_pet(
+            t2_k,
+            t2_k,
+            np.full_like(t_c, 0.1),
+            vapour_pressure_hpa=np.full_like(t_c, 12.0),
+        )
+        np.testing.assert_allclose(pet, t2_k, atol=1e-4)
+
+    def test_pet_published_reference_values(self):
+        # Hoeppe (1999) Table 1. The published values, the Walther & Goestchel
+        # (2018) recomputation and this implementation disagree by up to ~1.7 K
+        # on the high-radiant-load rows -- the two papers already disagree with
+        # each other by up to 1.3 K -- so the tolerance is per row and reflects
+        # the documented spread of the model itself, not implementation error.
+        # (Ta, Tmrt, v, vpa, published PET, tolerance) in degC / m s-1 / hPa
+        cases = [
+            (21.0, 21.0, 0.1, 12.0, 21.0, 0.05),
+            (-5.0, 40.0, 0.5, 2.0, 10.0, 1.8),
+            (-5.0, -5.0, 5.0, 2.0, -13.0, 0.3),
+            (30.0, 60.0, 1.0, 21.0, 43.0, 1.5),
+            (30.0, 30.0, 1.0, 21.0, 29.0, 0.5),
+        ]
+        for t_c, mrt_c, va, vpa, expected_c, tol in cases:
+            pet = tmf.calculate_pet(
+                np.array([tmf.celsius_to_kelvin(t_c)]),
+                np.array([tmf.celsius_to_kelvin(mrt_c)]),
+                np.array([va]),
+                vapour_pressure_hpa=np.array([vpa]),
+            )
+            got_c = tmf.kelvin_to_celsius(pet[0])
+            assert got_c == pytest.approx(expected_c, abs=tol)
+
+    def test_pet_monotonicity(self):
+        # Physical sanity: PET rises with air temperature, with mean radiant
+        # temperature and with activity, and falls with air velocity.
+        base = dict(
+            t2_k=np.array([298.15]),
+            mrt_k=np.array([303.15]),
+            va=np.array([1.0]),
+            rh=np.array([50.0]),
+        )
+        ref = tmf.calculate_pet(**base)
+        assert tmf.calculate_pet(**{**base, "t2_k": np.array([303.15])}) > ref
+        assert tmf.calculate_pet(**{**base, "mrt_k": np.array([313.15])}) > ref
+        assert tmf.calculate_pet(**{**base, "m_act_w": np.array([150.0])}) > ref
+        assert tmf.calculate_pet(**{**base, "va": np.array([5.0])}) < ref
+
+    def test_pet_clothing_and_subject_variants(self):
+        # Exercises every branch of the clothed-height band (clo >= 2,
+        # 0.6 < clo < 2, 0.3 < clo <= 0.6, clo <= 0.3) and the female basal
+        # metabolism relation. More clothing must raise PET in a cool
+        # environment.
+        t2_k = np.array([288.15])
+        mrt_k = np.array([288.15])
+        va = np.array([1.0])
+        rh = np.array([50.0])
+        pets = [
+            float(tmf.calculate_pet(t2_k, mrt_k, va, rh=rh, clo=np.array([c]))[0])
+            for c in (0.2, 0.5, 1.0, 2.5)
+        ]
+        assert pets == sorted(pets), "PET must increase with clothing when cool"
+
+        female = tmf.calculate_pet(t2_k, mrt_k, va, rh=rh, sex="female")
+        male = tmf.calculate_pet(t2_k, mrt_k, va, rh=rh, sex="male")
+        assert np.isfinite(female).all()
+        assert float(female[0]) != float(male[0])
+
+    def test_pet_hot_and_cold_regimes(self):
+        # Drives the three branches of the closed-form core-node solution:
+        # set blood flow (cold), vasodilated (warm) and saturated at the
+        # 90 L m-2 h-1 cap (hot). All must be finite and correctly ordered.
+        t_c = np.array([-20.0, 10.0, 30.0, 45.0])
+        pet = tmf.calculate_pet(
+            tmf.celsius_to_kelvin(t_c),
+            tmf.celsius_to_kelvin(t_c),
+            np.full_like(t_c, 1.0),
+            rh=np.full_like(t_c, 60.0),
+        )
+        assert np.isfinite(pet).all()
+        assert np.all(np.diff(pet) > 0)
+
+    def test_pet_broadcasting_and_chunking(self):
+        # Scalars broadcast against arrays, 2-D shape is preserved, and an
+        # array larger than the internal cache-blocking chunk gives the same
+        # answer as a single small one (i.e. chunking is not observable).
+        two_d = tmf.calculate_pet(
+            np.full((2, 3), 300.0), np.full((2, 3), 305.0), 1.0, rh=50.0
+        )
+        assert two_d.shape == (2, 3)
+
+        n = 20000  # > thermofeel.pet.CHUNK, so more than one block is processed
+        big = tmf.calculate_pet(
+            np.full(n, 300.0), np.full(n, 305.0), np.full(n, 1.0), rh=np.full(n, 50.0)
+        )
+        assert big.shape == (n,)
+        np.testing.assert_allclose(big, two_d.ravel()[0], atol=1e-9)
+
     def test_apparent_temperature(self):
         t2_k = np.array([tmf.celsius_to_kelvin(25.0)])
         va = np.array([3])

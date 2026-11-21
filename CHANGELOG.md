@@ -1,5 +1,52 @@
 # ChangeLog
 
+## Unreleased
+
+- Added `calculate_pet`: the Physiological Equivalent Temperature (Höppe 1999,
+  https://doi.org/10.1007/s004840050118), the outdoor companion to UTCI, solved
+  from the MEMI two-node human energy-balance model. Takes 2 m temperature, mean
+  radiant temperature, body-level air velocity and one humidity input, plus the
+  subject and activity parameters that define the index; returns Kelvin. Adds a
+  guide page with the thermal-stress classes.
+
+  The published implementations hand the 3x3 non-linear system to a per-point
+  `scipy.optimize.fsolve`, which does not vectorise. The system is
+  triangularisable — the core-node balance contains no clothing temperature and
+  its forcing term contains no body temperature — so it collapses to two nested
+  one-dimensional *monotone* root finds, solved by bisection over the whole
+  array at once. The result is numpy-only, needs no SciPy, and is about two
+  orders of magnitude faster than a per-point solver, which is what makes PET
+  usable over global grids and ensembles. Reproduces Höppe's published Table 1
+  to ~1 K rms (the two source papers disagree with each other by up to 1.3 K on
+  those same cases) and agrees with `pythermalcomfort.pet_steady` to ~0.19 K rms
+  despite the deliberate model-variant differences below.
+
+  Model decisions, all following the VDI/Walther reference implementations
+  because those are what the published PET tables and stress classes were
+  generated with (each is recorded in the docstring so the choice is auditable):
+  the clothing temperature is **frozen** at its actual-environment value while
+  the reference air temperature is solved — both papers' prose says otherwise,
+  but every released implementation freezes it and re-solving moves PET by up to
+  24 K in hot, high radiant-load conditions; evaporation uses the **Woodcock**
+  clothing-aware resistance, with the original Höppe skin-diffusion variant
+  deliberately **not** implemented because it could not be verified against a
+  primary source (it moves PET by −7 to +2.6 K, and the widely-cited
+  Matzarakis/Mayer stress classes derive from it — the guide page carries that
+  caveat); the body-temperature weighting is the constant `alpha = 0.1`;
+  activity metabolism is **whole-body watts** (default 80 W), matching the source
+  model and *not* `pythermalcomfort`'s `met` convention; the blood heat capacity
+  is 3640 J L⁻¹ K⁻¹ as applied by every reference implementation, although the
+  source paper's own nomenclature would give ~4431. Solver brackets are wider
+  than the reference implementations' so that the whole operational envelope
+  returns a value rather than NaN; NaN is reserved for non-finite inputs,
+  `clo <= 0` (a genuine singularity of the clothing geometry), negative air
+  velocity, and a balance with no root in the bracket.
+- Pinned `ruff` and declared the lint rule set explicitly (`select = ["E4",
+  "E7", "E9", "F", "I"]`). The gate previously relied on ruff's *default* rules
+  with the tool unpinned in both the Makefile and CI; ruff 0.16 changed those
+  defaults, which silently redefined the gate. CI now also lints `validation/`,
+  matching the Makefile.
+
 ## 2.3.0
 
 - Added a scientific validation campaign under `validation/` for every method

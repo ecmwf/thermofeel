@@ -26,7 +26,13 @@ PYTHON  ?= $(VENV)/bin/python
 # ruff (linter + formatter) runs in an ephemeral uv environment (`--no-project`
 # so uv does not build thermofeel just to run a linter). Config lives in
 # pyproject.toml under [tool.ruff].
-RUFF    ?= $(UV) run --no-project --with ruff ruff
+#
+# The version is PINNED: ruff's default rule set changes between releases, so an
+# unpinned linter silently redefines the gate (it did once — 0.16 dropped E4 from
+# the defaults and added ~350 rules). Bump this deliberately, and keep it in sync
+# with the `pip install ruff==...` line in .github/workflows/ci.yml.
+RUFF_VERSION ?= 0.16.1
+RUFF    ?= $(UV) run --no-project --with ruff==$(RUFF_VERSION) ruff
 
 # Code that the QA tools operate on (the package, its tests, helper scripts,
 # and the validation campaign).
