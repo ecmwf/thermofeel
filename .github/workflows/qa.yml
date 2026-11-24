@@ -1,4 +1,4 @@
-name: ci
+name: qa
 
 on:
   # Trigger the workflow on push to main, except tag creation
@@ -15,25 +15,6 @@ on:
   workflow_dispatch: ~
 
 jobs:
-  # Run CI including downstream packages on self-hosted runners
-  downstream-ci:
-    name: downstream-ci
-    uses: ecmwf/downstream-ci/.github/workflows/downstream-ci.yml@main
-    with:
-      thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
-      # QA is handled by the dedicated `qa` job below (ruff), not the
-      # downstream-ci black/isort/flake8 gate.
-      python_qa: false
-    secrets: inherit
-
-  # Build downstream packages on HPC
-  downstream-ci-hpc:
-    name: downstream-ci-hpc
-    uses: ecmwf/downstream-ci/.github/workflows/downstream-ci-hpc.yml@main
-    with:
-      thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
-    secrets: inherit
-
   # Lint and check formatting with ruff (replaces black + isort + flake8)
   qa:
     name: qa
