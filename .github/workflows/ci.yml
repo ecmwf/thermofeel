@@ -1,93 +1,119 @@
-name: ci
+# GENERATED FILE - DO NOT EDIT.
+# Regenerate via the ci-infrastructure-generate CLI.
+# Source of truth: each repo's .ci/manifest.toml.
+name: CI
 
 on:
-  # Trigger the workflow on push to main, except tag creation
   push:
-    branches:
-      - 'main'
-    tags-ignore:
-      - '**'
+    branches: [develop, master, main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+  schedule:
+    - cron: "46 3 * * *"
 
-  # Trigger the workflow on pull request
-  pull_request: ~
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
-  # Trigger the workflow manually
-  workflow_dispatch: ~
+permissions:
+  contents: read
+
+env:
+  ARTIFACT_POLL_INTERVAL: ${{ vars.ARTIFACT_POLL_INTERVAL || '60' }}
+  ARTIFACT_WAIT_TIMEOUT: ${{ vars.ARTIFACT_WAIT_TIMEOUT || '1800' }}
+  ARTIFACT_S3_ENDPOINT: ${{ secrets.ARTIFACT_S3_ENDPOINT }}
+  ARTIFACT_S3_BUCKET: ${{ secrets.ARTIFACT_S3_BUCKET }}
+  SCCACHE_BUCKET: ${{ secrets.SCCACHE_BUCKET }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
 jobs:
-  # Run CI including downstream packages on self-hosted runners
-  downstream-ci:
-    name: downstream-ci
-    uses: ecmwf/downstream-ci/.github/workflows/downstream-ci.yml@main
-    with:
-      thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
-      # QA is handled by the dedicated `qa` job below (ruff), not the
-      # downstream-ci black/isort/flake8 gate.
-      python_qa: false
-    secrets: inherit
-
-  # Build downstream packages on HPC
-  downstream-ci-hpc:
-    name: downstream-ci-hpc
-    uses: ecmwf/downstream-ci/.github/workflows/downstream-ci-hpc.yml@main
-    with:
-      thermofeel: ecmwf/thermofeel@${{ github.event.pull_request.head.sha || github.sha }}
-    secrets: inherit
-
-  # Lint and check formatting with ruff (replaces black + isort + flake8)
-  qa:
-    name: qa
+  ci-approval:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install ruff
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff
-      - name: Ruff lint (config in pyproject.toml)
-        run: ruff check thermofeel tests scripts
-      - name: Ruff format check
-        run: ruff format --check --diff thermofeel tests scripts
+      - uses: ecmwf/ci-infrastructure/actions/require-ci-approval@main
 
-  # Run the test suite with coverage and upload to Codecov
-  coverage:
-    name: coverage
+  resolve:
+    needs: ci-approval
     runs-on: ubuntu-latest
+    outputs:
+      matrices: ${{ steps.r.outputs.json }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - id: mint
+        uses: ecmwf/ci-infrastructure/actions/mint-token@main
         with:
-          python-version: "3.11"
-      - name: Install package with test extras
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[test]"
-      - name: Run tests with coverage
-        run: pytest tests/ --cov=thermofeel --cov-report=xml --cov-report=term-missing
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+          client-id: ${{ secrets.CI_READER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CI_READER_APP_PRIVATE_KEY }}
+          repositories: thermofeel
+          permissions: contents:read actions:read
+      - uses: actions/checkout@v6
         with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          persist-credentials: false
+          fetch-depth: 0
+      - id: r
+        uses: ecmwf/ci-infrastructure/actions/resolve-deps@main
+        with:
+          matrix: test
+          token: ${{ steps.mint.outputs.token }}
 
-  # Verify the documentation builds (MkDocs); does not publish (Read the Docs does)
-  docs:
-    name: docs-build
-    runs-on: ubuntu-latest
+  test:
+    needs: [ci-approval, resolve]
+    name: test (${{ matrix._resolved['job-name'] }})
+    runs-on: ${{ matrix['runs-on'] }}
+    container:
+      image: ${{ matrix.container || '' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve.outputs.matrices).test }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Announce image
+        uses: ecmwf/ci-infrastructure/actions/announce-image@main
+      - id: mint
+        uses: ecmwf/ci-infrastructure/actions/mint-token@main
         with:
-          python-version: "3.11"
-      - name: Install documentation dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r docs/requirements.txt
-          pip install .
-      - name: Build documentation (strict)
-        run: mkdocs build --strict
+          client-id: ${{ secrets.CI_READER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.CI_READER_APP_PRIVATE_KEY }}
+          repositories: thermofeel
+          permissions: contents:read actions:read
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Fetch resolved deps
+        id: deps
+        uses: ecmwf/ci-infrastructure/actions/fetch-deps@main
+        with:
+          deps-json: ${{ toJSON(matrix._resolved.deps) }}
+          token: ${{ steps.mint.outputs.token }}
+      - name: Print dependency table
+        uses: ecmwf/ci-infrastructure/actions/print-dep-table@main
+        with:
+          resolved: ${{ toJSON(matrix._resolved) }}
+      - name: Build
+        id: build
+        uses: ecmwf/ci-infrastructure/actions/run-job-script@main
+        with:
+          job-script: ${{ matrix.job-script }}
+          matrix-leg: ${{ toJSON(matrix) }}
+          package: thermofeel
+          cmake-prefix-path: ${{ steps.deps.outputs.cmake-prefix-path }}
+      - name: Publish
+        uses: ecmwf/ci-infrastructure/actions/publish-artifact@main
+        with:
+          install-path: ${{ steps.build.outputs.install-path }}
+          artifact-name: ${{ matrix._resolved['own-artifact-name'] }}
+
+  ci-result:
+    name: collect results
+    if: always()
+    needs: [ci-approval, resolve, test]
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - uses: ecmwf/ci-infrastructure/actions/ci-result@main
+        with:
+          needs: ${{ toJSON(needs) }}

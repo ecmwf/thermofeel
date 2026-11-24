@@ -1,0 +1,74 @@
+name: qa
+
+on:
+  # Trigger the workflow on push to main, except tag creation
+  push:
+    branches:
+      - 'main'
+    tags-ignore:
+      - '**'
+
+  # Trigger the workflow on pull request
+  pull_request: ~
+
+  # Trigger the workflow manually
+  workflow_dispatch: ~
+
+jobs:
+  # Lint and check formatting with ruff (replaces black + isort + flake8)
+  qa:
+    name: qa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      - name: Ruff lint (config in pyproject.toml)
+        run: ruff check thermofeel tests scripts
+      - name: Ruff format check
+        run: ruff format --check --diff thermofeel tests scripts
+
+  # Run the test suite with coverage and upload to Codecov
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package with test extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+      - name: Run tests with coverage
+        run: pytest tests/ --cov=thermofeel --cov-report=xml --cov-report=term-missing
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Verify the documentation builds (MkDocs); does not publish (Read the Docs does)
+  docs:
+    name: docs-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+          pip install .
+      - name: Build documentation (strict)
+        run: mkdocs build --strict
