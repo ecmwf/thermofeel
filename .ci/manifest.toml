@@ -25,6 +25,3 @@ python-version = "3.12"
 
 [[matrix.test.include]]
 python-version = "3.13"
-
-[downstream]
-run-default = "all"
