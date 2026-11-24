@@ -95,7 +95,7 @@ target-version = "py310"
 [tool.ruff.lint]
 # Default rules (Pyflakes "F" + pycodestyle "E4"/"E7"/"E9") plus import sorting
 # ("I"), which together cover what flake8 + isort previously enforced.
-extend-select = ["I"]
+select = ["F", "E4", "E7", "E9", "I"]
 
 [tool.coverage.run]
 source = ["thermofeel"]
